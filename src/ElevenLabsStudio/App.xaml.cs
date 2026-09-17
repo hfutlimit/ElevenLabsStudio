@@ -48,39 +48,8 @@ public partial class App : Application
         var shellView = new ShellView();
         ViewModelBinder.Bind(shellVm, shellView, null);
 
-        // Subscribe to AgentDetail changes. The setter on ShellViewModel
-        // fires NotifyOfPropertyChange for AgentDetail + IsBusy +
-        // BusyMessage all in one go, so the App.xaml.cs side can react
-        // once and rebuild the right pane in lockstep.
-        shellVm.PropertyChanged += (_, _) =>
-        {
-            shellView.DetailContent = shellVm.AgentDetail is null
-                ? (object)new Views.AgentDetail.AgentDetailPlaceholder()
-                : ResolveDetailView(shellVm.AgentDetail);
-        };
-        // Prime the right pane with the empty-state placeholder so
-        // there is always something visible, even before an agent is
-        // pulled / selected.
-        shellView.DetailContent = new Views.AgentDetail.AgentDetailPlaceholder();
-
         MainWindow = shellView;
         shellView.Show();
-    }
-
-    private static System.Windows.FrameworkElement? ResolveDetailView(
-        ElevenLabsStudio.ViewModels.AgentDetail.AgentDetailViewModel vm)
-    {
-        var viewType = ViewLocator.LocateTypeForModelType(vm.GetType(), null, null);
-        if (viewType is null)
-        {
-            return new System.Windows.Controls.TextBlock
-            {
-                Text = $"Cannot find view for {vm.GetType().FullName}",
-            };
-        }
-        var view = (System.Windows.FrameworkElement)System.Activator.CreateInstance(viewType)!;
-        ViewModelBinder.Bind(vm, view, null);
-        return view;
     }
 
     protected override void OnExit(ExitEventArgs e)

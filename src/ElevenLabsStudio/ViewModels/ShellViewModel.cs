@@ -26,9 +26,11 @@ public sealed class ShellViewModel : Screen
         set
         {
             _agentDetail = value;
+            // Forward the inner AgentListViewModel.AgentDetail into
+            // our own property so the right-pane ContentControl
+            // (bound via XAML) re-renders through its DataContextChanged
+            // event.
             NotifyOfPropertyChange(nameof(AgentDetail));
-            NotifyOfPropertyChange(nameof(IsBusy));
-            NotifyOfPropertyChange(nameof(BusyMessage));
         }
     }
 
@@ -56,6 +58,10 @@ public sealed class ShellViewModel : Screen
         _settings = settings;
         _windows = windows;
 
+        // Forward AgentListViewModel.AgentDetail to our own AgentDetail
+        // so the right-pane XAML binding (DataContext="{Binding
+        // AgentDetail}") gets a fresh value and ShellView's
+        // DataContextChanged handler rebuilds the view.
         _agents.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(AgentListViewModel.AgentDetail))

@@ -124,18 +124,22 @@
                                 cal:View.Model="{Binding AgentsVm}"
                                 Margin="0,0,12,0" />
 
-                <!-- Right: detail panel. Code-behind assigns the view
-                     directly when the bound VM changes — we gave up on
-                     the nested ContentControl + cal:View.Model
-                     auto-locate because CM5 doesn't reliably rebuild
-                     views inside an already-initialised Border. -->
+                <!-- Right: detail panel. The DataContextChanged code-behind
+                     handler resolves the right view for whatever VM
+                     the ShellViewModel hands us (placeholder or
+                     4-tab detail). This is the simplest reliable
+                     route — cal:View.Model nested in a Border
+                     never re-rendered the view. -->
                 <Border x:Name="DetailBorder"
                         Grid.Column="1"
                         BorderBrush="{StaticResource App.Border}"
                         BorderThickness="1"
                         Background="{StaticResource App.Surface}"
                         CornerRadius="4">
-                    <ContentControl x:Name="DetailHost" />
+                    <ContentControl x:Name="DetailHost"
+                                    DataContext="{Binding AgentDetail}"
+                                    DataContextChanged="DetailHost_DataContextChanged"
+                                    Loaded="DetailHost_Loaded" />
                 </Border>
             </Grid>
 
