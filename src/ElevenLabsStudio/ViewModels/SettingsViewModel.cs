@@ -85,19 +85,21 @@ public sealed class SettingsViewModel : Screen
 
         // Reload so dependent configuration (the IHttpClientFactory
         // base address, for example) re-resolves with the new values.
+        // RuntimeClient observes the live IOptionsMonitor value, so the
+        // next call will pick up the new Mock flag without an app restart.
         _configRoot.Reload();
 
         _logger.LogInformation(
             "Settings persisted: mock={Mock} (was {OldMock}), apiKeySet={HasKey}",
             opts.Mock, oldMock, !string.IsNullOrWhiteSpace(opts.ApiKey));
 
-        var restartNote = opts.Mock != oldMock
-            ? "\n\nMock 模式已切换，需要重启应用让 IHttpClient/Mock 选择器重读配置。"
+        var note = opts.Mock != oldMock
+            ? "\n\nMock 模式切换已生效 — 下次列表加载会立即走新路径，无需重启。"
             : string.Empty;
 
         await _dialog.ShowInfoAsync(
             "Settings saved",
-            $"配置已写入 appsettings.json 并热重载。{restartNote}",
+            $"配置已写入 appsettings.json 并热重载。{note}",
             default);
         await TryCloseAsync(true);
     }

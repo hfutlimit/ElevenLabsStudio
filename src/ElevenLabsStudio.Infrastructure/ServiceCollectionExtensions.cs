@@ -27,62 +27,55 @@ public static class ServiceCollectionExtensions
             .Bind(configuration.GetSection(ElevenLabsOptions.SectionName))
             .ValidateOnStart();
 
-        // Typed HttpClient with Polly retry / circuit breaker wrapped around
-        // the raw ElevenLabsHttpClient. Use AddPolicyHandler from
-        // Microsoft.Extensions.Http.Polly so the policies are applied
-        // per-request without an explicit decorator class.
-        //
-        // Skipped when ElevenLabs:Mock=true so the offline
-        // MockElevenLabsClient takes over and the UI gets real-looking
-        // data without an API key.
-        var mockFlagRaw = configuration["ElevenLabs:Mock"];
-        var useMock = bool.TryParse(mockFlagRaw, out var parsed) && parsed;
-        if (!useMock)
+        // Both the offline mock client and the typed HTTP client are always
+        // registered. A thin <see cref="RuntimeClient"/> decorator
+        // picks one or the other on every call, reading the current
+        // ElevenLabsOptions.Mock flag via IOptionsMonitor so the user
+        // can flip Mock ↔ Real in Settings without restarting the app.
+        services.AddSingleton<Mock.MockElevenLabsClient>();
+        services.AddHttpClient<Http.ElevenLabsHttpClient>((sp, client) =>
         {
-            services.AddHttpClient<IElevenLabsClient, ElevenLabsHttpClient>((sp, client) =>
+            var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
+            if (!string.IsNullOrWhiteSpace(opts.BaseUrl))
             {
-                var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
-                if (!string.IsNullOrWhiteSpace(opts.BaseUrl))
-                {
-                    client.BaseAddress = new Uri(opts.BaseUrl, UriKind.Absolute);
-                }
-                client.Timeout = TimeSpan.FromSeconds(30);
-            })
-            .AddPolicyHandler((sp, request) =>
-            {
-                var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
-                var logger = sp.GetRequiredService<ILogger<ElevenLabsHttpClient>>();
+                client.BaseAddress = new Uri(opts.BaseUrl, UriKind.Absolute);
+            }
+            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        .AddPolicyHandler((sp, request) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
+            var logger = sp.GetRequiredService<ILogger<Http.ElevenLabsHttpClient>>();
 
-                return HttpPolicyExtensions
-                    .HandleTransientHttpError()
-                    .OrResult(msg => (int)msg.StatusCode == 429)
-                    .WaitAndRetryAsync(
-                        retryCount: opts.Polly.RetryCount,
-                        sleepDurationProvider: attempt =>
-                            TimeSpan.FromMilliseconds(opts.Polly.RetryBaseDelayMs * Math.Pow(2, attempt - 1)),
-                        onRetry: (outcome, delay, _, _) =>
-                        {
-                            logger.LogWarning(
-                                outcome.Exception,
-                                "ElevenLabs HTTP retry in {Delay} (attempt outcome: {Status})",
-                                delay,
-                                outcome.Result?.StatusCode);
-                        });
-            })
-            .AddPolicyHandler((sp, _) =>
-            {
-                var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
-                return HttpPolicyExtensions
-                    .HandleTransientHttpError()
-                    .CircuitBreakerAsync(
-                        handledEventsAllowedBeforeBreaking: opts.Polly.CircuitBreakerThreshold,
-                        durationOfBreak: TimeSpan.FromSeconds(30));
-            });
-        }
-        else
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => (int)msg.StatusCode == 429)
+                .WaitAndRetryAsync(
+                    retryCount: opts.Polly.RetryCount,
+                    sleepDurationProvider: attempt =>
+                        TimeSpan.FromMilliseconds(opts.Polly.RetryBaseDelayMs * Math.Pow(2, attempt - 1)),
+                    onRetry: (outcome, delay, _, _) =>
+                    {
+                        logger.LogWarning(
+                            outcome.Exception,
+                            "ElevenLabs HTTP retry in {Delay} (attempt outcome: {Status})",
+                            delay,
+                            outcome.Result?.StatusCode);
+                    });
+        })
+        .AddPolicyHandler((sp, _) =>
         {
-            services.AddSingleton<IElevenLabsClient, Mock.MockElevenLabsClient>();
-        }
+            var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .CircuitBreakerAsync(
+                    handledEventsAllowedBeforeBreaking: opts.Polly.CircuitBreakerThreshold,
+                    durationOfBreak: TimeSpan.FromSeconds(30));
+        });
+
+        // Single IElevenLabsClient facade — delegates to mock or real
+        // per call, based on the live ElevenLabsOptions value.
+        services.AddSingleton<IElevenLabsClient, RuntimeClient>();
 
         // Local-only suggestion engines (no network). Register every
         // leaf engine as ISuggestionEngine so MS DI's IEnumerable<T>
