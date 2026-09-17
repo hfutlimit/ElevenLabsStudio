@@ -9,12 +9,31 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBox Grid.Row="0"
-                 x:Name="FirstMessage"
-                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                 materialDesign:HintAssist.Hint="First message — Agent 开场白"
-                 FontSize="13"
-                 Margin="0,0,0,12" />
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <TextBox x:Name="FirstMessage"
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     materialDesign:HintAssist.Hint="First message — Agent 开场白"
+                     FontSize="13" />
+            <Border HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,8,12,0"
+                    Background="{StaticResource App.Surface}"
+                    Padding="8,2"
+                    CornerRadius="3">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="TextLength"
+                                             Width="12" Height="12"
+                                             Margin="0,0,4,0"
+                                             VerticalAlignment="Center"
+                                             Foreground="{StaticResource App.TextMuted}" />
+                    <TextBlock x:Name="FirstMessageLength"
+                               Text="0 chars"
+                               FontSize="11"
+                               Foreground="{StaticResource App.TextSecondary}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Grid>
 
         <Border Grid.Row="1" Style="{StaticResource App.SoftCard}" Padding="14">
             <StackPanel>

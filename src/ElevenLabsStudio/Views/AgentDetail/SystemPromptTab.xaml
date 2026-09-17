@@ -20,6 +20,27 @@
                  materialDesign:HintAssist.Hint="System prompt"
                  Padding="10" />
 
+        <DockPanel Grid.Row="0" Margin="0,0,0,0" LastChildFill="True"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Border DockPanel.Dock="Right"
+                    Background="{StaticResource App.Surface}"
+                    Padding="8,2"
+                    CornerRadius="3">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="TextLength"
+                                             Width="12" Height="12"
+                                             Margin="0,0,4,0"
+                                             VerticalAlignment="Center"
+                                             Foreground="{StaticResource App.TextMuted}" />
+                    <TextBlock x:Name="PromptLength"
+                               Text="0 chars"
+                               FontSize="11"
+                               Foreground="{StaticResource App.TextSecondary}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </DockPanel>
+
         <TextBlock Grid.Row="1"
                    Margin="0,12,0,0"
                    FontWeight="SemiBold"
