@@ -25,6 +25,7 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 
     public SystemPromptTabViewModel SystemPromptVm { get; }
     public FirstMessageTabViewModel FirstMessageVm { get; }
+    public VariablesTabViewModel VariablesVm { get; }
     public WorkflowTabViewModel WorkflowVm { get; }
     public ConversationsTabViewModel ConversationsVm { get; }
 
@@ -51,6 +52,7 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 
         SystemPromptVm = new SystemPromptTabViewModel(agent, suggestions, NullLogger<SystemPromptTabViewModel>.Instance);
         FirstMessageVm = new FirstMessageTabViewModel(agent, suggestions, NullLogger<FirstMessageTabViewModel>.Instance);
+        VariablesVm = new VariablesTabViewModel(agent, NullLogger<VariablesTabViewModel>.Instance);
         WorkflowVm = new WorkflowTabViewModel(agent, NullLogger<WorkflowTabViewModel>.Instance);
         ConversationsVm = new ConversationsTabViewModel(agent, client, dialog, NullLogger<ConversationsTabViewModel>.Instance);
     }
@@ -68,22 +70,25 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
     {
         var prompt = SystemPromptVm.Prompt;
         var firstMsg = FirstMessageVm.FirstMessage;
+        var variables = VariablesVm.GetCurrentVariables();
         var workflowNodes = WorkflowVm.GetCurrentNodes();
 
         var hasPromptChange = prompt != Agent.Prompt;
         var hasFirstMsgChange = firstMsg != Agent.FirstMessage;
+        var hasVariablesChange = !variables.SequenceEqual(Agent.Variables);
         var hasWorkflowChange = workflowNodes is not null
             && !workflowNodes.SequenceEqual(Agent.Workflow.Nodes);
 
-        if (!hasPromptChange && !hasFirstMsgChange && !hasWorkflowChange)
+        if (!hasPromptChange && !hasFirstMsgChange && !hasVariablesChange && !hasWorkflowChange)
         {
-            await _dialog.ShowInfoAsync("无变更", "Prompt、First Message、Workflow 都没改动，无需推送。");
+            await _dialog.ShowInfoAsync("无变更", "Prompt、First Message、Variables、Workflow 都没改动，无需推送。");
             return;
         }
 
         var update = new AgentUpdate(
             Prompt: hasPromptChange ? prompt : null,
             FirstMessage: hasFirstMsgChange ? firstMsg : null,
+            Variables: hasVariablesChange ? variables : null,
             WorkflowNodes: hasWorkflowChange ? workflowNodes : null);
 
         IsBusy = true;

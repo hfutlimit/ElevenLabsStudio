@@ -103,6 +103,7 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
                 {
                     prompt = update.Prompt is null ? null : new { prompt = update.Prompt },
                     first_message = update.FirstMessage,
+                    variables = update.Variables is null ? null : new { items = update.Variables },
                 },
                 tts = update.VoiceId is null ? null : new { voice_id = update.VoiceId },
             },

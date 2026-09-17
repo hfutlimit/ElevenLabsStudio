@@ -113,6 +113,15 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="VariableBox" Margin="0,0,6,0" />
+                        <TextBlock Text="Variables" />
+                    </StackPanel>
+                </TabItem.Header>
+                <ContentControl cal:View.Model="{Binding VariablesVm}" />
+            </TabItem>
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="ForumOutline" Margin="0,0,6,0" />
                         <TextBlock Text="Conversations" />
                     </StackPanel>

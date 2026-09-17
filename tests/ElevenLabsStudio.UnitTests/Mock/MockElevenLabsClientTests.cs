@@ -135,6 +135,25 @@ public sealed class MockElevenLabsClientTests
     }
 
     [Fact]
+    public async Task UpdateAgentAsync_replaces_variables_when_supplied()
+    {
+        var newVars = new[]
+        {
+            new Core.Domain.Variable("region", "JP", "string"),
+            new Core.Domain.Variable("industry", "fintech", "string"),
+        };
+
+        var snapshot = await _client.UpdateAgentAsync(
+            "agent_sales_001",
+            new Core.Domain.AgentUpdate(Variables: newVars));
+
+        snapshot.Variables.Should().HaveCount(2);
+        snapshot.Variables[0].Name.Should().Be("region");
+        snapshot.Variables[0].Value.Should().Be("JP");
+        snapshot.Variables[1].Name.Should().Be("industry");
+    }
+
+    [Fact]
     public async Task ListVoicesAsync_returns_three_premade_voices()
     {
         var voices = await _client.ListVoicesAsync();
