@@ -47,6 +47,40 @@ public partial class App : Application
 
         var shellView = new ShellView();
         ViewModelBinder.Bind(shellVm, shellView, null);
+
+        // Explicitly subscribe so we always know when the inner detail
+        // VM changes — the ContentControl + cal:View.Model binding
+        // would otherwise do it lazily, but here we want the new view
+        // in place immediately so the 4-tab agent detail renders without
+        // a round-trip through CM's attached-property callback path.
+        shellVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ShellViewModel.AgentDetail))
+            {
+                if (shellVm.AgentDetail is null)
+                {
+                    shellView.DetailContent = null;
+                }
+                else
+                {
+                    var viewType = ViewLocator.LocateTypeForModelType(
+                        shellVm.AgentDetail.GetType(), null, null);
+                    if (viewType is null)
+                    {
+                        shellView.DetailContent = new System.Windows.Controls.TextBlock
+                        {
+                            Text = $"Cannot find view for {shellVm.AgentDetail.GetType().FullName}",
+                        };
+                        return;
+                    }
+
+                    var view = (System.Windows.FrameworkElement)System.Activator.CreateInstance(viewType)!;
+                    ViewModelBinder.Bind(shellVm.AgentDetail, view, null);
+                    shellView.DetailContent = view;
+                }
+            }
+        };
+
         MainWindow = shellView;
         shellView.Show();
     }

@@ -49,6 +49,12 @@ public sealed class ConversationsTabViewModel : ScreenBase
         _client = client;
         _dialog = dialog;
         _logger = logger;
+
+        // Fire from ctor — the same reason as AgentListViewModel:
+        // CM5 nested ContentControl + cal:View.Model does not reliably
+        // trigger OnViewLoaded, so the conversations list would stay
+        // empty until the user explicitly clicked the Refresh button.
+        _ = ReloadAsync();
     }
 
     public async Task ReloadAsync()

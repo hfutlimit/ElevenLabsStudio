@@ -124,13 +124,18 @@
                                 cal:View.Model="{Binding AgentsVm}"
                                 Margin="0,0,12,0" />
 
-                <!-- Right: detail panel in a thin-border card -->
-                <Border Grid.Column="1"
+                <!-- Right: detail panel. Code-behind assigns the view
+                     directly when the bound VM changes — we gave up on
+                     the nested ContentControl + cal:View.Model
+                     auto-locate because CM5 doesn't reliably rebuild
+                     views inside an already-initialised Border. -->
+                <Border x:Name="DetailBorder"
+                        Grid.Column="1"
                         BorderBrush="{StaticResource App.Border}"
                         BorderThickness="1"
                         Background="{StaticResource App.Surface}"
                         CornerRadius="4">
-                    <ContentControl cal:View.Model="{Binding AgentDetail}" />
+                    <ContentControl x:Name="DetailHost" />
                 </Border>
             </Grid>
 

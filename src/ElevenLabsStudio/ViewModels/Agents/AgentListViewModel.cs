@@ -63,6 +63,13 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
                         _dialog,
                         _events,
                         _logger);
+                // PropertyChanged is what ShellViewModel listens to when
+                // forwarding the inner AgentDetail value to its own
+                // AgentDetail property (which the right-pane
+                // ContentControl binds). Set() only fires for the
+                // property that the backing store actually belongs to,
+                // so we have to push AgentDetail updates manually.
+                NotifyOfPropertyChange(nameof(AgentDetail));
             }
         }
     }
@@ -168,6 +175,14 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
             var items = await _client.ListAgentsAsync();
             Agents.Clear();
             Agents.AddRange(items);
+
+            // Auto-select the first agent so the right pane shows the
+            // 4-tab detail immediately. The user can pick another
+            // one to switch.
+            if (SelectedAgent is null && Agents.Count > 0)
+            {
+                SelectedAgent = Agents[0];
+            }
 
             await _events.PublishOnBackgroundThreadAsync(
                 new AgentListRefreshedEvent(items));

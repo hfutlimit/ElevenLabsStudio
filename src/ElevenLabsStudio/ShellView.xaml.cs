@@ -1,14 +1,8 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
+using Caliburn.Micro;
 
 namespace ElevenLabsStudio;
 
-/// <summary>
-/// ShellView code-behind. We deliberately do not put Minimize /
-/// Maximize / Close logic on the VM — those are pure Window
-/// affordances, not application state. Hooking them here keeps the
-/// VM free of UI-framework concerns (per docs/02-mvvm-conventions.md).
-/// </summary>
 public partial class ShellView : Window
 {
     public ShellView()
@@ -34,5 +28,15 @@ public partial class ShellView : Window
         MaximizeIcon.Kind = WindowState == WindowState.Maximized
             ? MaterialDesignThemes.Wpf.PackIconKind.WindowRestore
             : MaterialDesignThemes.Wpf.PackIconKind.WindowMaximize;
+    }
+
+    /// <summary>
+    /// Wires a single child <see cref="ContentControl"/> at the centre of
+    /// the right pane so we can host any view the ShellViewModel needs.
+    /// </summary>
+    public object? DetailContent
+    {
+        get => DetailHost.Content;
+        set => DetailHost.Content = value;
     }
 }
