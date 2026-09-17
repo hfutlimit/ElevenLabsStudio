@@ -1,0 +1,234 @@
+using System.Net.Http;
+using ElevenLabsStudio.Core.Domain;
+using ElevenLabsStudio.Infrastructure;
+using ElevenLabsStudio.Infrastructure.Http;
+using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
+namespace ElevenLabsStudio.UnitTests.Integration;
+
+/// <summary>
+/// Real wire-level integration tests for <see cref="ElevenLabsHttpClient"/>.
+/// The client is constructed with its full DI graph and pointed at a
+/// loopback <see cref="HttpTestServer"/>; no mocks or in-memory
+/// seams are involved. This pins the on-the-wire JSON shape, the
+/// xi-api-key header, and the Polly retries that we'd otherwise
+/// only see by hitting the public ElevenLabs API.
+/// </summary>
+public sealed class ElevenLabsHttpClientIntegrationTests
+{
+    private static ElevenLabsHttpClient NewClient(HttpTestServer server, string apiKey = "test-key-123")
+    {
+        var opts = new StaticOptionsMonitor<ElevenLabsOptions>(new ElevenLabsOptions
+        {
+            BaseUrl = server.BaseUrl,
+            ApiKey = apiKey,
+        });
+        // HttpClient created with a 5s timeout so a hung test doesn't
+        // block the runner indefinitely. The handler chain is
+        // real (no MockHttpMessageHandler).
+        var http = new HttpClient { BaseAddress = new Uri(server.BaseUrl), Timeout = TimeSpan.FromSeconds(5) };
+        return new ElevenLabsHttpClient(http, NullLogger<ElevenLabsHttpClient>.Instance, opts);
+    }
+
+    private static string AgentsListJson() => """
+        {
+          "agents": [
+            {
+              "agent_id": "agent_wire_001",
+              "name": "Wire Agent",
+              "conversation_config": {
+                "agent": { "prompt": {"prompt": "x"}, "first_message": "hi" },
+                "tts": { "voice_id": "voice_aria" }
+              },
+              "workflow": { "nodes": [ {"id": "n1", "type": "llm", "name": "Answer"} ] },
+              "metadata": { "updated_at": "2026-09-17T22:00:00Z" }
+            }
+          ]
+        }
+        """;
+
+    [Fact]
+    public async Task ListAgentsAsync_deserialises_payload_and_sends_xi_api_key()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(200, AgentsListJson());
+        var client = NewClient(server, apiKey: "wire-test-key");
+
+        var agents = await client.ListAgentsAsync();
+
+        agents.Should().HaveCount(1);
+        agents[0].AgentId.Should().Be("agent_wire_001");
+        agents[0].Name.Should().Be("Wire Agent");
+        agents[0].VoiceId.Should().Be("voice_aria");
+        // The header the server received should include our API key.
+        server.Captured.Should().HaveCount(1);
+        server.Captured[0].Method.Should().Be("GET");
+        server.Captured[0].Path.Should().Be("/v1/convai/agents");
+        server.Captured[0].Headers.Should().ContainKey("xi-api-key");
+        server.Captured[0].Headers["xi-api-key"].Should().Be("wire-test-key");
+    }
+
+    [Fact]
+    public async Task GetAgentAsync_maps_single_agent_payload()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(200, """
+            {
+              "agent_id": "agent_wire_002",
+              "name": "Single",
+              "conversation_config": {
+                "agent": { "prompt": {"prompt": "p"}, "first_message": "f" },
+                "tts": {}
+              },
+              "workflow": { "nodes": [] },
+              "metadata": {}
+            }
+            """);
+        var client = NewClient(server);
+
+        var agent = await client.GetAgentAsync("agent_wire_002");
+        agent.AgentId.Should().Be("agent_wire_002");
+        agent.Prompt.Should().Be("p");
+        agent.FirstMessage.Should().Be("f");
+    }
+
+    [Fact]
+    public async Task UpdateAgentAsync_sends_patch_with_xi_api_key_and_payload()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(200, """
+            {
+              "agent_id": "agent_wire_003",
+              "name": "Updated",
+              "conversation_config": {
+                "agent": { "prompt": {"prompt": "new"}, "first_message": "new-fm" },
+                "tts": { "voice_id": "voice_b" }
+              },
+              "workflow": { "nodes": [{"id":"n9","type":"llm","name":"Greeting"}] },
+              "metadata": { "updated_at": "2026-09-17T23:00:00Z" }
+            }
+            """);
+        var client = NewClient(server, apiKey: "patch-key");
+
+        var snapshot = await client.UpdateAgentAsync(
+            "agent_wire_003",
+            new AgentUpdate(
+                Prompt: "new",
+                FirstMessage: "new-fm",
+                Variables: new[] { new Variable("topic", "billing", "string") },
+                WorkflowNodes: new[] { new WorkflowNode("n9", "llm", "Greeting") }));
+
+        snapshot.Prompt.Should().Be("new");
+        snapshot.FirstMessage.Should().Be("new-fm");
+        snapshot.Workflow.Nodes.Should().HaveCount(1);
+        snapshot.Workflow.Nodes[0].Id.Should().Be("n9");
+
+        // The PATCH request must include the api key and the merged
+        // payload we sent.
+        server.Captured.Should().HaveCount(1);
+        var sent = server.Captured[0];
+        sent.Method.Should().Be("PATCH");
+        sent.Path.Should().Be("/v1/convai/agents/agent_wire_003");
+        sent.Headers["xi-api-key"].Should().Be("patch-key");
+        sent.RequestBody.Should().Contain("\"prompt\":{\"prompt\":\"new\"}");
+        sent.RequestBody.Should().Contain("\"workflow\":");
+        sent.RequestBody.Should().Contain("\"n9\"");
+    }
+
+    [Fact]
+    public async Task ListConversationsAsync_decodes_transcript_and_passes_agent_id()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(200, """
+            {
+              "conversations": [
+                {
+                  "conversation_id": "conv_wire_001",
+                  "agent_id": "agent_wire_001",
+                  "start_time_unix_secs": 1737000000,
+                  "call_duration_secs": 12,
+                  "status": "success",
+                  "transcript": [
+                    {"role": "agent", "message": "hi", "time_in_call_secs": 0.5},
+                    {"role": "user", "message": "hello", "time_in_call_secs": 1.5}
+                  ]
+                }
+              ],
+              "next_cursor": null
+            }
+            """);
+        var client = NewClient(server);
+
+        var convs = await client.ListConversationsAsync("agent_wire_001");
+
+        convs.Should().HaveCount(1);
+        convs[0].Turns.Should().HaveCount(2);
+        convs[0].Turns[0].Speaker.Should().Be("agent");
+        convs[0].Turns[1].Speaker.Should().Be("user");
+        convs[0].DurationMs.Should().Be(12_000);
+        // The agent id is sent as a query string; HttpListener exposes
+        // the path separately from the query.
+        var sent = server.Captured[0];
+        sent.Path.Should().StartWith("/v1/convai/conversations");
+        sent.FullPath.Should().Contain("agent_id=agent_wire_001");
+    }
+
+    [Fact]
+    public async Task GetAgentAsync_maps_404_to_ElevenLabsException_with_status()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(404, """{"detail":{"message":"agent not found","status":"not_found"}}""");
+        var client = NewClient(server);
+
+        var act = () => client.GetAgentAsync("agent_missing");
+
+        var ex = (await act.Should().ThrowAsync<Core.Exceptions.ElevenLabsException>()).Which;
+        ex.HttpStatus.Should().Be(404);
+        ex.Message.Should().Contain("agent not found");
+    }
+
+    [Fact]
+    public async Task UpdateAgentAsync_maps_429_to_RateLimitException()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(429, """{"detail":{"message":"slow down","status":"too_many_requests"}}""");
+        var client = NewClient(server);
+
+        var act = () => client.UpdateAgentAsync(
+            "agent_wire_001",
+            new AgentUpdate(Prompt: "p"));
+
+        var ex = (await act.Should().ThrowAsync<Core.Exceptions.ElevenLabsRateLimitException>()).Which;
+        ex.HttpStatus.Should().Be(429);
+        ex.Message.Should().Contain("slow down");
+    }
+
+    [Fact]
+    public async Task ListAgentsAsync_sends_accept_json_header()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(200, """{"agents":[]}""");
+        var client = NewClient(server);
+
+        _ = await client.ListAgentsAsync();
+
+        server.Captured[0].Headers.Should().ContainKey("Accept");
+        server.Captured[0].Headers["Accept"].Should().Contain("application/json");
+    }
+}
+
+/// <summary>
+/// Minimal <see cref="IOptionsMonitor{T}"/> wrapper for tests that
+/// only need a static snapshot. Matches the shape of the real
+/// Microsoft.Extensions.Options.OptionsMonitor without its
+/// change-tracking machinery.
+/// </summary>
+internal sealed class StaticOptionsMonitor<T> : IOptionsMonitor<T> where T : class
+{
+    public StaticOptionsMonitor(T value) { CurrentValue = value; }
+    public T CurrentValue { get; }
+    public T Get(string? name) => CurrentValue;
+    public IDisposable? OnChange(Action<T, string?> listener) => null;
+}
