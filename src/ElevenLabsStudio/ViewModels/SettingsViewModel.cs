@@ -7,6 +7,7 @@ using ElevenLabsStudio.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using JsonValue = System.Text.Json.Nodes.JsonValue;
 
 namespace ElevenLabsStudio.ViewModels;
 
@@ -23,6 +24,7 @@ public sealed class SettingsViewModel : Screen
     private readonly IDialogService _dialog;
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly IConfigurationRoot _configRoot;
+    private readonly string? _appsettingsPathOverride;
 
     private static readonly JsonSerializerOptions WriteOptions = new()
     {
@@ -33,11 +35,13 @@ public sealed class SettingsViewModel : Screen
         IOptionsMonitor<ElevenLabsOptions> options,
         IDialogService dialog,
         ILogger<SettingsViewModel> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        string? appsettingsPathOverride = null)
     {
         _options = options;
         _dialog = dialog;
         _logger = logger;
+        _appsettingsPathOverride = appsettingsPathOverride;
         // IConfigurationRoot is what gives us the ability to Reload()
         // after writing. When the host built the configuration, this
         // was the actual root it created.
@@ -102,7 +106,8 @@ public sealed class SettingsViewModel : Screen
 
     private async Task PersistToFileAsync()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        var path = _appsettingsPathOverride
+            ?? Path.Combine(AppContext.BaseDirectory, "appsettings.json");
         if (!File.Exists(path))
         {
             throw new FileNotFoundException("appsettings.json not found next to the .exe.", path);
@@ -119,8 +124,8 @@ public sealed class SettingsViewModel : Screen
             ?? throw new InvalidOperationException("appsettings.json root is not a JSON object.");
 
         var elNode = rootNode["ElevenLabs"] as JsonObject ?? new JsonObject();
-        elNode["Mock"] = MockMode;
-        elNode["ApiKey"] = ApiKey;
+        elNode["Mock"] = JsonValue.Create(MockMode);
+        elNode["ApiKey"] = JsonValue.Create(ApiKey);
         rootNode["ElevenLabs"] = elNode;
 
         var pretty = rootNode.ToJsonString(WriteOptions);

@@ -48,8 +48,92 @@ public partial class App : Application
         var shellView = new ShellView();
         ViewModelBinder.Bind(shellVm, shellView, null);
 
+        // DPI-aware sizing: cap the window to 80% of the working area of
+        // the monitor where the cursor is, so on a 1080p secondary
+        // screen the window never opens off-screen.
+        ClampToDpi(shellView);
+
         MainWindow = shellView;
         shellView.Show();
+    }
+
+    private static void ClampToDpi(Window window)
+    {
+        // Pick the monitor the cursor is currently on via P/Invoke and
+        // use its working area (physical pixels, excluding the taskbar)
+        // as the ceiling for the design-time Width/Height so the window
+        // never opens off-screen on a smaller secondary monitor.
+        var (workX, workY, workW, workH) = GetCursorMonitorWorkArea();
+
+        double dpiX = 1.0, dpiY = 1.0;
+        var source = System.Windows.PresentationSource.FromVisual(window);
+        if (source?.CompositionTarget is { } ct)
+        {
+            var m = ct.TransformToDevice;
+            dpiX = m.M11;
+            dpiY = m.M22;
+        }
+
+        var maxW = (int)(workW * 0.8);
+        var maxH = (int)(workH * 0.8);
+        var widthDip = Math.Min(window.Width, maxW / dpiX);
+        var heightDip = Math.Min(window.Height, maxH / dpiY);
+        window.Width = widthDip;
+        window.Height = heightDip;
+
+        // Centre within the working area.
+        window.WindowStartupLocation = WindowStartupLocation.Manual;
+        window.Left = (workX + (workW - widthDip * dpiX) / 2.0) / dpiX;
+        window.Top = (workY + (workH - heightDip * dpiY) / 2.0) / dpiY;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(
+        System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct POINT { public int X; public int Y; }
+
+    [System.Runtime.InteropServices.StructLayout(
+        System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct RECT { public int Left, Top, Right, Bottom; }
+
+    [System.Runtime.InteropServices.StructLayout(
+        System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+    private const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+    private static (int X, int Y, int W, int H) GetCursorMonitorWorkArea()
+    {
+        if (!GetCursorPos(out var pt))
+        {
+            return (0, 0, (int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
+        }
+        var hMon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+        if (hMon == IntPtr.Zero)
+        {
+            return (0, 0, (int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
+        }
+        var info = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
+        if (!GetMonitorInfo(hMon, ref info))
+        {
+            return (0, 0, (int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
+        }
+        var rc = info.rcWork;
+        return (rc.Left, rc.Top, rc.Right - rc.Left, rc.Bottom - rc.Top);
     }
 
     protected override void OnExit(ExitEventArgs e)
