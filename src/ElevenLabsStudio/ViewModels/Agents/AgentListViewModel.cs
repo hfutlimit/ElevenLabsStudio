@@ -52,6 +52,8 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
         get => _selectedAgent;
         set
         {
+            System.IO.File.AppendAllText(@"C:\Users\jason\AppData\Local\Temp\els-prop.log",
+                $"[{DateTime.UtcNow:HH:mm:ss.fff}] SelectedAgent SETTER old={_selectedAgent?.AgentId ?? "null"} new={value?.AgentId ?? "null"} eq={_selectedAgent == value}\n");
             if (Set(ref _selectedAgent, value))
             {
                 AgentDetail = _selectedAgent is null

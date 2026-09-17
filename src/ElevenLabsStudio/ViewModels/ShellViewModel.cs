@@ -23,7 +23,13 @@ public sealed class ShellViewModel : Screen
     public AgentDetailViewModel? AgentDetail
     {
         get => _agentDetail;
-        set => Set(ref _agentDetail, value);
+        set
+        {
+            _agentDetail = value;
+            NotifyOfPropertyChange(nameof(AgentDetail));
+            NotifyOfPropertyChange(nameof(IsBusy));
+            NotifyOfPropertyChange(nameof(BusyMessage));
+        }
     }
 
     private DateTimeOffset _currentTime;
@@ -55,8 +61,6 @@ public sealed class ShellViewModel : Screen
             if (e.PropertyName == nameof(AgentListViewModel.AgentDetail))
             {
                 AgentDetail = _agents.AgentDetail;
-                NotifyOfPropertyChange(nameof(IsBusy));
-                NotifyOfPropertyChange(nameof(BusyMessage));
             }
         };
 

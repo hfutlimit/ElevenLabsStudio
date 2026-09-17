@@ -3,6 +3,7 @@ using ElevenLabsStudio.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Reflection;
 
 namespace ElevenLabsStudio;
@@ -35,6 +36,10 @@ public sealed class Bootstrapper : IDisposable
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables(prefix: "ELEVENLABS_")
             .Build();
+        // Hold the IConfigurationRoot so SettingsViewModel can write
+        // back to appsettings.json + call Reload() at runtime.
+        services.AddSingleton<IConfiguration>(config);
+        services.AddSingleton<IConfigurationRoot>(config);
 
         services.AddLogging(b =>
         {
