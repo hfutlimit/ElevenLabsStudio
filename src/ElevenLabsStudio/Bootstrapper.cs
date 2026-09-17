@@ -3,6 +3,7 @@ using ElevenLabsStudio.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 
 namespace ElevenLabsStudio;
 
@@ -66,6 +67,46 @@ public sealed class Bootstrapper : IDisposable
         services.AddTransient<ViewModels.AgentDetail.ConversationsTabViewModel>();
 
         _serviceProvider = services.BuildServiceProvider();
+
+        // Caliburn.Micro 5's AssemblySource.Instance is empty by default.
+        // ViewLocator.FindTypeByNames iterates only over the assemblies we
+        // register here, so without this line every "cal:View.Model=..."
+        // binding falls through to the "Cannot find view for {0}" fallback.
+        // We add every assembly that contains View or ViewModel types —
+        // Core (domain + abstractions), Infrastructure (HttpClient lives
+        // there too) and the UI exe itself.
+        Caliburn.Micro.AssemblySource.Instance.AddRange(new[]
+        {
+            typeof(Core.Domain.Agent).Assembly,
+            typeof(Infrastructure.Http.ElevenLabsHttpClient).Assembly,
+            typeof(ViewModels.ShellViewModel).Assembly,
+        });
+
+        // The stock ViewLocator.GetOrCreateViewType probes IoC.GetAllInstances
+        // first; IoC is uninitialised in our setup (we use MS DI directly) so
+        // that probe throws InvalidOperationException and breaks view
+        // resolution. Replace it with an Activator-only fallback that never
+        // touches IoC.
+        Caliburn.Micro.ViewLocator.GetOrCreateViewType = viewType =>
+        {
+            if (viewType is null)
+            {
+                return new System.Windows.Controls.TextBlock { Text = "Null view type." };
+            }
+
+            if (viewType.IsInterface || viewType.IsAbstract
+                || !typeof(System.Windows.UIElement).IsAssignableFrom(viewType))
+            {
+                return new System.Windows.Controls.TextBlock
+                {
+                    Text = string.Format("Cannot create {0}.", viewType.FullName),
+                };
+            }
+
+            var view = (System.Windows.UIElement)System.Activator.CreateInstance(viewType)!;
+            Caliburn.Micro.ViewLocator.InitializeComponent(view);
+            return view;
+        };
     }
 
     public T Resolve<T>() where T : notnull =>
