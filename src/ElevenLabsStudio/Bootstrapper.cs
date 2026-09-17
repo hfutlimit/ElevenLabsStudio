@@ -57,6 +57,7 @@ public sealed class Bootstrapper : IDisposable
 
         services.AddSingleton<ViewModels.ShellViewModel>();
         services.AddSingleton<ViewModels.Agents.AgentListViewModel>();
+        services.AddSingleton<ViewModels.SettingsViewModel>();
 
         // Per-request: a fresh detail VM per selection so the four tab
         // VMs are recreated when the user switches agents.

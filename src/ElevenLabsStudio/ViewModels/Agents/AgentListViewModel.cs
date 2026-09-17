@@ -87,6 +87,15 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
         _windowManager = windowManager;
 
         AgentsView = CollectionViewSource.GetDefaultView(Agents);
+
+        // Fire LoadAsync from ctor instead of OnViewLoaded. CM5's
+        // ContentControl + cal:View.Model does not reliably trigger
+        // OnViewLoaded on the VM when the ContentControl is nested
+        // inside another ContentControl (ShellView), so the load
+        // would silently never happen. Kicking off here means the list
+        // is populated as soon as the AgentListViewModel exists in the
+        // DI graph.
+        _ = LoadAsync();
         AgentsView.Filter = FilterAgent;
         Agents.CollectionChanged += (_, _) =>
             NotifyOfPropertyChange(nameof(HasNoAgents));
@@ -143,5 +152,47 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
             }
         }
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Pulls the agent list from the (mock or real) client and populates
+    /// the bound collection. Already wired up to run from the ctor so
+    /// the UI never sits empty.
+    /// </summary>
+    public async Task LoadAsync()
+    {
+        IsBusy = true;
+        BusyMessage = "正在加载 Agent…";
+        try
+        {
+            var items = await _client.ListAgentsAsync();
+            Agents.Clear();
+            Agents.AddRange(items);
+
+            await _events.PublishOnBackgroundThreadAsync(
+                new AgentListRefreshedEvent(items));
+        }
+        catch (ElevenLabsAuthException ex)
+        {
+            _logger.LogError(ex, "ElevenLabs auth failed while loading agents");
+            await _dialog.ShowErrorAsync(
+                "鉴权失败",
+                "API Key 无效或缺失。请在 appsettings.json 的 ElevenLabs.ApiKey 配置后重启。");
+        }
+        catch (ElevenLabsException ex)
+        {
+            _logger.LogError(ex, "ElevenLabs error while loading agents (status={Status})", ex.HttpStatus);
+            await _dialog.ShowErrorAsync("加载失败", $"无法加载 Agent（HTTP {ex.HttpStatus}）。");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while loading agents");
+            await _dialog.ShowErrorAsync("未知错误", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyOfPropertyChange(nameof(BusyMessage));
+        }
     }
 }

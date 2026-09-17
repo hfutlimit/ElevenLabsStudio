@@ -10,6 +10,14 @@ public sealed class ElevenLabsOptions
     public const string SectionName = "ElevenLabs";
 
     /// <summary>
+    /// Use the offline <see cref="Mock.MockElevenLabsClient"/> instead of
+    /// the real HTTP client. Useful for UI iteration and E2E tests
+    /// without an API key. Defaults to true so first-time launches show
+    /// content immediately.
+    /// </summary>
+    public bool Mock { get; set; } = true;
+
+    /// <summary>
     /// ElevenLabs API key. Read from <c>ELEVENLABS_API_KEY</c> environment
     /// variable if blank in config. NEVER hard-code; never commit.
     /// </summary>

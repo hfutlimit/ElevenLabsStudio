@@ -31,7 +31,15 @@ public static class ServiceCollectionExtensions
         // the raw ElevenLabsHttpClient. Use AddPolicyHandler from
         // Microsoft.Extensions.Http.Polly so the policies are applied
         // per-request without an explicit decorator class.
-        services.AddHttpClient<IElevenLabsClient, ElevenLabsHttpClient>((sp, client) =>
+        //
+        // Skipped when ElevenLabs:Mock=true so the offline
+        // MockElevenLabsClient takes over and the UI gets real-looking
+        // data without an API key.
+        var mockFlagRaw = configuration["ElevenLabs:Mock"];
+        var useMock = bool.TryParse(mockFlagRaw, out var parsed) && parsed;
+        if (!useMock)
+        {
+            services.AddHttpClient<IElevenLabsClient, ElevenLabsHttpClient>((sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
                 if (!string.IsNullOrWhiteSpace(opts.BaseUrl))
@@ -70,6 +78,11 @@ public static class ServiceCollectionExtensions
                         handledEventsAllowedBeforeBreaking: opts.Polly.CircuitBreakerThreshold,
                         durationOfBreak: TimeSpan.FromSeconds(30));
             });
+        }
+        else
+        {
+            services.AddSingleton<IElevenLabsClient, Mock.MockElevenLabsClient>();
+        }
 
         // Local-only suggestion engines (no network). Register every
         // leaf engine as ISuggestionEngine so MS DI's IEnumerable<T>

@@ -8,13 +8,13 @@ namespace ElevenLabsStudio.ViewModels;
 /// <summary>
 /// Top-level shell. Wires the left agent menu and the right detail
 /// pane. Owns a 1-second clock so the status bar always shows a live
-/// timestamp. The Conductor pattern from Caliburn is intentionally
-/// bypassed — there is exactly one detail slot, bound to the
-/// currently-selected <see cref="AgentDetailViewModel"/>.
+/// timestamp. Hosts the Settings dialog action.
 /// </summary>
 public sealed class ShellViewModel : Screen
 {
     private readonly AgentListViewModel _agents;
+    private readonly SettingsViewModel _settings;
+    private readonly IWindowManager _windows;
     private readonly DispatcherTimer _clockTimer;
 
     public AgentListViewModel AgentsVm => _agents;
@@ -41,11 +41,15 @@ public sealed class ShellViewModel : Screen
         ?? _agents.BusyMessage
         ?? string.Empty;
 
-    public ShellViewModel(AgentListViewModel agents)
+    public ShellViewModel(
+        AgentListViewModel agents,
+        SettingsViewModel settings,
+        IWindowManager windows)
     {
         _agents = agents;
+        _settings = settings;
+        _windows = windows;
 
-        // Forward selection changes to the right pane.
         _agents.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(AgentListViewModel.AgentDetail))
@@ -65,23 +69,11 @@ public sealed class ShellViewModel : Screen
         CurrentTime = DateTimeOffset.Now;
     }
 
-    /// <summary>
-/// CM5 5.0.x seals / hides <c>OnDeactivate</c> + <c>Deactivate</c> from
-/// subclasses, so we can't override the lifecycle hook directly. The
-/// DispatcherTimer holds a weak-style reference and will be GC'd when
-/// the ShellViewModel is collected; for explicit teardown the user can
-/// close the window which tears the WPF tree down anyway.
-/// </summary>
-
-    public void OpenSettings()
+    public async Task OpenSettingsAsync()
     {
-        // Settings tab is intentionally out of scope for v0.1; hook is in
-        // place so the top-bar button is wired and behaviour stays
-        // explicit. Future iterations open a SettingsView dialog here.
-    }
-
-    public void OpenHelp()
-    {
-        // Same — hook only.
+        // WindowManager.ShowDialogAsync resolves the View via the same
+        // assembly registration we wired in Build(), so SettingsView
+        // (.xaml under Views/Settings/) is matched automatically.
+        await _windows.ShowDialogAsync(_settings);
     }
 }
