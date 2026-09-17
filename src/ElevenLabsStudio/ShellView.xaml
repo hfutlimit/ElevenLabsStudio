@@ -5,85 +5,156 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:cal="http://www.caliburnproject.org"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="ElevenLabs Studio"
         Height="820" Width="1320"
+        MinHeight="600" MinWidth="980"
         WindowStartupLocation="CenterScreen"
-        TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-        Background="{DynamicResource MaterialDesign.Brush.Background}"
-        FontFamily="{DynamicResource MaterialDesign.Font}">
-    <materialDesign:DialogHost>
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        AllowsTransparency="True"
+        Background="Transparent"
+        TextElement.Foreground="{StaticResource App.Text}"
+        FontFamily="{DynamicResource MaterialDesign.Font}"
+        d:DataContext="{d:DesignInstance Type=vm:ShellViewModel, IsDesignTimeCreatable=True}"
+        xmlns:vm="clr-namespace:ElevenLabsStudio.ViewModels">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="44"
+                            ResizeBorderThickness="6"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <!-- Outer border = single-pixel rounded-rect outline of the window. -->
+    <Border BorderBrush="{StaticResource App.Border}"
+            BorderThickness="1"
+            Background="{StaticResource App.Surface}">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="44" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="28" />
             </Grid.RowDefinitions>
 
-            <!-- 1. TopAppBar -->
-            <materialDesign:ColorZone Grid.Row="0" Mode="PrimaryMid" Padding="16,10">
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <Button x:Name="OpenSettings"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                ToolTip="设置"
-                                Margin="0,0,4,0">
-                            <materialDesign:PackIcon Kind="Cog" />
-                        </Button>
-                        <Button x:Name="OpenHelp"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                ToolTip="帮助">
-                            <materialDesign:PackIcon Kind="HelpCircleOutline" />
-                        </Button>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="MicrophoneMessage"
-                                                 Width="22" Height="22"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center" />
+            <!-- 1. Custom title bar -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource App.Surface}"
+                    BorderBrush="{StaticResource App.Border}"
+                    BorderThickness="0,0,0,1">
+                <DockPanel LastChildFill="True">
+                    <!-- Left: brand -->
+                    <StackPanel DockPanel.Dock="Left"
+                                Orientation="Horizontal"
+                                Margin="14,0,0,0"
+                                VerticalAlignment="Center">
+                        <Border Width="22" Height="22"
+                                CornerRadius="4"
+                                Background="{StaticResource App.Accent}">
+                            <TextBlock Text="🎙"
+                                       FontSize="13"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
                         <TextBlock Text="ElevenLabs Studio"
-                                   FontSize="18"
+                                   FontSize="14"
                                    FontWeight="SemiBold"
+                                   Margin="10,0,0,0"
                                    VerticalAlignment="Center" />
+                        <Border Background="#EEF2FF"
+                                CornerRadius="3"
+                                Padding="6,2"
+                                Margin="10,0,0,0">
+                            <TextBlock Text="v0.1"
+                                       FontSize="10"
+                                       Foreground="{StaticResource App.Accent}" />
+                        </Border>
                     </StackPanel>
-                </DockPanel>
-            </materialDesign:ColorZone>
 
-            <!-- 2. Main split: left agent menu / right detail -->
-            <Grid Grid.Row="1" Margin="12">
+                    <!-- Right: caption buttons -->
+                    <StackPanel DockPanel.Dock="Right"
+                                Orientation="Horizontal"
+                                Margin="0,0,0,0">
+                        <Button x:Name="Minimize"
+                                Style="{StaticResource CaptionButton}"
+                                ToolTip="最小化">
+                            <materialDesign:PackIcon Kind="WindowMinimize"
+                                                     Width="14" Height="14" />
+                        </Button>
+                        <Button x:Name="MaximizeRestore"
+                                Style="{StaticResource CaptionButton}"
+                                ToolTip="最大化">
+                            <materialDesign:PackIcon x:Name="MaximizeIcon"
+                                                     Kind="WindowMaximize"
+                                                     Width="14" Height="14" />
+                        </Button>
+                        <Button x:Name="Close"
+                                Style="{StaticResource CaptionButton}"
+                                ToolTip="关闭">
+                            <materialDesign:PackIcon Kind="Close"
+                                                     Width="14" Height="14" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Middle: drag handle (empty Grid lets WindowChrome
+                         pick up drag via CaptionHeight, no extra handler
+                         needed). -->
+                    <Grid />
+                </DockPanel>
+            </Border>
+
+            <!-- 2. Main split -->
+            <Grid Grid.Row="1" Margin="16,14,16,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="320" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- cal:View.Model explicit binding so CM5's ViewLocator
-                     picks up the right View without relying on namespace
-                     convention (5.0.x dropped the implicit match). -->
-                <ContentControl Grid.Column="0" cal:View.Model="{Binding AgentsVm}" />
+                <!-- Left: agent menu (borderless card) -->
+                <ContentControl Grid.Column="0"
+                                cal:View.Model="{Binding AgentsVm}"
+                                Margin="0,0,12,0" />
 
-                <materialDesign:Card Grid.Column="1" Padding="16">
+                <!-- Right: detail panel in a thin-border card -->
+                <Border Grid.Column="1"
+                        BorderBrush="{StaticResource App.Border}"
+                        BorderThickness="1"
+                        Background="{StaticResource App.Surface}"
+                        CornerRadius="4">
                     <ContentControl cal:View.Model="{Binding AgentDetail}" />
-                </materialDesign:Card>
+                </Border>
             </Grid>
 
-            <!-- 3. StatusBar -->
-            <materialDesign:ColorZone Grid.Row="2" Mode="PrimaryLight" Padding="16,4">
-                <DockPanel>
+            <!-- 3. Status bar -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource App.SurfaceAlt}"
+                    BorderBrush="{StaticResource App.Border}"
+                    BorderThickness="0,1,0,0">
+                <DockPanel LastChildFill="True">
                     <TextBlock DockPanel.Dock="Right"
                                Text="{Binding CurrentTime, StringFormat='{}{0:HH:mm:ss}'}"
                                VerticalAlignment="Center"
-                               FontSize="12" />
-                    <StackPanel Orientation="Horizontal">
-                            <ProgressBar Style="{DynamicResource MaterialDesign.LinearProgressBar}"
-                                         Width="120"
-                                         IsIndeterminate="True"
-                                         Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         Margin="0,0,12,0" />
-                            <TextBlock Text="{Binding BusyMessage}"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
+                               Margin="0,0,12,0"
+                               FontSize="11"
+                               Foreground="{StaticResource App.TextMuted}" />
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="12,0,0,0">
+                        <ProgressBar Style="{DynamicResource MaterialDesign.LinearProgressBar}"
+                                     Width="80"
+                                     Height="2"
+                                     IsIndeterminate="True"
+                                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                     Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding BusyMessage}"
+                                   FontSize="11"
+                                   Foreground="{StaticResource App.TextSecondary}" />
+                    </StackPanel>
                 </DockPanel>
-            </materialDesign:ColorZone>
+            </Border>
         </Grid>
-    </materialDesign:DialogHost>
+    </Border>
 </Window>

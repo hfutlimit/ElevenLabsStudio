@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              Width="440">
-    <Grid Margin="16">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -14,39 +14,50 @@
 
         <TextBlock Grid.Row="0"
                    Text="拉取 Agent 到本地"
-                   FontSize="18"
+                   FontSize="16"
                    FontWeight="SemiBold"
+                   Foreground="{StaticResource App.Text}"
+                   Margin="0,0,0,4" />
+        <TextBlock Grid.Row="1"
+                   Text="从 ElevenLabs 读取并加入本地列表。"
+                   FontSize="11"
+                   Foreground="{StaticResource App.TextSecondary}"
                    Margin="0,0,0,16" />
 
-        <TextBox Grid.Row="1"
+        <TextBox Grid.Row="2"
                  x:Name="AgentId"
-                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
                  materialDesign:HintAssist.Hint="AgentId (例如 agent_abc123)"
+                 FontSize="13"
                  Margin="0,0,0,8" />
-
-        <TextBlock Grid.Row="2"
-                   Text="将从 api.elevenlabs.io 读取并加入本地列表。"
-                   FontSize="12"
-                   Opacity="0.6"
-                   Margin="0,0,0,8" />
 
         <TextBlock Grid.Row="3"
                    x:Name="ErrorText"
-                   Foreground="{DynamicResource MaterialDesign.Brush.Error}"
+                   Foreground="{StaticResource App.Danger}"
+                   FontSize="12"
                    TextWrapping="Wrap"
                    Margin="0,0,0,8"
                    Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <StackPanel Grid.Row="4"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Right">
+                    HorizontalAlignment="Right"
+                    Margin="0,8,0,0">
             <Button x:Name="Cancel"
                     Content="取消"
+                    Width="80"
+                    Height="32"
                     Margin="0,0,8,0"
-                    Style="{StaticResource MaterialDesignFlatButton}" />
+                    Background="{StaticResource App.SurfaceAlt}"
+                    Foreground="{StaticResource App.Text}"
+                    BorderBrush="{StaticResource App.Border}" />
             <Button x:Name="Confirm"
                     Content="拉取"
-                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                    Width="80"
+                    Height="32"
+                    Background="{StaticResource App.Accent}"
+                    Foreground="White"
+                    BorderThickness="0"
                     IsEnabled="{Binding CanConfirm}" />
         </StackPanel>
     </Grid>

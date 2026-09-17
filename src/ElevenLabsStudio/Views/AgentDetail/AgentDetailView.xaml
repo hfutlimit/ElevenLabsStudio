@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:cal="http://www.caliburnproject.org">
-    <Grid>
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -11,13 +11,21 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="{Binding Agent.Name}"
-                       FontSize="20"
-                       FontWeight="SemiBold" />
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource App.Text}" />
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                <materialDesign:PackIcon Kind="Identifier" Margin="0,0,4,0" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Agent.AgentId}" FontSize="12" Opacity="0.7" />
+                <materialDesign:PackIcon Kind="Identifier"
+                                         Width="14" Height="14"
+                                         Margin="0,0,6,0"
+                                         VerticalAlignment="Center"
+                                         Foreground="{StaticResource App.TextMuted}" />
+                <TextBlock Text="{Binding Agent.AgentId}"
+                           FontSize="12"
+                           FontFamily="Consolas, Cascadia Mono, monospace"
+                           Foreground="{StaticResource App.TextSecondary}" />
             </StackPanel>
         </StackPanel>
 
@@ -25,27 +33,44 @@
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
             <Button x:Name="Push"
                     Content="📤 Push"
+                    Height="32"
+                    Padding="14,0"
                     Margin="0,0,8,0"
-                    Style="{StaticResource MaterialDesignRaisedAccentButton}" />
+                    Background="{StaticResource App.Accent}"
+                    Foreground="White"
+                    BorderThickness="0"
+                    FontWeight="SemiBold" />
             <Button x:Name="ReloadAsync"
                     Content="🔄 Refresh"
-                    Margin="0,0,8,0" />
+                    Height="32"
+                    Padding="14,0"
+                    Margin="0,0,8,0"
+                    Background="{StaticResource App.Surface}"
+                    Foreground="{StaticResource App.Text}"
+                    BorderBrush="{StaticResource App.BorderStrong}" />
             <Button x:Name="DryRun"
                     Content="🧪 Dry-run"
-                    Style="{StaticResource MaterialDesignFlatButton}" />
+                    Height="32"
+                    Padding="14,0"
+                    Background="Transparent"
+                    Foreground="{StaticResource App.TextSecondary}"
+                    BorderThickness="0" />
             <materialDesign:PackIcon Kind="ClockOutline"
-                                     Margin="16,0,4,0"
-                                     VerticalAlignment="Center" />
+                                     Width="14" Height="14"
+                                     Margin="16,0,6,0"
+                                     VerticalAlignment="Center"
+                                     Foreground="{StaticResource App.TextMuted}" />
             <TextBlock Text="{Binding Agent.UpdatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
                        VerticalAlignment="Center"
-                       FontSize="12"
-                       Opacity="0.7" />
+                       FontSize="11"
+                       Foreground="{StaticResource App.TextSecondary}" />
         </StackPanel>
 
         <!-- Tabs -->
         <TabControl Grid.Row="2"
                     SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
-                    Style="{StaticResource MaterialDesignFilledTabControl}">
+                    Background="Transparent"
+                    BorderThickness="0">
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">

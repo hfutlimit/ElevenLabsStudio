@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
-    <Grid Margin="0,12,0,0">
+    <Grid Margin="0,8,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -11,55 +11,82 @@
 
         <TextBox Grid.Row="0"
                  x:Name="Prompt"
+                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  VerticalScrollBarVisibility="Auto"
                  FontFamily="Consolas, Cascadia Mono, monospace"
                  FontSize="13"
-                 materialDesign:HintAssist.Hint="System prompt" />
+                 materialDesign:HintAssist.Hint="System prompt"
+                 Padding="10" />
 
         <TextBlock Grid.Row="1"
-                   Margin="0,12,0,4"
-                   FontWeight="SemiBold">
+                   Margin="0,12,0,0"
+                   FontWeight="SemiBold"
+                   FontSize="12"
+                   Foreground="{StaticResource App.Text}">
             <Run Text="Local Suggestions" />
             <Run Text="(" /><Run Text="{Binding Suggestions.Count, Mode=OneWay}" /><Run Text=")" />
         </TextBlock>
 
-        <ListBox Grid.Row="2" x:Name="Suggestions">
+        <ListBox Grid.Row="2"
+                 x:Name="Suggestions"
+                 Margin="0,4,0,0"
+                 Background="Transparent"
+                 BorderThickness="0">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0,2" />
+                </Style>
+            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid Margin="0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <materialDesign:PackIcon Grid.Column="0"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center">
-                            <materialDesign:PackIcon.Style>
-                                <Style TargetType="materialDesign:PackIcon">
-                                    <Setter Property="Kind" Value="Information" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Severity}" Value="Suggestion">
-                                            <Setter Property="Kind" Value="LightbulbOutline" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Severity}" Value="Warning">
-                                            <Setter Property="Kind" Value="AlertOutline" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </materialDesign:PackIcon.Style>
-                        </materialDesign:PackIcon>
-                        <StackPanel Grid.Column="1">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding FieldName}" FontWeight="SemiBold" />
-                                <Border Margin="8,0,0,0" Padding="6,1" CornerRadius="3" Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
-                                    <TextBlock Text="{Binding Severity}" FontSize="10" Opacity="0.7" />
-                                </Border>
+                    <Border Style="{StaticResource App.SoftCard}" Padding="10,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Grid.Column="0"
+                                                     Margin="0,0,8,0"
+                                                     VerticalAlignment="Top"
+                                                     Foreground="{StaticResource App.TextSecondary}">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="Information" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Severity}" Value="Suggestion">
+                                                <Setter Property="Kind" Value="LightbulbOutline" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Severity}" Value="Warning">
+                                                <Setter Property="Kind" Value="AlertOutline" />
+                                                <Setter Property="Foreground" Value="{StaticResource App.Danger}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <StackPanel Grid.Column="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding FieldName}"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               Foreground="{StaticResource App.Text}" />
+                                    <Border Style="{StaticResource App.Badge}" Margin="8,0,0,0">
+                                        <TextBlock Text="{Binding Severity}"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource App.Accent}" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Rationale}"
+                                           TextWrapping="Wrap"
+                                           FontSize="11"
+                                           Foreground="{StaticResource App.TextSecondary}"
+                                           Margin="0,2,0,0" />
                             </StackPanel>
-                            <TextBlock Text="{Binding Rationale}" TextWrapping="Wrap" Opacity="0.85" Margin="0,2,0,0" />
-                        </StackPanel>
-                    </Grid>
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
