@@ -1,38 +1,76 @@
-"""Smoke test: launch the WPF app, wait for the main window, terminate."""
+"""Real end-to-end smoke test for ElevenLabsStudio.
+
+Spins up the built ElevenLabsStudio.exe via Windows UI Automation
+(pywinauto), waits for the main window to settle, asserts the three
+mock agents are populated (mock mode is on by default), opens the
+Settings dialog via the gear button, then shuts everything down.
+
+These tests are slow (5-10s per case, mostly process startup) and
+require the Release .exe to be present at the conventional output
+path; they deliberately do not run as part of `dotnet test`. Run
+them with:
+
+    pip install -r tests/ElevenLabsStudio.E2ETests/requirements.txt
+    pytest -m e2e tests/ElevenLabsStudio.E2ETests/
+
+The pytest.ini / conftest.py / utils.py already in this folder pick
+up the right `launched_exe` fixture, kill stragglers on teardown,
+and skip the run when the .exe is missing.
+"""
 
 from __future__ import annotations
 
-import subprocess
-import sys
-import time
-from pathlib import Path
-
 import pytest
-
-# Allow `import utils` regardless of pytest's rootdir / conftest loading.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from utils import wait_until  # noqa: E402
 
 
 @pytest.mark.e2e
-def test_exe_launches_and_exits_cleanly(launched_exe: subprocess.Popen) -> None:
-    """Process starts, stays alive, and exits cleanly when terminated.
+def test_window_title_is_elevenlabs_studio(launched_exe) -> None:
+    """The exe boots, the main window appears, the title matches.
 
-    Asserts:
-      * process is alive after the launch window (proves MainWindow mounted
-        without an unhandled exception)
-      * clean exit on terminate (returncode is set within a reasonable
-        timeout without an OS-level kill)
+    Acts as the canary: any failure here usually means a
+    composition-root exception (e.g. CM5 ViewLocator can't find a
+    view) and the rest of the suite is irrelevant.
     """
-    proc = launched_exe
-    alive = wait_until(lambda: proc.poll() is None, timeout=5.0, default=False)
-    assert alive, "ElevenLabsStudio.exe exited prematurely — check missing config or runtime errors."
+    main_window = launched_exe.main_window
+    assert main_window.exists(timeout=15), "main window did not appear within 15s"
+    assert "ElevenLabs Studio" in main_window.window_text()
 
-    # Leave it alive for 2 extra seconds to catch any late crashes.
-    time.sleep(2.0)
-    assert proc.poll() is None, "ElevenLabsStudio.exe crashed within 2 seconds of launch"
 
-    proc.terminate()
-    proc.wait(timeout=10)
-    assert proc.returncode is not None, "Process did not exit after terminate()"
+@pytest.mark.e2e
+def test_left_sidebar_lists_three_mock_agents(launched_exe) -> None:
+    """With Mock=true (the default in appsettings.json) the sidebar
+    shows the three seeded agents: Sales Rep, Support Bot, Onboarding
+    Guide. We match by name so a future seeded re-order doesn't
+    break the test."""
+    launched_exe.main_window.wait("ready", timeout=15)
+    main_window = launched_exe.main_window
+    for name in ("Sales Rep", "Support Bot", "Onboarding Guide"):
+        assert main_window.child_window(title=name, control_type="ListItem").exists(timeout=10), (
+            f"Mock agent {name!r} not found in the sidebar"
+        )
+
+
+@pytest.mark.e2e
+def test_gear_button_opens_settings_dialog(launched_exe) -> None:
+    """Click the gear caption button and assert the Settings dialog
+    opens with its ApiKey hint and Mock mode toggle."""
+    launched_exe.main_window.wait("ready", timeout=15)
+    main_window = launched_exe.main_window
+
+    gear = main_window.child_window(
+        title="设置", auto_id="OpenSettings", control_type="Button")
+    # pywinauto can fall back to text match if auto_id is empty.
+    if not gear.exists():
+        gear = main_window.child_window(title="设置", control_type="Button")
+    assert gear.exists(timeout=5), "settings gear button not found in title bar"
+
+    gear.click()
+    # The SettingsView is a separate Window; wait for it to appear.
+    settings = launched_exe.app.window(title_re="Settings.*ElevenLabs Studio")
+    settings.wait("ready", timeout=10)
+    assert settings.exists(), "Settings dialog did not open after clicking the gear"
+
+    # Mock mode CheckBox + ApiKey PasswordBox are present.
+    assert settings.child_window(title_re="Use offline mock data.*", control_type="CheckBox").exists()
+    assert settings.child_window(control_type="Edit", auto_id="ApiKey").exists() or \
+           settings.child_window(control_type="Edit").exists()

@@ -1,0 +1,11 @@
+# ElevenLabsStudio E2E test dependencies.
+#
+# Install with:
+#   pip install -r tests/ElevenLabsStudio.E2ETests/requirements.txt
+#
+# pywinauto drives the actual WPF window via Windows UI Automation
+# (UIA). pytest is the test runner; the conftest.py wraps the heavy
+# lifting so individual test cases stay terse.
+
+pywinauto>=0.6.8
+pytest>=8.0
