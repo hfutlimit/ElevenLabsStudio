@@ -1,5 +1,7 @@
 # ElevenLabsStudio
 
+[![build & test](https://github.com/hfutlimit/ElevenLabsStudio/actions/workflows/build.yml/badge.svg)](https://github.com/hfutlimit/ElevenLabsStudio/actions/workflows/build.yml)
+
 WPF 桌面工具：本地建议 + 推送更新 ElevenLabs Conversational AI Agent，
 查询 conversation records，做端到端自检。
 

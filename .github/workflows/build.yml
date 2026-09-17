@@ -1,0 +1,74 @@
+name: build & test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel any in-flight run for the same ref so we don't waste CI
+# minutes on a stale branch after a force-push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dotnet:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ElevenLabsStudio.slnx
+
+      - name: Build
+        run: dotnet build ElevenLabsStudio.slnx -c Release --no-restore
+
+      - name: Run unit + integration tests
+        run: dotnet test tests/ElevenLabsStudio.UnitTests/ElevenLabsStudio.UnitTests.csproj -c Release --no-build --nologo
+        # 10 mock + 6 settings + 5 agent list + 7 heuristic + 1 mapping +
+        # 4 runtime + 7 integration = 40 cases; expected to finish in
+        # under 5s on a 2-core runner.
+
+  e2e:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: dotnet
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build the WPF exe
+        run: |
+          dotnet build src/ElevenLabsStudio/ElevenLabsStudio.csproj -c Release
+
+      - name: Install pywinauto + pytest
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/ElevenLabsStudio.E2ETests/requirements.txt
+
+      - name: Run E2E smoke
+        # pytest -m e2e picks up the three real UI tests in
+        # test_smoke.py. They start the actual .exe and probe its
+        # main window + sidebar + gear button via Windows UI Automation.
+        # 30-minute timeout is generous; in practice a single case
+        # takes 5-10s.
+        run: |
+          pytest -m e2e tests/ElevenLabsStudio.E2ETests/ -v
