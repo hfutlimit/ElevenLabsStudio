@@ -106,6 +106,7 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
                 },
                 tts = update.VoiceId is null ? null : new { voice_id = update.VoiceId },
             },
+            workflow = update.WorkflowNodes is null ? null : new { nodes = update.WorkflowNodes },
         };
 
         var dto = await SendAsync<ElevenLabsAgentDto>(

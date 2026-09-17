@@ -103,6 +103,38 @@ public sealed class MockElevenLabsClientTests
     }
 
     [Fact]
+    public async Task UpdateAgentAsync_replaces_workflow_nodes_when_supplied()
+    {
+        var newNodes = new[]
+        {
+            new Core.Domain.WorkflowNode("a1", "llm", "Greeting"),
+            new Core.Domain.WorkflowNode("a2", "tool", "Lookup Order"),
+            new Core.Domain.WorkflowNode("a3", "end", "Wrap up"),
+        };
+
+        var snapshot = await _client.UpdateAgentAsync(
+            "agent_sales_001",
+            new Core.Domain.AgentUpdate(WorkflowNodes: newNodes));
+
+        snapshot.Workflow.Nodes.Should().HaveCount(3);
+        snapshot.Workflow.Nodes.Should().BeEquivalentTo(newNodes, opts => opts.WithStrictOrdering());
+        snapshot.Workflow.Nodes[1].Type.Should().Be("tool");
+    }
+
+    [Fact]
+    public async Task UpdateAgentAsync_preserves_existing_nodes_when_workflow_not_supplied()
+    {
+        var snapshot = await _client.UpdateAgentAsync(
+            "agent_sales_001",
+            new Core.Domain.AgentUpdate(FirstMessage: "kept"));
+
+        snapshot.FirstMessage.Should().Be("kept");
+        // Workflow.Nodes untouched because WorkflowNodes left null.
+        snapshot.Workflow.Nodes.Should().NotBeEmpty();
+        snapshot.Workflow.Nodes.Should().Contain(n => n.Id == "n1" && n.Type == "greeting");
+    }
+
+    [Fact]
     public async Task ListVoicesAsync_returns_three_premade_voices()
     {
         var voices = await _client.ListVoicesAsync();

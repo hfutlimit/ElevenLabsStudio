@@ -185,12 +185,15 @@ public sealed class MockElevenLabsClient : IElevenLabsClient
 
         // Echo the merged state back without mutation. The VM treats
         // the response as the canonical post-update snapshot.
+        var newNodes = update.WorkflowNodes ?? current.Workflow.Nodes;
+        var newRaw = current.Workflow.RawJson;
         var snapshot = current with
         {
             Prompt = update.Prompt ?? current.Prompt,
             FirstMessage = update.FirstMessage ?? current.FirstMessage,
             VoiceId = update.VoiceId ?? current.VoiceId,
             Variables = update.Variables ?? current.Variables,
+            Workflow = new Workflow(newNodes, newRaw),
             UpdatedAt = DateTimeOffset.UtcNow,
         };
         return Task.FromResult(snapshot);

@@ -66,6 +66,18 @@
                        Foreground="{StaticResource App.TextSecondary}" />
         </StackPanel>
 
+        <!-- Status hint for workflow dirty state -->
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Margin="0,0,0,12">
+            <TextBlock Text="改完后记得点 Push 同步"
+                       FontSize="10"
+                       Foreground="{StaticResource App.TextMuted}"
+                       VerticalAlignment="Center" />
+        </StackPanel>
+
         <!-- Tabs -->
         <TabControl Grid.Row="2"
                     SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"

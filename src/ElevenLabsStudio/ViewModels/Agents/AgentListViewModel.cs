@@ -64,7 +64,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
                         _suggestions,
                         _dialog,
                         _events,
-                        _logger);
+                        Microsoft.Extensions.Logging.Abstractions.NullLogger<AgentDetailViewModel>.Instance);
                 // PropertyChanged is what ShellViewModel listens to when
                 // forwarding the inner AgentDetail value to its own
                 // AgentDetail property (which the right-pane

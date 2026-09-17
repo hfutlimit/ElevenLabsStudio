@@ -5,6 +5,7 @@ using ElevenLabsStudio.Core.Events;
 using ElevenLabsStudio.Core.Exceptions;
 using ElevenLabsStudio.Core.MVVM;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ElevenLabsStudio.ViewModels.AgentDetail;
 
@@ -40,7 +41,7 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
         ISuggestionEngine suggestions,
         IDialogService dialog,
         IEventAggregator events,
-        ILogger logger)
+        ILogger<AgentDetailViewModel> logger)
     {
         Agent = agent;
         _client = client;
@@ -48,10 +49,10 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
         _events = events;
         _logger = logger;
 
-        SystemPromptVm = new SystemPromptTabViewModel(agent, suggestions, logger);
-        FirstMessageVm = new FirstMessageTabViewModel(agent, suggestions, logger);
-        WorkflowVm = new WorkflowTabViewModel(agent);
-        ConversationsVm = new ConversationsTabViewModel(agent, client, dialog, logger);
+        SystemPromptVm = new SystemPromptTabViewModel(agent, suggestions, NullLogger<SystemPromptTabViewModel>.Instance);
+        FirstMessageVm = new FirstMessageTabViewModel(agent, suggestions, NullLogger<FirstMessageTabViewModel>.Instance);
+        WorkflowVm = new WorkflowTabViewModel(agent, NullLogger<WorkflowTabViewModel>.Instance);
+        ConversationsVm = new ConversationsTabViewModel(agent, client, dialog, NullLogger<ConversationsTabViewModel>.Instance);
     }
 
     protected override void OnViewLoaded(object view)
@@ -67,16 +68,23 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
     {
         var prompt = SystemPromptVm.Prompt;
         var firstMsg = FirstMessageVm.FirstMessage;
+        var workflowNodes = WorkflowVm.GetCurrentNodes();
 
-        if (prompt == Agent.Prompt && firstMsg == Agent.FirstMessage)
+        var hasPromptChange = prompt != Agent.Prompt;
+        var hasFirstMsgChange = firstMsg != Agent.FirstMessage;
+        var hasWorkflowChange = workflowNodes is not null
+            && !workflowNodes.SequenceEqual(Agent.Workflow.Nodes);
+
+        if (!hasPromptChange && !hasFirstMsgChange && !hasWorkflowChange)
         {
-            await _dialog.ShowInfoAsync("无变更", "Prompt 和 First Message 都没改动，无需推送。");
+            await _dialog.ShowInfoAsync("无变更", "Prompt、First Message、Workflow 都没改动，无需推送。");
             return;
         }
 
         var update = new AgentUpdate(
-            Prompt: prompt == Agent.Prompt ? null : prompt,
-            FirstMessage: firstMsg == Agent.FirstMessage ? null : firstMsg);
+            Prompt: hasPromptChange ? prompt : null,
+            FirstMessage: hasFirstMsgChange ? firstMsg : null,
+            WorkflowNodes: hasWorkflowChange ? workflowNodes : null);
 
         IsBusy = true;
         try

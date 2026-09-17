@@ -1,19 +1,21 @@
 namespace ElevenLabsStudio.Core.Domain;
 
 /// <summary>
-/// Partial Agent update payload. Any null field is left unchanged on the
-/// server side; nullable-value fields are kept verbatim. Used as the
+/// Partial Agent update payload. Any null field is left unchanged on
+/// the server side; nullable-value fields are kept verbatim. Used as the
 /// single input for <see cref="Abstractions.IElevenLabsClient.UpdateAgentAsync"/>.
 /// </summary>
 public sealed record AgentUpdate(
     string? Prompt = null,
     string? FirstMessage = null,
     string? VoiceId = null,
-    IReadOnlyList<Variable>? Variables = null)
+    IReadOnlyList<Variable>? Variables = null,
+    IReadOnlyList<WorkflowNode>? WorkflowNodes = null)
 {
     public bool IsEmpty =>
         Prompt is null &&
         FirstMessage is null &&
         VoiceId is null &&
-        Variables is null;
+        Variables is null &&
+        WorkflowNodes is null;
 }
