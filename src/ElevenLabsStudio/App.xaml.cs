@@ -2,14 +2,26 @@
 using System.Threading;
 using System.Windows;
 using Caliburn.Micro;
+using ElevenLabsStudio.Core.Abstractions;
+using ElevenLabsStudio.Infrastructure;
 using ElevenLabsStudio.ViewModels;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ElevenLabsStudio;
 
 /// <summary>
-/// WPF entry point. Holds the single-instance mutex, builds the
-/// composition root, instantiates the ShellViewModel, and asks CM to
-/// bind it to the ShellView.
+/// WPF entry point. Holds the single-instance mutex, builds the MS DI
+/// service provider, wires CM5 framework singletons (WindowManager,
+/// EventAggregator), and asks CM to bind the ShellViewModel to a
+/// Window.
+///
+/// <para>
+/// CM5's lifecycle hooks (OnStartup, OnExit) are sealed in 5.0.x, so
+/// we don't inherit <c>BootstrapperBase</c> — every step happens in
+/// line below and is easy to follow.
+/// </para>
 /// </summary>
 public partial class App : Application
 {
@@ -17,9 +29,9 @@ public partial class App : Application
     // sessions, so stick to Local\ which still rejects a second start
     // in the same logon session.
     private const string SingleInstanceMutexName = "Local\\ElevenLabsStudio.SingleInstance.v1";
-    private Mutex? _singleInstanceMutex;
 
-    private Bootstrapper? _bootstrapper;
+    private Mutex? _singleInstanceMutex;
+    private ServiceProvider? _serviceProvider;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -40,21 +52,128 @@ public partial class App : Application
             return;
         }
 
-        _bootstrapper = new Bootstrapper();
-        _bootstrapper.Build();
-
-        var shellVm = _bootstrapper.Resolve<ShellViewModel>();
+        _serviceProvider = BuildServiceProvider();
+        var shellVm = _serviceProvider.GetRequiredService<ShellViewModel>();
 
         var shellView = new ShellView();
         ViewModelBinder.Bind(shellVm, shellView, null);
 
-        // DPI-aware sizing: cap the window to 80% of the working area of
-        // the monitor where the cursor is, so on a 1080p secondary
+        // DPI-aware sizing: cap the window to 80% of the working area
+        // of the monitor where the cursor is, so on a 1080p secondary
         // screen the window never opens off-screen.
         ClampToDpi(shellView);
 
         MainWindow = shellView;
         shellView.Show();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _serviceProvider?.Dispose();
+        _serviceProvider = null;
+        if (_singleInstanceMutex is not null)
+        {
+            // Release the mutex we acquired on start; SafeWaitHandle
+            // disposal is enough because we used initiallyOwned=true.
+            _singleInstanceMutex.Dispose();
+            _singleInstanceMutex = null;
+        }
+        base.OnExit(e);
+    }
+
+    /// <summary>
+    /// Build the MS DI graph. Split out so OnStartup stays readable
+    /// and so the registration order is obvious: configuration,
+    /// logging, infrastructure, CM5 singletons, view-models.
+    /// </summary>
+    private static ServiceProvider BuildServiceProvider()
+    {
+        var services = new ServiceCollection();
+
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables(prefix: "ELEVENLABS_")
+            .Build();
+        // Hold the IConfigurationRoot so SettingsViewModel can write
+        // back to appsettings.json + call Reload() at runtime.
+        services.AddSingleton<IConfiguration>(config);
+        services.AddSingleton<IConfigurationRoot>(config);
+
+        services.AddLogging(b =>
+        {
+            b.AddDebug();
+            b.AddSimpleConsole(o =>
+            {
+                o.SingleLine = true;
+                o.TimestampFormat = "HH:mm:ss ";
+            });
+            b.SetMinimumLevel(LogLevel.Information);
+        });
+
+        services.AddElevenLabsStudioInfrastructure(config);
+
+        services.AddSingleton<IDialogService, Services.MaterialDialogService>();
+
+        // CM5 framework singletons (only the ones App touches).
+        services.AddSingleton<IWindowManager, WindowManager>();
+        services.AddSingleton<IEventAggregator, EventAggregator>();
+
+        services.AddSingleton<ShellViewModel>();
+        services.AddSingleton<ViewModels.Agents.AgentListViewModel>();
+        services.AddSingleton<SettingsViewModel>();
+
+        // Per-request: a fresh detail VM per selection so the four tab
+        // VMs are recreated when the user switches agents.
+        services.AddTransient<ViewModels.AgentDetail.AgentDetailViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.SystemPromptTabViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.FirstMessageTabViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.WorkflowTabViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.ConversationsTabViewModel>();
+
+        var sp = services.BuildServiceProvider();
+
+        // Caliburn.Micro 5's AssemblySource.Instance is empty by default.
+        // ViewLocator.FindTypeByNames iterates only over the assemblies we
+        // register here, so without this line every "cal:View.Model=..."
+        // binding falls through to the "Cannot find view for {0}" fallback.
+        // We add every assembly that contains View or ViewModel types —
+        // Core (domain + abstractions), Infrastructure (HttpClient lives
+        // there too) and the UI exe itself.
+        AssemblySource.Instance.AddRange(new[]
+        {
+            typeof(Core.Domain.Agent).Assembly,
+            typeof(Infrastructure.Http.ElevenLabsHttpClient).Assembly,
+            typeof(ShellViewModel).Assembly,
+        });
+
+        // The stock ViewLocator.GetOrCreateViewType probes IoC.GetAllInstances
+        // first; IoC is uninitialised in our setup (we use MS DI directly) so
+        // that probe throws InvalidOperationException and breaks view
+        // resolution. Replace it with an Activator-only fallback that never
+        // touches IoC.
+        ViewLocator.GetOrCreateViewType = viewType =>
+        {
+            if (viewType is null)
+            {
+                return new System.Windows.Controls.TextBlock { Text = "Null view type." };
+            }
+
+            if (viewType.IsInterface || viewType.IsAbstract
+                || !typeof(System.Windows.UIElement).IsAssignableFrom(viewType))
+            {
+                return new System.Windows.Controls.TextBlock
+                {
+                    Text = string.Format("Cannot create {0}.", viewType.FullName),
+                };
+            }
+
+            var view = (System.Windows.UIElement)Activator.CreateInstance(viewType)!;
+            ViewLocator.InitializeComponent(view);
+            return view;
+        };
+
+        return sp;
     }
 
     private static void ClampToDpi(Window window)
@@ -134,19 +253,5 @@ public partial class App : Application
         }
         var rc = info.rcWork;
         return (rc.Left, rc.Top, rc.Right - rc.Left, rc.Bottom - rc.Top);
-    }
-
-    protected override void OnExit(ExitEventArgs e)
-    {
-        _bootstrapper?.Dispose();
-        _bootstrapper = null;
-        if (_singleInstanceMutex is not null)
-        {
-            // Release the mutex we acquired on start; SafeWaitHandle
-            // disposal is enough because we used initiallyOwned=true.
-            _singleInstanceMutex.Dispose();
-            _singleInstanceMutex = null;
-        }
-        base.OnExit(e);
     }
 }
