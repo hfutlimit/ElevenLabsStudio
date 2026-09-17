@@ -1,11 +1,5 @@
-using System.Windows;
-using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Infrastructure;
-using ElevenLabsStudio.Services;
-using ElevenLabsStudio.ViewModels;
-using ElevenLabsStudio.ViewModels.AgentDetail;
-using ElevenLabsStudio.ViewModels.Agents;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,29 +7,25 @@ using Microsoft.Extensions.Logging;
 namespace ElevenLabsStudio;
 
 /// <summary>
-/// Caliburn.Micro 5 BootstrapperBase. Owns the composition root: every
-/// type the UI asks for (VM, dialog, client) comes from
-/// <see cref="Configure"/>. Keep this class thin — no business logic, no
-/// "do X on startup" code, that lives in VMs.
+/// Composition root. Builds the MS DI service provider, registers the
+/// CM5 WindowManager / EventAggregator as singletons, and exposes the
+/// root <see cref="ViewModels.ShellViewModel"/> so the host App can
+/// bind it to a Window.
+/// <para>
+/// We deliberately do NOT inherit CM5's <c>BootstrapperBase</c>: 5.0.x
+/// sealed / hid the lifecycle hooks that 4.x exposed, and using a
+/// minimal manual approach keeps the surface area tiny and obvious.
+/// </para>
 /// </summary>
-public sealed class Bootstrapper : BootstrapperBase
+public sealed class Bootstrapper : IDisposable
 {
-    private SimpleContainer? _container;
+    private ServiceProvider? _serviceProvider;
 
-    public Bootstrapper()
-    {
-        Initialize();
-    }
+    public IServiceProvider Services =>
+        _serviceProvider ?? throw new InvalidOperationException(
+            "Bootstrapper.Build() was not called.");
 
-    /// <summary>
-    /// Build the Microsoft.Extensions.DependencyInjection container with
-    /// real services (Infrastructure, Core, etc.). We then lift the
-    /// singleton instances the UI actually uses (IWindowManager,
-    /// IEventAggregator, IDialogService, IElevenLabsClient) and register
-    /// them inside the Caliburn.Micro SimpleContainer so the framework's
-    /// view-model resolution continues to work.
-    /// </summary>
-    protected override void Configure()
+    public void Build()
     {
         var services = new ServiceCollection();
 
@@ -58,37 +48,28 @@ public sealed class Bootstrapper : BootstrapperBase
 
         services.AddElevenLabsStudioInfrastructure(config);
 
-        services.AddSingleton<IDialogService, MaterialDialogService>();
+        services.AddSingleton<IDialogService, Services.MaterialDialogService>();
 
-        var sp = services.BuildServiceProvider();
+        // CM5 framework singletons (only the ones App touches).
+        services.AddSingleton<Caliburn.Micro.IWindowManager, Caliburn.Micro.WindowManager>();
+        services.AddSingleton<Caliburn.Micro.IEventAggregator, Caliburn.Micro.EventAggregator>();
 
-        _container = new SimpleContainer();
-        _container.Singleton<IWindowManager, WindowManager>();
-        _container.Singleton<IEventAggregator, EventAggregator>();
-        _container.RegisterInstance(typeof(IDialogService), null, sp.GetRequiredService<IDialogService>());
-        _container.RegisterInstance(typeof(IElevenLabsClient), null, sp.GetRequiredService<IElevenLabsClient>());
-        _container.RegisterInstance(typeof(ISuggestionEngine), null, sp.GetRequiredService<ISuggestionEngine>());
-        _container.RegisterInstance(typeof(IWindowManager), null, sp.GetRequiredService<IWindowManager>());
+        services.AddSingleton<ViewModels.ShellViewModel>();
+        services.AddSingleton<ViewModels.Agents.AgentListViewModel>();
 
-        _container.Singleton<ShellViewModel>();
-        _container.Singleton<AgentListViewModel>();
-
-        // Per-Request: a fresh detail VM per selection so the four tab
+        // Per-request: a fresh detail VM per selection so the four tab
         // VMs are recreated when the user switches agents.
-        _container.PerRequest<AgentDetailViewModel>();
-        _container.PerRequest<SystemPromptTabViewModel>();
-        _container.PerRequest<FirstMessageTabViewModel>();
-        _container.PerRequest<WorkflowTabViewModel>();
-        _container.PerRequest<ConversationsTabViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.AgentDetailViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.SystemPromptTabViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.FirstMessageTabViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.WorkflowTabViewModel>();
+        services.AddTransient<ViewModels.AgentDetail.ConversationsTabViewModel>();
+
+        _serviceProvider = services.BuildServiceProvider();
     }
 
-    protected override object GetInstance(Type service, string key) =>
-        _container is null
-            ? throw new InvalidOperationException("Bootstrapper.Configure() was not called.")
-            : _container.GetInstance(service, key);
+    public T Resolve<T>() where T : notnull =>
+        _serviceProvider!.GetRequiredService<T>();
 
-    protected override IEnumerable<object> GetAllInstances(Type service) =>
-        _container?.GetAllInstances(service) ?? Array.Empty<object>();
-
-    protected override void BuildUp(object instance) => _container?.BuildUp(instance);
+    public void Dispose() => _serviceProvider?.Dispose();
 }

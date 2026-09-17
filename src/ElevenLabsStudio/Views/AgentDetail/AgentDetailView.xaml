@@ -53,7 +53,7 @@
                         <TextBlock Text="System Prompt" />
                     </StackPanel>
                 </TabItem.Header>
-                <ContentControl x:Name="SystemPromptVm" />
+                <ContentControl cal:View.Model="{Binding SystemPromptVm}" />
             </TabItem>
             <TabItem>
                 <TabItem.Header>
@@ -62,7 +62,7 @@
                         <TextBlock Text="First Msg" />
                     </StackPanel>
                 </TabItem.Header>
-                <ContentControl x:Name="FirstMessageVm" />
+                <ContentControl cal:View.Model="{Binding FirstMessageVm}" />
             </TabItem>
             <TabItem>
                 <TabItem.Header>
@@ -71,7 +71,7 @@
                         <TextBlock Text="Workflow" />
                     </StackPanel>
                 </TabItem.Header>
-                <ContentControl x:Name="WorkflowVm" />
+                <ContentControl cal:View.Model="{Binding WorkflowVm}" />
             </TabItem>
             <TabItem>
                 <TabItem.Header>
@@ -80,7 +80,7 @@
                         <TextBlock Text="Conversations" />
                     </StackPanel>
                 </TabItem.Header>
-                <ContentControl x:Name="ConversationsVm" />
+                <ContentControl cal:View.Model="{Binding ConversationsVm}" />
             </TabItem>
         </TabControl>
     </Grid>

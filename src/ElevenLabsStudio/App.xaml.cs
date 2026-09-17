@@ -1,12 +1,12 @@
 ﻿using System.Windows;
+using Caliburn.Micro;
+using ElevenLabsStudio.ViewModels;
 
 namespace ElevenLabsStudio;
 
 /// <summary>
-/// WPF entry point. The real wiring lives in <see cref="Bootstrapper"/>
-/// which configures IoC + configuration + logging. <c>App.xaml.cs</c>
-/// only owns the WPF lifecycle: <c>OnStartup</c> hands control to the
-/// Bootstrapper, <c>OnExit</c> releases the host.
+/// WPF entry point. Builds the composition root, instantiates the
+/// ShellViewModel, and asks CM to bind it to the ShellView.
 /// </summary>
 public partial class App : Application
 {
@@ -15,11 +15,21 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
         _bootstrapper = new Bootstrapper();
+        _bootstrapper.Build();
+
+        var shellVm = _bootstrapper.Resolve<ShellViewModel>();
+
+        var shellView = new ShellView();
+        ViewModelBinder.Bind(shellVm, shellView, null);
+        MainWindow = shellView;
+        shellView.Show();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _bootstrapper?.Dispose();
         _bootstrapper = null;
         base.OnExit(e);
     }

@@ -71,11 +71,14 @@ public static class ServiceCollectionExtensions
                         durationOfBreak: TimeSpan.FromSeconds(30));
             });
 
-        // Local-only suggestion engines (no network). Plug a second one
-        // (e.g. LlmSuggestionEngine) to extend behaviour without touching
-        // the analysis pipeline.
+        // Local-only suggestion engines (no network). Register every
+        // leaf engine as ISuggestionEngine so MS DI's IEnumerable<T>
+        // resolution collects them automatically — CompositeSuggestionEngine
+        // itself takes IEnumerable<ISuggestionEngine> in its ctor, so
+        // registering it under the same interface would create a
+        // self-referencing cycle. The composite can be wired by hand
+        // later when a 2nd leaf engine shows up.
         services.AddSingleton<ISuggestionEngine, HeuristicSuggestionEngine>();
-        services.AddSingleton<ISuggestionEngine, CompositeSuggestionEngine>();
 
         return services;
     }

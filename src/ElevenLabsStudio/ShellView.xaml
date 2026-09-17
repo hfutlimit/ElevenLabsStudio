@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:cal="http://www.caliburnproject.org"
         mc:Ignorable="d"
         Title="ElevenLabs Studio"
         Height="820" Width="1320"
@@ -55,10 +56,13 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <ContentControl Grid.Column="0" x:Name="AgentsVm" />
+                <!-- cal:View.Model explicit binding so CM5's ViewLocator
+                     picks up the right View without relying on namespace
+                     convention (5.0.x dropped the implicit match). -->
+                <ContentControl Grid.Column="0" cal:View.Model="{Binding AgentsVm}" />
 
                 <materialDesign:Card Grid.Column="1" Padding="16">
-                    <ContentControl x:Name="AgentDetail" />
+                    <ContentControl cal:View.Model="{Binding AgentDetail}" />
                 </materialDesign:Card>
             </Grid>
 
