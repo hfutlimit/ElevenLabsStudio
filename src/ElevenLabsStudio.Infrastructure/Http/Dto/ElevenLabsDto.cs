@@ -26,8 +26,29 @@ internal sealed class ElevenLabsAgentDto
     [JsonPropertyName("conversation_config")]
     public ElevenLabsConversationConfigDto ConversationConfig { get; set; } = new();
 
+    [JsonPropertyName("workflow")]
+    public ElevenLabsWorkflowDto? Workflow { get; set; }
+
     [JsonPropertyName("metadata")]
     public ElevenLabsMetadataDto Metadata { get; set; } = new();
+}
+
+internal sealed class ElevenLabsWorkflowDto
+{
+    [JsonPropertyName("nodes")]
+    public List<ElevenLabsWorkflowNodeDto> Nodes { get; set; } = new();
+}
+
+internal sealed class ElevenLabsWorkflowNodeDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
 }
 
 internal sealed class ElevenLabsConversationConfigDto

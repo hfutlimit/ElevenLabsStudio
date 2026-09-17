@@ -38,6 +38,14 @@ public sealed class AgentMappingTests
                 },
                 Tts = new ElevenLabsTtsDto { VoiceId = "voice_xyz" },
             },
+            Workflow = new ElevenLabsWorkflowDto
+            {
+                Nodes = new()
+                {
+                    new ElevenLabsWorkflowNodeDto { Id = "n1", Type = "start", Name = "Greeting" },
+                    new ElevenLabsWorkflowNodeDto { Id = "n2", Type = "llm", Name = "Answer" },
+                },
+            },
             Metadata = new ElevenLabsMetadataDto
             {
                 UpdatedAt = DateTimeOffset.UtcNow,
@@ -54,6 +62,9 @@ public sealed class AgentMappingTests
         agent.Variables.Should().HaveCount(1);
         agent.Variables[0].Name.Should().Be("region");
         agent.Variables[0].Value.Should().Be("CN");
+        agent.Workflow.Nodes.Should().HaveCount(2);
+        agent.Workflow.Nodes[0].Id.Should().Be("n1");
+        agent.Workflow.RawJson.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -76,5 +87,23 @@ public sealed class AgentMappingTests
         var agent = MapToAgent(dto);
 
         agent.FirstMessage.Should().BeEmpty();
+        agent.Workflow.Nodes.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Empty_workflow_when_dto_is_null()
+    {
+        var dto = new ElevenLabsAgentDto
+        {
+            AgentId = "agent_nowf",
+            Name = "No Workflow",
+            ConversationConfig = new ElevenLabsConversationConfigDto(),
+            Workflow = null,
+        };
+
+        var agent = MapToAgent(dto);
+
+        agent.Workflow.Nodes.Should().BeEmpty();
+        agent.Workflow.RawJson.Should().BeNull();
     }
 }

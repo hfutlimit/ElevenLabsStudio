@@ -1,0 +1,62 @@
+<UserControl x:Class="ElevenLabsStudio.Views.AgentDetail.WorkflowTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <Grid Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="2*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="v0.1 只读 — 编辑能力在后续迭代中加入"
+                   Opacity="0.6"
+                   FontSize="12"
+                   Margin="0,0,0,8" />
+
+        <materialDesign:Card Grid.Row="1" Padding="0" VerticalAlignment="Stretch">
+            <DockPanel>
+                <materialDesign:ColorZone Mode="PrimaryMid" Padding="12,6" DockPanel.Dock="Top">
+                    <TextBlock Text="Nodes" FontWeight="SemiBold" />
+                </materialDesign:ColorZone>
+                <ListBox x:Name="Nodes" MinHeight="120">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Id}" FontFamily="Consolas" FontSize="11" Opacity="0.7" />
+                                <TextBlock Grid.Column="1" Text="{Binding Type}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="2" Text="{Binding Name}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </materialDesign:Card>
+
+        <TextBlock Grid.Row="2"
+                   Text="Raw JSON"
+                   FontWeight="SemiBold"
+                   Margin="0,12,0,4" />
+
+        <ScrollViewer Grid.Row="3"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto"
+                      Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
+            <TextBox x:Name="RawJson"
+                     IsReadOnly="True"
+                     FontFamily="Consolas, Cascadia Mono, monospace"
+                     FontSize="12"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     TextWrapping="NoWrap"
+                     AcceptsReturn="True" />
+        </ScrollViewer>
+    </Grid>
+</UserControl>

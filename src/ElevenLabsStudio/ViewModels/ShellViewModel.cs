@@ -1,70 +1,87 @@
+using System.Windows.Threading;
 using Caliburn.Micro;
-using ElevenLabsStudio.Core.Events;
+using ElevenLabsStudio.ViewModels.AgentDetail;
 using ElevenLabsStudio.ViewModels.Agents;
-using ElevenLabsStudio.ViewModels.Conversations;
 
 namespace ElevenLabsStudio.ViewModels;
 
 /// <summary>
-/// Top-level shell. Holds the two child VMs (Agents / Conversations) and
-/// surfaces the active one to a <c>ContentControl</c> in <c>ShellView</c>
-/// through the <see cref="ActiveItem"/> property. We model it as a plain
-/// <see cref="Screen"/> rather than <c>Conductor&lt;Screen&gt;.Collection.OneActive</c>
-/// because the latter requires the inherited lifecycle hooks to be
-/// wired up correctly before the XAML root is bound; this keeps the
-/// tab-switch logic explicit and easy to follow.
+/// Top-level shell. Wires the left agent menu and the right detail
+/// pane. Owns a 1-second clock so the status bar always shows a live
+/// timestamp. The Conductor pattern from Caliburn is intentionally
+/// bypassed — there is exactly one detail slot, bound to the
+/// currently-selected <see cref="AgentDetailViewModel"/>.
 /// </summary>
-public sealed class ShellViewModel : Screen, IHandle<AgentUpdatedEvent>
+public sealed class ShellViewModel : Screen
 {
-    private readonly IEventAggregator _events;
     private readonly AgentListViewModel _agents;
-    private readonly ConversationListViewModel _conversations;
+    private readonly DispatcherTimer _clockTimer;
 
-    private Screen? _activeItem;
-    public Screen? ActiveItem
+    public AgentListViewModel AgentsVm => _agents;
+
+    private AgentDetailViewModel? _agentDetail;
+    public AgentDetailViewModel? AgentDetail
     {
-        get => _activeItem;
-        set => Set(ref _activeItem, value);
+        get => _agentDetail;
+        set => Set(ref _agentDetail, value);
     }
 
-    public string BusyMessage => (ActiveItem as Core.MVVM.ScreenBase)?.BusyMessage ?? string.Empty;
-
-    public bool IsBusy => (ActiveItem as Core.MVVM.ScreenBase)?.IsBusy ?? false;
-
-    public ShellViewModel(
-        IEventAggregator events,
-        AgentListViewModel agents,
-        ConversationListViewModel conversations)
+    private DateTimeOffset _currentTime;
+    public DateTimeOffset CurrentTime
     {
-        _events = events;
+        get => _currentTime;
+        private set => Set(ref _currentTime, value);
+    }
+
+    public bool IsBusy => _agents.IsBusy
+        || (_agentDetail?.IsBusy ?? false);
+
+    public string BusyMessage =>
+        _agentDetail?.BusyMessage
+        ?? _agents.BusyMessage
+        ?? string.Empty;
+
+    public ShellViewModel(AgentListViewModel agents)
+    {
         _agents = agents;
-        _conversations = conversations;
 
-        ActiveItem = _agents;
+        // Forward selection changes to the right pane.
+        _agents.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AgentListViewModel.AgentDetail))
+            {
+                AgentDetail = _agents.AgentDetail;
+                NotifyOfPropertyChange(nameof(IsBusy));
+                NotifyOfPropertyChange(nameof(BusyMessage));
+            }
+        };
+
+        _clockTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromSeconds(1),
+        };
+        _clockTimer.Tick += (_, _) => CurrentTime = DateTimeOffset.Now;
+        _clockTimer.Start();
+        CurrentTime = DateTimeOffset.Now;
     }
 
-    protected override void OnViewLoaded(object view)
+    /// <summary>
+/// CM5 5.0.x seals / hides <c>OnDeactivate</c> + <c>Deactivate</c> from
+/// subclasses, so we can't override the lifecycle hook directly. The
+/// DispatcherTimer holds a weak-style reference and will be GC'd when
+/// the ShellViewModel is collected; for explicit teardown the user can
+/// close the window which tears the WPF tree down anyway.
+/// </summary>
+
+    public void OpenSettings()
     {
-        _events.SubscribeOnPublishedThread(this);
-        base.OnViewLoaded(view);
+        // Settings tab is intentionally out of scope for v0.1; hook is in
+        // place so the top-bar button is wired and behaviour stays
+        // explicit. Future iterations open a SettingsView dialog here.
     }
 
-    public void ShowAgentsTab()
+    public void OpenHelp()
     {
-        ActiveItem = _agents;
-        NotifyOfPropertyChange(nameof(BusyMessage));
-        NotifyOfPropertyChange(nameof(IsBusy));
+        // Same — hook only.
     }
-
-    public void ShowConversationsTab()
-    {
-        ActiveItem = _conversations;
-        NotifyOfPropertyChange(nameof(BusyMessage));
-        NotifyOfPropertyChange(nameof(IsBusy));
-    }
-
-    public Task HandleAsync(AgentUpdatedEvent message, CancellationToken ct) =>
-        // Hook left in place for future cross-tab invalidation; currently
-        // the Agents tab refreshes its own list, so there is nothing to do.
-        Task.CompletedTask;
 }

@@ -4,8 +4,8 @@ using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Infrastructure;
 using ElevenLabsStudio.Services;
 using ElevenLabsStudio.ViewModels;
+using ElevenLabsStudio.ViewModels.AgentDetail;
 using ElevenLabsStudio.ViewModels.Agents;
-using ElevenLabsStudio.ViewModels.Conversations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -68,11 +68,18 @@ public sealed class Bootstrapper : BootstrapperBase
         _container.RegisterInstance(typeof(IDialogService), null, sp.GetRequiredService<IDialogService>());
         _container.RegisterInstance(typeof(IElevenLabsClient), null, sp.GetRequiredService<IElevenLabsClient>());
         _container.RegisterInstance(typeof(ISuggestionEngine), null, sp.GetRequiredService<ISuggestionEngine>());
+        _container.RegisterInstance(typeof(IWindowManager), null, sp.GetRequiredService<IWindowManager>());
 
         _container.Singleton<ShellViewModel>();
         _container.Singleton<AgentListViewModel>();
-        _container.PerRequest<UpdateAgentViewModel>();
-        _container.Singleton<ConversationListViewModel>();
+
+        // Per-Request: a fresh detail VM per selection so the four tab
+        // VMs are recreated when the user switches agents.
+        _container.PerRequest<AgentDetailViewModel>();
+        _container.PerRequest<SystemPromptTabViewModel>();
+        _container.PerRequest<FirstMessageTabViewModel>();
+        _container.PerRequest<WorkflowTabViewModel>();
+        _container.PerRequest<ConversationsTabViewModel>();
     }
 
     protected override object GetInstance(Type service, string key) =>

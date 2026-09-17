@@ -11,6 +11,7 @@ public sealed record Agent(
     string FirstMessage,
     string? VoiceId,
     IReadOnlyList<Variable> Variables,
+    Workflow Workflow,
     DateTimeOffset UpdatedAt)
 {
     public static Agent Empty(string agentId) => new(
@@ -20,5 +21,6 @@ public sealed record Agent(
         FirstMessage: string.Empty,
         VoiceId: null,
         Variables: Array.Empty<Variable>(),
+        Workflow: WorkflowDefaults.Empty,
         UpdatedAt: DateTimeOffset.UtcNow);
 }

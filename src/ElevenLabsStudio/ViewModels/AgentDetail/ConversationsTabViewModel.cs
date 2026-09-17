@@ -5,17 +5,19 @@ using ElevenLabsStudio.Core.Exceptions;
 using ElevenLabsStudio.Core.MVVM;
 using Microsoft.Extensions.Logging;
 
-namespace ElevenLabsStudio.ViewModels.Conversations;
+namespace ElevenLabsStudio.ViewModels.AgentDetail;
 
 /// <summary>
-/// Reads and paginates <see cref="ConversationRecord"/>s. The right pane
-/// shows the transcript for the currently selected conversation.
+/// Lists the most recent <see cref="ConversationRecord"/>s for the
+/// agent currently displayed in <see cref="AgentDetailViewModel"/>.
+/// Selecting a row shows its transcript on the right.
 /// </summary>
-public sealed class ConversationListViewModel : ScreenBase
+public sealed class ConversationsTabViewModel : ScreenBase
 {
+    private readonly Agent _agent;
     private readonly IElevenLabsClient _client;
     private readonly IDialogService _dialog;
-    private readonly ILogger<ConversationListViewModel> _logger;
+    private readonly ILogger _logger;
 
     public BindableCollection<ConversationRecord> Conversations { get; } = new();
     public BindableCollection<TranscriptTurn> Turns { get; } = new();
@@ -37,37 +39,25 @@ public sealed class ConversationListViewModel : ScreenBase
         }
     }
 
-    private string _agentIdFilter = string.Empty;
-    public string AgentIdFilter
-    {
-        get => _agentIdFilter;
-        set => Set(ref _agentIdFilter, value);
-    }
-
-    public ConversationListViewModel(
+    public ConversationsTabViewModel(
+        Agent agent,
         IElevenLabsClient client,
         IDialogService dialog,
-        ILogger<ConversationListViewModel> logger)
+        ILogger logger)
     {
+        _agent = agent;
         _client = client;
         _dialog = dialog;
         _logger = logger;
     }
 
-    public async Task LoadAsync()
+    public async Task ReloadAsync()
     {
-        if (string.IsNullOrWhiteSpace(AgentIdFilter))
-        {
-            await _dialog.ShowInfoAsync("提示", "请先在筛选框输入 AgentId，再点击刷新。");
-            return;
-        }
-
         IsBusy = true;
-        BusyMessage = "正在加载对话…";
         try
         {
             var items = await _client.ListConversationsAsync(
-                AgentIdFilter,
+                _agent.AgentId,
                 from: DateTimeOffset.UtcNow.AddDays(-7),
                 to: DateTimeOffset.UtcNow,
                 pageSize: 100);
@@ -76,12 +66,12 @@ public sealed class ConversationListViewModel : ScreenBase
         }
         catch (ElevenLabsException ex)
         {
-            _logger.LogError(ex, "ElevenLabs error while loading conversations (status={Status})", ex.HttpStatus);
+            _logger.LogError(ex, "ElevenLabs error loading conversations for {AgentId}", _agent.AgentId);
             await _dialog.ShowErrorAsync("加载失败", $"HTTP {ex.HttpStatus}: {ex.Message}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while loading conversations");
+            _logger.LogError(ex, "Unexpected error loading conversations for {AgentId}", _agent.AgentId);
             await _dialog.ShowErrorAsync("未知错误", ex.Message);
         }
         finally

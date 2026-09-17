@@ -18,6 +18,7 @@ public sealed class HeuristicSuggestionEngineTests
         FirstMessage: "Hi!",
         VoiceId: "voice-1",
         Variables: new[] { new Variable("topic", "general", "string") },
+        Workflow: WorkflowDefaults.Empty,
         UpdatedAt: DateTimeOffset.UtcNow);
 
     [Fact]

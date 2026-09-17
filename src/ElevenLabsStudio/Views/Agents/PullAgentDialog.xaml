@@ -1,0 +1,53 @@
+<UserControl x:Class="ElevenLabsStudio.Views.Agents.PullAgentDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Width="440">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="拉取 Agent 到本地"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,16" />
+
+        <TextBox Grid.Row="1"
+                 x:Name="AgentId"
+                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                 materialDesign:HintAssist.Hint="AgentId (例如 agent_abc123)"
+                 Margin="0,0,0,8" />
+
+        <TextBlock Grid.Row="2"
+                   Text="将从 api.elevenlabs.io 读取并加入本地列表。"
+                   FontSize="12"
+                   Opacity="0.6"
+                   Margin="0,0,0,8" />
+
+        <TextBlock Grid.Row="3"
+                   x:Name="ErrorText"
+                   Foreground="{DynamicResource MaterialDesign.Brush.Error}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,8"
+                   Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button x:Name="Cancel"
+                    Content="取消"
+                    Margin="0,0,8,0"
+                    Style="{StaticResource MaterialDesignFlatButton}" />
+            <Button x:Name="Confirm"
+                    Content="拉取"
+                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                    IsEnabled="{Binding CanConfirm}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -6,7 +6,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="ElevenLabs Studio"
-        Height="720" Width="1180"
+        Height="820" Width="1320"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
         Background="{DynamicResource MaterialDesign.Brush.Background}"
@@ -19,42 +19,66 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Top tab bar -->
-            <materialDesign:ColorZone Grid.Row="0"
-                                      Mode="PrimaryMid"
-                                      Padding="12,8">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="ElevenLabs Studio"
-                               VerticalAlignment="Center"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Margin="0,0,24,0" />
-                    <Button x:Name="ShowAgentsTab"
-                            Content="Agents"
-                            Margin="0,0,8,0" />
-                    <Button x:Name="ShowConversationsTab"
-                            Content="Conversations" />
-                </StackPanel>
+            <!-- 1. TopAppBar -->
+            <materialDesign:ColorZone Grid.Row="0" Mode="PrimaryMid" Padding="16,10">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="OpenSettings"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                ToolTip="设置"
+                                Margin="0,0,4,0">
+                            <materialDesign:PackIcon Kind="Cog" />
+                        </Button>
+                        <Button x:Name="OpenHelp"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                ToolTip="帮助">
+                            <materialDesign:PackIcon Kind="HelpCircleOutline" />
+                        </Button>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="MicrophoneMessage"
+                                                 Width="22" Height="22"
+                                                 Margin="0,0,8,0"
+                                                 VerticalAlignment="Center" />
+                        <TextBlock Text="ElevenLabs Studio"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </DockPanel>
             </materialDesign:ColorZone>
 
-            <!-- Conductor -->
-            <ContentControl Grid.Row="1"
-                            x:Name="ActiveItem"
-                            Margin="12" />
+            <!-- 2. Main split: left agent menu / right detail -->
+            <Grid Grid.Row="1" Margin="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-            <!-- Status bar -->
-            <materialDesign:ColorZone Grid.Row="2"
-                                      Mode="PrimaryLight"
-                                      Padding="12,4">
-                <StackPanel Orientation="Horizontal">
-                    <ProgressBar Style="{DynamicResource MaterialDesign.LinearProgressBar}"
-                                 Width="120"
-                                 IsIndeterminate="True"
-                                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                 Margin="0,0,12,0" />
-                    <TextBlock Text="{Binding BusyMessage}"
-                               VerticalAlignment="Center" />
-                </StackPanel>
+                <ContentControl Grid.Column="0" x:Name="AgentsVm" />
+
+                <materialDesign:Card Grid.Column="1" Padding="16">
+                    <ContentControl x:Name="AgentDetail" />
+                </materialDesign:Card>
+            </Grid>
+
+            <!-- 3. StatusBar -->
+            <materialDesign:ColorZone Grid.Row="2" Mode="PrimaryLight" Padding="16,4">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right"
+                               Text="{Binding CurrentTime, StringFormat='{}{0:HH:mm:ss}'}"
+                               VerticalAlignment="Center"
+                               FontSize="12" />
+                    <StackPanel Orientation="Horizontal">
+                            <ProgressBar Style="{DynamicResource MaterialDesign.LinearProgressBar}"
+                                         Width="120"
+                                         IsIndeterminate="True"
+                                         Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                         Margin="0,0,12,0" />
+                            <TextBlock Text="{Binding BusyMessage}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                </DockPanel>
             </materialDesign:ColorZone>
         </Grid>
     </materialDesign:DialogHost>

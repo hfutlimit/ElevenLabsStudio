@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Infrastructure.Http.Dto;
 
@@ -10,6 +11,12 @@ namespace ElevenLabsStudio.Infrastructure.Http.Mapping;
 /// </summary>
 internal static class Mapping
 {
+    private static readonly JsonSerializerOptions RawJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true,
+    };
+
     public static Agent MapToAgent(ElevenLabsAgentDto dto) => new(
         AgentId: dto.AgentId,
         Name: dto.Name,
@@ -19,6 +26,7 @@ internal static class Mapping
         Variables: (dto.ConversationConfig.Agent.Prompt.Variables ?? new())
             .Select(MapToVariable)
             .ToList(),
+        Workflow: MapToWorkflow(dto.Workflow),
         UpdatedAt: dto.Metadata.UpdatedAt ?? DateTimeOffset.UtcNow);
 
     public static Variable MapToVariable(ElevenLabsVariableDto dto) =>
@@ -40,6 +48,29 @@ internal static class Mapping
 
     public static Voice MapToVoice(ElevenLabsVoiceDto dto) =>
         new(dto.VoiceId, dto.Name, dto.Category, dto.PreviewUrl);
+
+    public static Workflow MapToWorkflow(ElevenLabsWorkflowDto? dto)
+    {
+        if (dto is null)
+        {
+            return WorkflowDefaults.Empty;
+        }
+
+        var nodes = dto.Nodes
+            .Select(n => new WorkflowNode(n.Id, n.Type, n.Name))
+            .ToList();
+        string? raw = null;
+        try
+        {
+            raw = JsonSerializer.Serialize(dto, RawJsonOptions);
+        }
+        catch (JsonException)
+        {
+            // Fall through with raw=null; UI surfaces "no raw JSON" gracefully.
+        }
+
+        return new Workflow(nodes, raw);
+    }
 
     private static DateTimeOffset FromUnix(long? unixSecs) =>
         unixSecs is null
