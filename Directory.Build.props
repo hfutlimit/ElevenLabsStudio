@@ -1,0 +1,35 @@
+<Project>
+
+  <!--
+    Directory.Build.props
+    =====================
+    Centralised MSBuild settings for every project under this solution.
+    Imported automatically by Microsoft.NET.Sdk projects. Keep this file lean:
+    only what ALL projects share. Per-project overrides live in the .csproj.
+
+    Why this exists:
+      * NU1903 (Microsoft.OpenApi 2.x vulnerability advisory lag) is treated
+        as an error by default in .NET 10 SDK; demote it to a warning so
+        restore does not fail on third-party advisory backlog.
+      * NU1701 fires for packages whose primary target is .NETFramework but
+        which are netstandard2.0 compatible (e.g. Caliburn.Micro 5.0.x). The
+        package still loads correctly under .NET 10; treat as info.
+      * ManagePackageVersionsCentrally=true would force a single
+        Directory.Packages.props for every transitive version — overkill for
+        a 5-project solution. Per-csproj Version="x.y.z" stays explicit.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework Condition="'$(UseWPF)' == 'true'">net10.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>NU1701;NU1903;CS1591</WarningsNotAsErrors>
+    <NoWarn>$(NoWarn);NU1701;NU1903</NoWarn>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+</Project>

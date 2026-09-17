@@ -1,0 +1,61 @@
+﻿<Window x:Class="ElevenLabsStudio.ShellView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="ElevenLabs Studio"
+        Height="720" Width="1180"
+        WindowStartupLocation="CenterScreen"
+        TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+        Background="{DynamicResource MaterialDesign.Brush.Background}"
+        FontFamily="{DynamicResource MaterialDesign.Font}">
+    <materialDesign:DialogHost>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Top tab bar -->
+            <materialDesign:ColorZone Grid.Row="0"
+                                      Mode="PrimaryMid"
+                                      Padding="12,8">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ElevenLabs Studio"
+                               VerticalAlignment="Center"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Margin="0,0,24,0" />
+                    <Button x:Name="ShowAgentsTab"
+                            Content="Agents"
+                            Margin="0,0,8,0" />
+                    <Button x:Name="ShowConversationsTab"
+                            Content="Conversations" />
+                </StackPanel>
+            </materialDesign:ColorZone>
+
+            <!-- Conductor -->
+            <ContentControl Grid.Row="1"
+                            x:Name="ActiveItem"
+                            Margin="12" />
+
+            <!-- Status bar -->
+            <materialDesign:ColorZone Grid.Row="2"
+                                      Mode="PrimaryLight"
+                                      Padding="12,4">
+                <StackPanel Orientation="Horizontal">
+                    <ProgressBar Style="{DynamicResource MaterialDesign.LinearProgressBar}"
+                                 Width="120"
+                                 IsIndeterminate="True"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 Margin="0,0,12,0" />
+                    <TextBlock Text="{Binding BusyMessage}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </materialDesign:ColorZone>
+        </Grid>
+    </materialDesign:DialogHost>
+</Window>
