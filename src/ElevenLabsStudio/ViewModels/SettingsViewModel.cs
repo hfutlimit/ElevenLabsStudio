@@ -66,12 +66,23 @@ public sealed class SettingsViewModel : Screen
     {
         var opts = _options.CurrentValue;
         var oldMock = opts.Mock;
-        opts.ApiKey = ApiKey;
-        opts.Mock = MockMode;
+
+        // Capture the intended new values up front so the file write
+        // can happen without first mutating the live in-memory options.
+        // If the write fails the live options are untouched and the
+        // user sees an honest "保存失败" message instead of a UI
+        // showing "saved" while the running app still uses the old
+        // Mock/ApiKey (review #5).
+        var snapshot = new ElevenLabsOptions
+        {
+            Mock = MockMode,
+            ApiKey = ApiKey,
+            BaseUrl = opts.BaseUrl,
+        };
 
         try
         {
-            await PersistToFileAsync();
+            await PersistToFileAsync(snapshot);
         }
         catch (Exception ex)
         {
@@ -83,10 +94,12 @@ public sealed class SettingsViewModel : Screen
             return;
         }
 
-        // Reload so dependent configuration (the IHttpClientFactory
-        // base address, for example) re-resolves with the new values.
-        // RuntimeClient observes the live IOptionsMonitor value, so the
-        // next call will pick up the new Mock flag without an app restart.
+        // Persist succeeded — now and only now do we touch the
+        // in-memory IOptionsMonitor surface and trigger Reload so
+        // every consumer (RuntimeClient, typed HttpClient, MS logger
+        // sinks) re-resolves with the new values.
+        opts.Mock = MockMode;
+        opts.ApiKey = ApiKey;
         _configRoot.Reload();
 
         _logger.LogInformation(
@@ -106,7 +119,7 @@ public sealed class SettingsViewModel : Screen
 
     public Task CancelAsync() => TryCloseAsync(false);
 
-    private async Task PersistToFileAsync()
+    private async Task PersistToFileAsync(ElevenLabsOptions snapshot)
     {
         var path = _appsettingsPathOverride
             ?? Path.Combine(AppContext.BaseDirectory, "appsettings.json");
@@ -126,8 +139,8 @@ public sealed class SettingsViewModel : Screen
             ?? throw new InvalidOperationException("appsettings.json root is not a JSON object.");
 
         var elNode = rootNode["ElevenLabs"] as JsonObject ?? new JsonObject();
-        elNode["Mock"] = JsonValue.Create(MockMode);
-        elNode["ApiKey"] = JsonValue.Create(ApiKey);
+        elNode["Mock"] = JsonValue.Create(snapshot.Mock);
+        elNode["ApiKey"] = JsonValue.Create(snapshot.ApiKey);
         rootNode["ElevenLabs"] = elNode;
 
         var pretty = rootNode.ToJsonString(WriteOptions);

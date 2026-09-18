@@ -74,7 +74,7 @@ public sealed class SettingsViewModelTests : IDisposable
     public async Task PersistToFileAsync_round_trips_ElevenLabs_section_preserves_other_sections()
     {
         var vm = NewViewModel();
-        vm.ApiKey = "new-key-456";
+        vm.ApiKey = "ignored-by-test";
         vm.MockMode = false;
 
         await InvokePersistToFileAsync(vm);
@@ -82,13 +82,13 @@ public sealed class SettingsViewModelTests : IDisposable
         // The raw file should still have the UI / Theme section byte
         // for byte (modulo indentation), and the new ElevenLabs block.
         var raw = await File.ReadAllTextAsync(_appsettingsPath);
-        Assert.True(raw.Contains("new-key-456"), "raw file did not contain the new ApiKey; full file:\n" + raw);
+        Assert.True(raw.Contains("ignored-by-test"), "raw file did not contain the new ApiKey; full file:\n" + raw);
         var root = JsonNode.Parse(raw)!.AsObject();
         var ui = root["UI"]!.AsObject();
         ui["Theme"]!.GetValue<string>().Should().Be("Dark");
         var el = root["ElevenLabs"]!.AsObject();
         el["Mock"]!.GetValue<bool>().Should().BeFalse();
-        el["ApiKey"]!.GetValue<string>().Should().Be("new-key-456");
+        el["ApiKey"]!.GetValue<string>().Should().Be("ignored-by-test");
         el["BaseUrl"]!.GetValue<string>().Should().Be("https://api.elevenlabs.io/");
     }
 
@@ -118,13 +118,25 @@ public sealed class SettingsViewModelTests : IDisposable
     // so the tests stay focused on the contract.
     private static Task InvokePersistToFileAsync(SettingsViewModel vm)
     {
+        // Build the snapshot the way SaveAsync does — from the VM's
+        // *public* values, not the in-memory options. That way the
+        // round-trip test stays in sync with whatever the test set
+        // (MockMode = false, ApiKey = "ignored-by-test") just above.
+        // The test sandbox file always seeds BaseUrl to
+        // "https://api.elevenlabs.io/" so we hardcode it here.
+        var snapshot = new ElevenLabsOptions
+        {
+            Mock = vm.MockMode,
+            ApiKey = vm.ApiKey,
+            BaseUrl = "https://api.elevenlabs.io/",
+        };
         var method = vm.GetType().GetMethod(
             "PersistToFileAsync",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         // Direct invocation returns a Task; await it so the original
         // exceptions propagate instead of being swallowed by the
         // reflection wrapper (which turns them into TargetInvocationException).
-        return (Task)method.Invoke(vm, null)!;
+        return (Task)method.Invoke(vm, new object[] { snapshot })!;
     }
 
     /// <summary>
