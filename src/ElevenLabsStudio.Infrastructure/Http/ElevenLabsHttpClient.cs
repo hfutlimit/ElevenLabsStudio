@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.Exceptions;
@@ -30,6 +31,20 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
+    /// <summary>
+    /// Wire options for REQUEST bodies: snake_case property names (the
+    /// ElevenLabs API is snake_case, and embedded Domain records like
+    /// <c>Variable(Name, Value, Type)</c> would otherwise serialize as
+    /// PascalCase), and null-omission so a partial PATCH update never
+    /// sends <c>"first_message": null</c>-style keys that the server
+    /// could interpret as "clear this field" (review #7).
+    /// </summary>
+    private static readonly JsonSerializerOptions WireWriteOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     public ElevenLabsHttpClient(
         HttpClient http,
         ILogger<ElevenLabsHttpClient> logger,
@@ -40,7 +55,14 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
         _options = options;
     }
 
-    private void PrepareHeaders()
+    /// <summary>
+    /// Apply auth headers to a single request message. Never touches
+    /// <see cref="HttpClient.DefaultRequestHeaders"/> — that collection
+    /// is not thread-safe and was previously mutated per request,
+    /// racing whenever two calls (list + conversations) overlapped
+    /// (review #7).
+    /// </summary>
+    private void ApplyAuth(HttpRequestMessage request)
     {
         var apiKey = _options.CurrentValue.ApiKey;
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -49,11 +71,11 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
                 "ElevenLabs API key is not configured. Set ElevenLabs:ApiKey in appsettings.json or ELEVENLABS_API_KEY environment variable.");
         }
 
-        _http.DefaultRequestHeaders.Remove("xi-api-key");
-        _http.DefaultRequestHeaders.Add("xi-api-key", apiKey);
-        _http.DefaultRequestHeaders.Accept.Clear();
-        _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.Add("xi-api-key", apiKey);
+        request.Headers.Accept.ParseAdd("application/json");
 
+        // Fallback for hand-built HttpClients (tests) whose BaseAddress
+        // was never set by the DI configure action.
         var baseUrl = _options.CurrentValue.BaseUrl;
         if (!string.IsNullOrWhiteSpace(baseUrl) && _http.BaseAddress is null)
         {
@@ -63,7 +85,6 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
 
     public async Task<IReadOnlyList<Agent>> ListAgentsAsync(CancellationToken ct = default)
     {
-        PrepareHeaders();
         var url = "v1/convai/agents";
         _logger.LogInformation("GET {Url}", url);
 
@@ -75,7 +96,6 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
     public async Task<Agent> GetAgentAsync(string agentId, CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
-        PrepareHeaders();
         var url = $"v1/convai/agents/{Uri.EscapeDataString(agentId)}";
         _logger.LogInformation("GET {Url}", url);
 
@@ -91,19 +111,30 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
         ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
         ArgumentNullException.ThrowIfNull(update);
 
-        PrepareHeaders();
         var url = $"v1/convai/agents/{Uri.EscapeDataString(agentId)}";
         _logger.LogInformation("PATCH {Url}", url);
 
+        // Wire shape mirrors the GET model (PromptAgentAPIModel in the
+        // public OpenAPI spec): the prompt TEXT and its VARIABLES both
+        // live inside conversation_config.agent.prompt. The previous
+        // payload sent variables as agent.variables.items — a path the
+        // read side never uses, so a round-trip was impossible
+        // (review #7). Null fields are omitted by WireWriteOpts so the
+        // server's partial-update merge never sees "clear this field".
         var payload = new
         {
             conversation_config = new
             {
                 agent = new
                 {
-                    prompt = update.Prompt is null ? null : new { prompt = update.Prompt },
+                    prompt = (update.Prompt is null && update.Variables is null)
+                        ? null
+                        : new
+                        {
+                            prompt = update.Prompt,
+                            variables = update.Variables,
+                        },
                     first_message = update.FirstMessage,
-                    variables = update.Variables is null ? null : new { items = update.Variables },
                 },
                 tts = update.VoiceId is null ? null : new { voice_id = update.VoiceId },
             },
@@ -124,7 +155,6 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
         CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
-        PrepareHeaders();
 
         var query = new List<string>
         {
@@ -148,7 +178,6 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
         CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
-        PrepareHeaders();
 
         var url = $"v1/convai/conversations/{Uri.EscapeDataString(conversationId)}";
         _logger.LogInformation("GET {Url}", url);
@@ -160,7 +189,6 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
 
     public async Task<IReadOnlyList<Voice>> ListVoicesAsync(CancellationToken ct = default)
     {
-        PrepareHeaders();
         var url = "v1/voices";
         _logger.LogInformation("GET {Url}", url);
 
@@ -176,9 +204,10 @@ public sealed class ElevenLabsHttpClient : IElevenLabsClient
         object? body = null)
     {
         using var request = new HttpRequestMessage(method, url);
+        ApplyAuth(request);
         if (body is not null)
         {
-            request.Content = JsonContent.Create(body);
+            request.Content = JsonContent.Create(body, mediaType: null, options: WireWriteOpts);
         }
 
         using var response = await _http.SendAsync(request, ct);

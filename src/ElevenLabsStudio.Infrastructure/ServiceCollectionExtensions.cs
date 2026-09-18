@@ -3,10 +3,7 @@ using ElevenLabsStudio.Core.Suggestions;
 using ElevenLabsStudio.Infrastructure.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
-using Polly.Extensions.Http;
 
 namespace ElevenLabsStudio.Infrastructure;
 
@@ -33,6 +30,7 @@ public static class ServiceCollectionExtensions
         // ElevenLabsOptions.Mock flag via IOptionsMonitor so the user
         // can flip Mock ↔ Real in Settings without restarting the app.
         services.AddSingleton<Mock.MockElevenLabsClient>();
+        services.AddSingleton<Http.ElevenLabsHttpPolicies>();
         services.AddHttpClient<Http.ElevenLabsHttpClient>((sp, client) =>
         {
             var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
@@ -42,36 +40,14 @@ public static class ServiceCollectionExtensions
             }
             client.Timeout = TimeSpan.FromSeconds(30);
         })
-        .AddPolicyHandler((sp, request) =>
-        {
-            var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
-            var logger = sp.GetRequiredService<ILogger<Http.ElevenLabsHttpClient>>();
-
-            return HttpPolicyExtensions
-                .HandleTransientHttpError()
-                .OrResult(msg => (int)msg.StatusCode == 429)
-                .WaitAndRetryAsync(
-                    retryCount: opts.Polly.RetryCount,
-                    sleepDurationProvider: attempt =>
-                        TimeSpan.FromMilliseconds(opts.Polly.RetryBaseDelayMs * Math.Pow(2, attempt - 1)),
-                    onRetry: (outcome, delay, _, _) =>
-                    {
-                        logger.LogWarning(
-                            outcome.Exception,
-                            "ElevenLabs HTTP retry in {Delay} (attempt outcome: {Status})",
-                            delay,
-                            outcome.Result?.StatusCode);
-                    });
-        })
+        // Resolve the SAME singleton policy instance on every request
+        // so the circuit breaker accumulates trip state (review #7).
+        // Building policies inside the (sp, request) lambda would hand
+        // each request a fresh breaker that never trips.
         .AddPolicyHandler((sp, _) =>
-        {
-            var opts = sp.GetRequiredService<IOptions<ElevenLabsOptions>>().Value;
-            return HttpPolicyExtensions
-                .HandleTransientHttpError()
-                .CircuitBreakerAsync(
-                    handledEventsAllowedBeforeBreaking: opts.Polly.CircuitBreakerThreshold,
-                    durationOfBreak: TimeSpan.FromSeconds(30));
-        });
+            sp.GetRequiredService<Http.ElevenLabsHttpPolicies>().Retry)
+        .AddPolicyHandler((sp, _) =>
+            sp.GetRequiredService<Http.ElevenLabsHttpPolicies>().CircuitBreaker);
 
         // Single IElevenLabsClient facade — delegates to mock or real
         // per call, based on the live ElevenLabsOptions value.

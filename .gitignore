@@ -76,4 +76,4 @@ docs/screenshots/*.png
 *.application
 *.xbap
 *.exe.mdb
-*.dll.mdb
+*.dll.mdbpush.log

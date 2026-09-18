@@ -3,6 +3,9 @@ using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Infrastructure;
 using ElevenLabsStudio.Infrastructure.Http;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -126,15 +129,89 @@ public sealed class ElevenLabsHttpClientIntegrationTests
         snapshot.Workflow.Nodes[0].Id.Should().Be("n9");
 
         // The PATCH request must include the api key and the merged
-        // payload we sent.
+        // payload we sent. Variables nest INSIDE the prompt object
+        // (mirroring the GET model) and Domain records serialize with
+        // snake_case property names — the wire contract of the
+        // ElevenLabs API (review #7).
         server.Captured.Should().HaveCount(1);
         var sent = server.Captured[0];
         sent.Method.Should().Be("PATCH");
         sent.Path.Should().Be("/v1/convai/agents/agent_wire_003");
         sent.Headers["xi-api-key"].Should().Be("patch-key");
-        sent.RequestBody.Should().Contain("\"prompt\":{\"prompt\":\"new\"}");
-        sent.RequestBody.Should().Contain("\"workflow\":");
-        sent.RequestBody.Should().Contain("\"n9\"");
+        sent.RequestBody.Should().Contain("\"prompt\":{\"prompt\":\"new\",\"variables\":[{\"name\":\"topic\",\"value\":\"billing\",\"type\":\"string\"}]}");
+        sent.RequestBody.Should().Contain("\"first_message\":\"new-fm\"");
+        sent.RequestBody.Should().Contain("\"workflow\":{\"nodes\":[");
+        sent.RequestBody.Should().Contain("\"id\":\"n9\",\"type\":\"llm\",\"name\":\"Greeting\"");
+    }
+
+    [Fact]
+    public async Task UpdateAgentAsync_partial_update_omits_unchanged_fields()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(200, """
+            {
+              "agent_id": "agent_wire_004",
+              "name": "Partial",
+              "conversation_config": {
+                "agent": { "prompt": {"prompt": "only"}, "first_message": "kept" },
+                "tts": {}
+              },
+              "workflow": { "nodes": [] },
+              "metadata": {}
+            }
+            """);
+        var client = NewClient(server);
+
+        // Only the prompt changed — the wire body must not mention
+        // first_message / tts / workflow / variables at all. Serializing
+        // them as JSON null could make the server clear those fields.
+        _ = await client.UpdateAgentAsync(
+            "agent_wire_004", new AgentUpdate(Prompt: "only"));
+
+        var body = server.Captured[0].RequestBody;
+        body.Should().Contain("\"prompt\":{\"prompt\":\"only\"}");
+        body.Should().NotContain("first_message");
+        body.Should().NotContain("\"tts\"");
+        body.Should().NotContain("workflow");
+        body.Should().NotContain("variables");
+    }
+
+    [Fact]
+    public async Task ListAgentsAsync_retries_transient_500_through_DI_polly_pipeline()
+    {
+        await using var server = new HttpTestServer();
+        server.Enqueue(500, "transient boom");
+        server.Enqueue(200, AgentsListJson());
+
+        // Build the client through the SAME registration the app uses
+        // (AddElevenLabsStudioInfrastructure + AddPolicyHandler chain),
+        // pointed at the loopback test server. The previous tests
+        // hand-new the HttpClient and so never exercised the Polly
+        // policies at all (review #7).
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ElevenLabs:BaseUrl"] = server.BaseUrl,
+                ["ElevenLabs:ApiKey"] = "di-key",
+                ["ElevenLabs:Polly:RetryCount"] = "3",
+                ["ElevenLabs:Polly:RetryBaseDelayMs"] = "1",
+                ["ElevenLabs:Polly:CircuitBreakerThreshold"] = "5",
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddElevenLabsStudioInfrastructure(config);
+        await using var sp = services.BuildServiceProvider();
+        var client = sp.GetRequiredService<ElevenLabsHttpClient>();
+
+        var agents = await client.ListAgentsAsync();
+
+        agents.Should().HaveCount(1);
+        agents[0].AgentId.Should().Be("agent_wire_001");
+        // One initial attempt + one retry, both carrying the per-request
+        // auth header.
+        server.Captured.Should().HaveCount(2);
+        server.Captured.Should().OnlyContain(c => c.Headers["xi-api-key"] == "di-key");
     }
 
     [Fact]
