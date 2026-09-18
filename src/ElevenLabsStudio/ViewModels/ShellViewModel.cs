@@ -1,5 +1,5 @@
-using System.Windows.Threading;
 using Caliburn.Micro;
+using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.ViewModels.AgentDetail;
 using ElevenLabsStudio.ViewModels.Agents;
 
@@ -15,7 +15,8 @@ public sealed class ShellViewModel : Screen
     private readonly AgentListViewModel _agents;
     private readonly SettingsViewModel _settings;
     private readonly IWindowManager _windows;
-    private readonly DispatcherTimer _clockTimer;
+    private readonly IClockService _clock;
+    private IDisposable? _clockSubscription;
 
     public AgentListViewModel AgentsVm => _agents;
 
@@ -52,11 +53,13 @@ public sealed class ShellViewModel : Screen
     public ShellViewModel(
         AgentListViewModel agents,
         SettingsViewModel settings,
-        IWindowManager windows)
+        IWindowManager windows,
+        IClockService clock)
     {
         _agents = agents;
         _settings = settings;
         _windows = windows;
+        _clock = clock;
 
         // Forward AgentListViewModel.AgentDetail to our own AgentDetail
         // so the right-pane XAML binding (DataContext="{Binding
@@ -70,13 +73,11 @@ public sealed class ShellViewModel : Screen
             }
         };
 
-        _clockTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = TimeSpan.FromSeconds(1),
-        };
-        _clockTimer.Tick += (_, _) => CurrentTime = DateTimeOffset.Now;
-        _clockTimer.Start();
-        CurrentTime = DateTimeOffset.Now;
+        // 1Hz tick via the IClockService boundary so the unit tests
+        // can substitute a deterministic clock.
+        _clockSubscription = _clock.Start(TimeSpan.FromSeconds(1),
+            () => CurrentTime = _clock.Now);
+        CurrentTime = _clock.Now;
     }
 
     public async Task OpenSettingsAsync()

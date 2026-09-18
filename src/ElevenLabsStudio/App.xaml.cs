@@ -5,6 +5,7 @@ using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Infrastructure;
 using ElevenLabsStudio.ViewModels;
+using ElevenLabsStudio.ViewModels.AgentDetail;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -119,17 +120,17 @@ public partial class App : Application
         services.AddSingleton<IWindowManager, WindowManager>();
         services.AddSingleton<IEventAggregator, EventAggregator>();
 
+        // Boundary services that hide WPF / file-system details from
+        // the VMs (review #6). The clock keeps DispatcherTimer out of
+        // the VMs; the factory hides the four-tab detail construction
+        // (and stays in the UI layer because it returns a UI type).
+        services.AddSingleton<IClockService, Services.WpfClockService>();
+        services.AddSingleton<IAgentDetailViewModelFactory,
+            AgentDetailViewModelFactory>();
+
         services.AddSingleton<ShellViewModel>();
         services.AddSingleton<ViewModels.Agents.AgentListViewModel>();
         services.AddSingleton<SettingsViewModel>();
-
-        // Per-request: a fresh detail VM per selection so the four tab
-        // VMs are recreated when the user switches agents.
-        services.AddTransient<ViewModels.AgentDetail.AgentDetailViewModel>();
-        services.AddTransient<ViewModels.AgentDetail.SystemPromptTabViewModel>();
-        services.AddTransient<ViewModels.AgentDetail.FirstMessageTabViewModel>();
-        services.AddTransient<ViewModels.AgentDetail.WorkflowTabViewModel>();
-        services.AddTransient<ViewModels.AgentDetail.ConversationsTabViewModel>();
 
         var sp = services.BuildServiceProvider();
 

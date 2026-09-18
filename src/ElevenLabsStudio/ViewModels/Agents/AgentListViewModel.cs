@@ -24,6 +24,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
     private readonly IDialogService _dialog;
     private readonly IEventAggregator _events;
     private readonly Core.Abstractions.IDraftStore _drafts;
+    private readonly IAgentDetailViewModelFactory _detailFactory;
     private readonly ILogger<AgentListViewModel> _logger;
     private readonly ISuggestionEngine _suggestions;
     private readonly IWindowManager _windowManager;
@@ -78,14 +79,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
             AgentDetailViewModel? next = null;
             if (_selectedAgent is not null)
             {
-                next = new AgentDetailViewModel(
-                    _selectedAgent,
-                    _client,
-                    _suggestions,
-                    _dialog,
-                    _events,
-                    _drafts,
-                    Microsoft.Extensions.Logging.Abstractions.NullLogger<AgentDetailViewModel>.Instance);
+                next = _detailFactory.Create(_selectedAgent);
                 if (next.TryRestoreDraft())
                 {
                     _logger.LogInformation(
@@ -112,6 +106,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
         IDialogService dialog,
         IEventAggregator events,
         Core.Abstractions.IDraftStore drafts,
+        IAgentDetailViewModelFactory detailFactory,
         ILogger<AgentListViewModel> logger,
         ISuggestionEngine suggestions,
         IWindowManager windowManager)
@@ -120,6 +115,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
         _dialog = dialog;
         _events = events;
         _drafts = drafts;
+        _detailFactory = detailFactory;
         _logger = logger;
         _suggestions = suggestions;
         _windowManager = windowManager;

@@ -42,8 +42,12 @@ public sealed class AgentListViewModelTests
         var dialog = Substitute.For<IDialogService>();
         var suggestions = Substitute.For<ISuggestionEngine>();
         var drafts = Substitute.For<IDraftStore>();
+        var detailFactory = new AgentDetailViewModelFactory(
+            client, suggestions, dialog, events, drafts,
+            NullLogger<AgentDetailViewModel>.Instance);
         var vm = new AgentListViewModel(
-            client, dialog, events, drafts, NullLogger<AgentListViewModel>.Instance, suggestions, windows);
+            client, dialog, events, drafts, detailFactory,
+            NullLogger<AgentListViewModel>.Instance, suggestions, windows);
         return (vm, client, events, windows);
     }
 
@@ -95,6 +99,10 @@ public sealed class AgentListViewModelTests
         var events = Substitute.For<IEventAggregator>();
         var vm = new AgentListViewModel(
             client, dialog, events, Substitute.For<IDraftStore>(),
+            new AgentDetailViewModelFactory(
+                client, Substitute.For<ISuggestionEngine>(), dialog, events,
+                Substitute.For<IDraftStore>(),
+                NullLogger<AgentDetailViewModel>.Instance),
             NullLogger<AgentListViewModel>.Instance,
             Substitute.For<ISuggestionEngine>(), Substitute.For<IWindowManager>());
 
@@ -127,6 +135,7 @@ public sealed class AgentListViewModelTests
         var vm = new AgentListViewModel(
             client, Substitute.For<IDialogService>(), Substitute.For<IEventAggregator>(),
             Substitute.For<IDraftStore>(),
+            Substitute.For<IAgentDetailViewModelFactory>(),
             NullLogger<AgentListViewModel>.Instance,
             Substitute.For<ISuggestionEngine>(), Substitute.For<IWindowManager>());
 
