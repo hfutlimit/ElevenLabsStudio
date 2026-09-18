@@ -81,10 +81,15 @@ def launched_exe(elevenlabs_exe: Path) -> Iterator[LaunchedApp]:
     if sys.platform == "win32":
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
 
+    # GUI app: it never writes anything useful to stdout/stderr, and
+    # creating pipes trips a Python 3.14 + pytest fd-capture bug
+    # (WinError 6 The handle is invalid inside Popen._get_handles).
+    # DEVNULL keeps the fixture launching under plain `pytest -m e2e`
+    # without needing `-s`.
     proc = subprocess.Popen(
         [str(elevenlabs_exe)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         creationflags=creationflags,
     )
     app = LaunchedApp(proc)

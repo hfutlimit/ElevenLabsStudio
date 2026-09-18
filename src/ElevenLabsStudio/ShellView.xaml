@@ -80,7 +80,8 @@
                                 Margin="0,0,0,0">
                         <Button x:Name="OpenSettings"
                                 Style="{StaticResource CaptionButton}"
-                                ToolTip="设置">
+                                ToolTip="设置"
+                                AutomationProperties.Name="设置">
                             <materialDesign:PackIcon Kind="CogOutline"
                                                      Width="14" Height="14" />
                         </Button>

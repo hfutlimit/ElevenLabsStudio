@@ -43,6 +43,11 @@
                     <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
                         <Setter Property="Padding" Value="10,8" />
                         <Setter Property="Margin" Value="4,2" />
+                        <!-- UIA name = agent name so automation (e2e,
+                             screen readers) matches list items by the
+                             human label instead of the record
+                             ToString() that WPF uses by default. -->
+                        <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
