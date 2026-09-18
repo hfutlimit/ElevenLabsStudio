@@ -71,4 +71,10 @@ public sealed class SystemPromptTabViewModel : ScreenBase
         Suggestions.Clear();
         Suggestions.AddRange(found);
     }
+
+    /// <summary>Public entry point so the parent VM can force a
+    /// re-evaluation (e.g. the Dry-run button) without going through
+    /// the property setter, which would no-op when the local text
+    /// already matches the field.</summary>
+    public void RecomputeSuggestionsPublic() => RecomputeSuggestions();
 }

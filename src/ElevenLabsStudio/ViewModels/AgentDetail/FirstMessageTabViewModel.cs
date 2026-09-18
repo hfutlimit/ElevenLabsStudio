@@ -57,4 +57,7 @@ public sealed class FirstMessageTabViewModel : ScreenBase
         Suggestions.Clear();
         Suggestions.AddRange(found);
     }
+
+    /// <summary>See SystemPromptTabViewModel.RecomputeSuggestionsPublic.</summary>
+    public void RecomputeSuggestionsPublic() => RecomputeSuggestions();
 }

@@ -126,9 +126,18 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
         {
             var fresh = await _client.GetAgentAsync(Agent.AgentId);
             Agent = fresh;
+            // Every tab VM must reset its "edited vs. server" baseline
+            // so the next Push correctly distinguishes real edits from
+            // values that already match the server snapshot. Missing
+            // any one of these lets the user re-push the stale value
+            // and silently overwrite the server's data.
             SystemPromptVm.RefreshFrom(fresh);
             FirstMessageVm.RefreshFrom(fresh);
+            VariablesVm.RefreshFrom(fresh);
             WorkflowVm.RefreshFrom(fresh);
+            _logger.LogInformation(
+                "Refreshed agent {Id} from server; all four tab baselines reset",
+                fresh.AgentId);
             await _dialog.ShowInfoAsync("已刷新", $"Agent {fresh.Name} 重新拉取成功。");
         }
         catch (ElevenLabsException ex)
@@ -147,12 +156,16 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
     /// <summary>Dry-run: re-run suggestion engine only, no network call.</summary>
     public Task DryRun()
     {
-        // Re-fire each tab's recompute so the suggestions list reflects the
-        // current local edits. Both tab VMs only recompute when their
-        // setter is called, so we toggle the bound properties to trigger
-        // the change notification.
-        SystemPromptVm.Prompt = SystemPromptVm.Prompt;
-        FirstMessageVm.FirstMessage = FirstMessageVm.FirstMessage;
+        // Calling the setters with their current value is a no-op because
+        // Set<T> short-circuits on EqualityComparer<T>.Default.Equals, so
+        // the previous "self-assign to trigger recompute" was a dead
+        // branch — no recompute ever happened, the suggestion lists
+        // never refreshed. Call the dedicated Recompute methods instead
+        // so the local editor's view of the server is genuinely
+        // re-evaluated.
+        SystemPromptVm.RecomputeSuggestionsPublic();
+        FirstMessageVm.RecomputeSuggestionsPublic();
+        _logger.LogDebug("DryRun triggered RecomputeSuggestions on both edit tabs");
         return Task.CompletedTask;
     }
 

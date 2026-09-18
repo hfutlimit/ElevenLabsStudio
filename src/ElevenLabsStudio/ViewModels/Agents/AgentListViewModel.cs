@@ -18,7 +18,7 @@ namespace ElevenLabsStudio.ViewModels.Agents;
 /// via <see cref="PullAgentByIdAsync"/>; the user can refresh an
 /// already-pulled agent from its detail view.
 /// </summary>
-public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
+public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>, IDisposable
 {
     private readonly IElevenLabsClient _client;
     private readonly IDialogService _dialog;
@@ -26,6 +26,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
     private readonly ILogger<AgentListViewModel> _logger;
     private readonly ISuggestionEngine _suggestions;
     private readonly IWindowManager _windowManager;
+    private bool _subscribed;
 
     public BindableCollection<Agent> Agents { get; } = new();
 
@@ -52,8 +53,6 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
         get => _selectedAgent;
         set
         {
-            System.IO.File.AppendAllText(@"C:\Users\jason\AppData\Local\Temp\els-prop.log",
-                $"[{DateTime.UtcNow:HH:mm:ss.fff}] SelectedAgent SETTER old={_selectedAgent?.AgentId ?? "null"} new={value?.AgentId ?? "null"} eq={_selectedAgent == value}\n");
             if (Set(ref _selectedAgent, value))
             {
                 AgentDetail = _selectedAgent is null
@@ -72,6 +71,9 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
                 // property that the backing store actually belongs to,
                 // so we have to push AgentDetail updates manually.
                 NotifyOfPropertyChange(nameof(AgentDetail));
+                _logger.LogDebug(
+                    "Sidebar selection changed: {AgentId} (detail VM rebuilt)",
+                    _selectedAgent?.AgentId);
             }
         }
     }
@@ -95,6 +97,13 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
         _suggestions = suggestions;
         _windowManager = windowManager;
 
+        // Subscribe to the cross-VM notification channel. HandleAsync
+        // (below) updates our local snapshot in place, so the
+        // sidebar's stale copy of a freshly-pushed agent never lingers
+        // after a successful update. Unsubscription happens in Dispose.
+        _events.SubscribeOnPublishedThread(this);
+        _subscribed = true;
+
         AgentsView = CollectionViewSource.GetDefaultView(Agents);
 
         // Fire LoadAsync from ctor instead of OnViewLoaded. CM5's
@@ -108,6 +117,24 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>
         AgentsView.Filter = FilterAgent;
         Agents.CollectionChanged += (_, _) =>
             NotifyOfPropertyChange(nameof(HasNoAgents));
+    }
+
+    /// <summary>
+    /// Unsubscribe from the event aggregator so the singleton VM
+    /// doesn't leak a handler back to itself after the host tears
+    /// down. CMs <c>BootstrapperBase</c> previously owned this
+    /// lifetime; we now manage it ourselves because the VM is
+    /// created via MS DI as a singleton.
+    /// </summary>
+    public void Dispose()
+    {
+        if (!_subscribed) return;
+        // CM5 IEventAggregator only exposes Unsubscribe(object) +
+        // UnsubscribeAll(); the per-thread variant lives on the
+        // IHandle<T> extensions, not the aggregator itself.
+        _events.Unsubscribe(this);
+        _subscribed = false;
+        _logger.LogDebug("AgentListViewModel unsubscribed from event aggregator");
     }
 
     private bool FilterAgent(object obj)
