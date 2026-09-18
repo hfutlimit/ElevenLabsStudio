@@ -33,6 +33,7 @@
 
         <TextBlock Grid.Row="3"
                    x:Name="ErrorText"
+                   Text="{Binding Error}"
                    Foreground="{StaticResource App.Danger}"
                    FontSize="12"
                    TextWrapping="Wrap"

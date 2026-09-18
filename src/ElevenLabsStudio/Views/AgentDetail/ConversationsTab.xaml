@@ -24,7 +24,7 @@
                                 Foreground="{StaticResource App.TextSecondary}">
                             <materialDesign:PackIcon Kind="Refresh" Width="14" Height="14" />
                         </Button>
-                        <TextBlock Text="Sessions (last 7 days)"
+                        <TextBlock Text="会话记录（近 7 天）"
                                    FontWeight="SemiBold"
                                    FontSize="11"
                                    Foreground="{StaticResource App.TextSecondary}"
@@ -75,7 +75,7 @@
                         BorderBrush="{StaticResource App.Border}"
                         BorderThickness="0,0,0,1"
                         Padding="14,8">
-                    <TextBlock Text="Transcript"
+                    <TextBlock Text="对话转写"
                                FontWeight="SemiBold"
                                FontSize="11"
                                Foreground="{StaticResource App.TextSecondary}" />

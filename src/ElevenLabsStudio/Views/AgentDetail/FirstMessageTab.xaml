@@ -54,7 +54,7 @@
                    FontWeight="SemiBold"
                    FontSize="12"
                    Foreground="{StaticResource App.Text}">
-            <Run Text="Local Suggestions" />
+            <Run Text="本地建议" />
             <Run Text="(" /><Run Text="{Binding Suggestions.Count, Mode=OneWay}" /><Run Text=")" />
         </TextBlock>
     </Grid>

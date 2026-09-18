@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -112,6 +114,23 @@ public sealed class SettingsViewModelTests : IDisposable
         vm.MockBadgeText.Should().Be("ON");
         vm.MockMode = false;
         vm.MockBadgeText.Should().Be("OFF");
+    }
+
+    [Fact]
+    public void MockMode_change_raises_MockBadgeText_notification()
+    {
+        // The ON/OFF badge in SettingsView binds MockBadgeText; without
+        // a change notification from the MockMode setter the badge stays
+        // stuck on its initial value while the user flips the toggle
+        // (review #8).
+        var vm = NewViewModel();
+        var raised = new List<string?>();
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        vm.MockMode = !vm.MockMode;
+
+        raised.Should().Contain(nameof(SettingsViewModel.MockMode));
+        raised.Should().Contain(nameof(SettingsViewModel.MockBadgeText));
     }
 
     // The PersistToFileAsync method is private; call it via reflection

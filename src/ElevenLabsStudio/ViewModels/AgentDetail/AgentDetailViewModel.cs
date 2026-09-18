@@ -207,7 +207,10 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
             _logger.LogInformation(
                 "Refreshed agent {Id} from server; all four tab baselines reset",
                 fresh.AgentId);
-            await _dialog.ShowInfoAsync("已刷新", $"Agent {fresh.Name} 重新拉取成功。");
+            // A successful refresh is a routine background operation —
+            // the refreshed content IS the feedback. Only failures get
+            // a modal; success used to interrupt the user for nothing
+            // (review #8).
         }
         catch (ElevenLabsException ex)
         {

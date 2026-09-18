@@ -66,11 +66,11 @@ def test_gear_button_opens_settings_dialog(launched_exe) -> None:
 
     gear.click()
     # The SettingsView is a separate Window; wait for it to appear.
-    settings = launched_exe.app.window(title_re="Settings.*ElevenLabs Studio")
+    settings = launched_exe.app.window(title_re="设置.*ElevenLabs Studio")
     settings.wait("ready", timeout=10)
     assert settings.exists(), "Settings dialog did not open after clicking the gear"
 
     # Mock mode CheckBox + ApiKey PasswordBox are present.
-    assert settings.child_window(title_re="Use offline mock data.*", control_type="CheckBox").exists()
+    assert settings.child_window(title_re="使用离线 Mock 数据.*", control_type="CheckBox").exists()
     assert settings.child_window(control_type="Edit", auto_id="ApiKey").exists() or \
            settings.child_window(control_type="Edit").exists()

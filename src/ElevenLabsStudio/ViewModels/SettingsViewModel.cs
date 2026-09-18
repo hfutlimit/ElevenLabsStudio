@@ -56,7 +56,25 @@ public sealed class SettingsViewModel : Screen
 
     public string ApiKey { get; set; } = string.Empty;
 
-    public bool MockMode { get; set; }
+    private bool _mockMode;
+
+    /// <summary>
+    /// Two-way bound to the dialog checkbox. Raises change
+    /// notifications so the ON/OFF <see cref="MockBadgeText"/> badge
+    /// re-renders the moment the user flips the toggle instead of
+    /// staying stuck on the initial value (review #8).
+    /// </summary>
+    public bool MockMode
+    {
+        get => _mockMode;
+        set
+        {
+            if (Set(ref _mockMode, value))
+            {
+                NotifyOfPropertyChange(nameof(MockBadgeText));
+            }
+        }
+    }
 
     public string MockBadgeText => MockMode ? "ON" : "OFF";
 
@@ -111,7 +129,7 @@ public sealed class SettingsViewModel : Screen
             : string.Empty;
 
         await _dialog.ShowInfoAsync(
-            "Settings saved",
+            "已保存",
             $"配置已写入 appsettings.json 并热重载。{note}",
             default);
         await TryCloseAsync(true);

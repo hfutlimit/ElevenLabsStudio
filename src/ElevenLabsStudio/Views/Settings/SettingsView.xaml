@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Settings · ElevenLabs Studio"
+        Title="设置 · ElevenLabs Studio"
         Height="520" Width="560"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource App.Surface}"
@@ -25,11 +25,11 @@
 
             <!-- Header -->
             <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                <TextBlock Text="Settings"
+                <TextBlock Text="设置"
                            FontSize="20"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource App.Text}" />
-                <TextBlock Text="v0.1 mock — settings are in-memory only; restart reverts to appsettings.json."
+                <TextBlock Text="保存后写入 appsettings.json 并立即热重载，无需重启。"
                            FontSize="11"
                            Foreground="{StaticResource App.TextMuted}"
                            Margin="0,4,0,0" />
@@ -37,7 +37,7 @@
 
             <!-- Api key -->
             <StackPanel Grid.Row="1" Margin="0,0,0,18">
-                <TextBlock Text="ElevenLabs API key"
+                <TextBlock Text="ElevenLabs API Key"
                            FontSize="11"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource App.TextSecondary}"
@@ -49,7 +49,7 @@
                              BorderBrush="{StaticResource App.BorderStrong}"
                              Background="{StaticResource App.Surface}"
                              Foreground="{StaticResource App.Text}" />
-                <TextBlock Text="Or set the ELEVENLABS_API_KEY environment variable."
+                <TextBlock Text="也可以通过环境变量 ELEVENLABS_API_KEY 设置。"
                            FontSize="10"
                            Foreground="{StaticResource App.TextMuted}"
                            Margin="0,4,0,0" />
@@ -70,17 +70,17 @@
                                    FontSize="10"
                                    Background="{StaticResource App.AccentSoft}"
                                    Foreground="{StaticResource App.Accent}"
-                                   Text="ON" />
-                        <TextBlock Text="Mock mode"
+                                   Text="{Binding MockBadgeText}" />
+                        <TextBlock Text="Mock 模式"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource App.Text}" />
                     </DockPanel>
                     <CheckBox x:Name="MockMode"
-                              Content="Use offline mock data (no API key required)"
+                              Content="使用离线 Mock 数据（无需 API Key）"
                               Margin="0,8,0,0"
                               FontSize="12"
                               Foreground="{StaticResource App.Text}" />
-                    <TextBlock Text="When off, the app talks to api.elevenlabs.io using the API key above."
+                    <TextBlock Text="关闭后，应用将使用上方 API Key 访问 api.elevenlabs.io。"
                                FontSize="11"
                                Foreground="{StaticResource App.TextSecondary}"
                                Margin="0,4,0,0"
@@ -102,14 +102,14 @@
                         HorizontalAlignment="Right"
                         Margin="0,16,0,0">
                 <Button x:Name="Cancel"
-                        Content="Cancel"
+                        Content="取消"
                         Width="90" Height="34"
                         Margin="0,0,8,0"
                         Background="{StaticResource App.SurfaceAlt}"
                         Foreground="{StaticResource App.Text}"
                         BorderBrush="{StaticResource App.BorderStrong}" />
                 <Button x:Name="Save"
-                        Content="Save"
+                        Content="保存"
                         Width="90" Height="34"
                         Background="{StaticResource App.Accent}"
                         Foreground="White"
