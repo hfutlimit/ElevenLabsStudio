@@ -41,8 +41,9 @@ public sealed class AgentListViewModelTests
         var windows = Substitute.For<IWindowManager>();
         var dialog = Substitute.For<IDialogService>();
         var suggestions = Substitute.For<ISuggestionEngine>();
+        var drafts = Substitute.For<IDraftStore>();
         var vm = new AgentListViewModel(
-            client, dialog, events, NullLogger<AgentListViewModel>.Instance, suggestions, windows);
+            client, dialog, events, drafts, NullLogger<AgentListViewModel>.Instance, suggestions, windows);
         return (vm, client, events, windows);
     }
 
@@ -93,7 +94,8 @@ public sealed class AgentListViewModelTests
         var dialog = Substitute.For<IDialogService>();
         var events = Substitute.For<IEventAggregator>();
         var vm = new AgentListViewModel(
-            client, dialog, events, NullLogger<AgentListViewModel>.Instance,
+            client, dialog, events, Substitute.For<IDraftStore>(),
+            NullLogger<AgentListViewModel>.Instance,
             Substitute.For<ISuggestionEngine>(), Substitute.For<IWindowManager>());
 
         await vm.LoadAsync();
@@ -124,6 +126,7 @@ public sealed class AgentListViewModelTests
         client.ListAgentsAsync(Arg.Any<CancellationToken>()).Returns(tcs.Task);
         var vm = new AgentListViewModel(
             client, Substitute.For<IDialogService>(), Substitute.For<IEventAggregator>(),
+            Substitute.For<IDraftStore>(),
             NullLogger<AgentListViewModel>.Instance,
             Substitute.For<ISuggestionEngine>(), Substitute.For<IWindowManager>());
 

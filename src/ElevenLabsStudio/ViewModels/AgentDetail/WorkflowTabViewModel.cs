@@ -2,15 +2,17 @@ using Caliburn.Micro;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.MVVM;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ElevenLabsStudio.ViewModels.AgentDetail;
 
 /// <summary>
-/// Editable workflow inspector. Surfaces the workflow nodes as a
-/// bindable collection the DataGrid can edit in place. Add / Remove
-/// buttons let the user build new node sequences; <see cref="GetCurrentNodes"/>
-/// returns the in-memory edits so <see cref="AgentDetailViewModel.Push"/>
-/// can hand them to <c>UpdateAgentAsync</c>.
+/// Editable workflow inspector. Mirrors the Variables tab: a
+/// DataGrid-bound <see cref="BindableCollection{WorkflowNode}"/> the
+/// user can add / remove / rename inline, plus an
+/// <see cref="GetCurrentNodes"/> snapshot so
+/// <c>AgentDetailViewModel.Push</c> can fold the local edits into a
+/// single update.
 /// </summary>
 public sealed class WorkflowTabViewModel : ScreenBase
 {
@@ -22,8 +24,11 @@ public sealed class WorkflowTabViewModel : ScreenBase
     public bool IsDirty
     {
         get => _isDirty;
-        private set => Set(ref _isDirty, value);
+        internal set => Set(ref _isDirty, value);
     }
+
+    public WorkflowTabViewModel(Agent agent)
+        : this(agent, NullLogger<WorkflowTabViewModel>.Instance) { }
 
     public WorkflowTabViewModel(Agent agent, ILogger<WorkflowTabViewModel> logger)
     {

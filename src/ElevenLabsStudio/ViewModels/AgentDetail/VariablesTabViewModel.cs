@@ -24,7 +24,7 @@ public sealed class VariablesTabViewModel : ScreenBase
     public bool IsDirty
     {
         get => _isDirty;
-        private set => Set(ref _isDirty, value);
+        internal set => Set(ref _isDirty, value);
     }
 
     public VariablesTabViewModel(Agent agent)

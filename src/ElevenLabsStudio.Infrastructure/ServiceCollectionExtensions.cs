@@ -86,6 +86,12 @@ public static class ServiceCollectionExtensions
         // later when a 2nd leaf engine shows up.
         services.AddSingleton<ISuggestionEngine, HeuristicSuggestionEngine>();
 
+        // In-memory draft store for per-agent edit drafts. Survives
+        // until ClearAll() or process exit — drafts are never persisted
+        // to disk, so a restart is the same as a deliberate "discard
+        // everything" policy.
+        services.AddSingleton<IDraftStore, Memory.MemoryDraftStore>();
+
         return services;
     }
 }

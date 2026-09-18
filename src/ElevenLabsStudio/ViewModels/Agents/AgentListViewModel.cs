@@ -23,6 +23,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
     private readonly IElevenLabsClient _client;
     private readonly IDialogService _dialog;
     private readonly IEventAggregator _events;
+    private readonly Core.Abstractions.IDraftStore _drafts;
     private readonly ILogger<AgentListViewModel> _logger;
     private readonly ISuggestionEngine _suggestions;
     private readonly IWindowManager _windowManager;
@@ -53,28 +54,52 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
         get => _selectedAgent;
         set
         {
-            if (Set(ref _selectedAgent, value))
+            if (!Set(ref _selectedAgent, value)) return;
+
+            // Save the previous detail's edits (if any) so the user
+            // can come back to them after navigating away. We do this
+            // before constructing the new detail because the new
+            // detail's DraftKey might already exist (different agent)
+            // and the old draft has to land in the previous key.
+            if (AgentDetail is { } previous)
             {
-                AgentDetail = _selectedAgent is null
-                    ? null
-                    : new AgentDetailViewModel(
-                        _selectedAgent,
-                        _client,
-                        _suggestions,
-                        _dialog,
-                        _events,
-                        Microsoft.Extensions.Logging.Abstractions.NullLogger<AgentDetailViewModel>.Instance);
-                // PropertyChanged is what ShellViewModel listens to when
-                // forwarding the inner AgentDetail value to its own
-                // AgentDetail property (which the right-pane
-                // ContentControl binds). Set() only fires for the
-                // property that the backing store actually belongs to,
-                // so we have to push AgentDetail updates manually.
-                NotifyOfPropertyChange(nameof(AgentDetail));
-                _logger.LogDebug(
-                    "Sidebar selection changed: {AgentId} (detail VM rebuilt)",
-                    _selectedAgent?.AgentId);
+                if (previous.IsDirty)
+                {
+                    _logger.LogInformation(
+                        "Saving draft for {AgentId} before switching to {NewAgentId}",
+                        previous.Agent.AgentId, value?.AgentId);
+                    previous.SaveDraft();
+                }
             }
+
+            // Build the new detail and try to restore a saved draft
+            // for it. The restore silently overwrites the tab
+            // contents with whatever the user had been typing.
+            AgentDetailViewModel? next = null;
+            if (_selectedAgent is not null)
+            {
+                next = new AgentDetailViewModel(
+                    _selectedAgent,
+                    _client,
+                    _suggestions,
+                    _dialog,
+                    _events,
+                    _drafts,
+                    Microsoft.Extensions.Logging.Abstractions.NullLogger<AgentDetailViewModel>.Instance);
+                if (next.TryRestoreDraft())
+                {
+                    _logger.LogInformation(
+                        "Restored draft for newly-selected {AgentId}", _selectedAgent.AgentId);
+                }
+            }
+
+            AgentDetail = next;
+            // Set() only fires for the property that owns the backing
+            // store (SelectedAgent) so we push AgentDetail updates manually.
+            NotifyOfPropertyChange(nameof(AgentDetail));
+            _logger.LogDebug(
+                "Sidebar selection changed: {AgentId} (detail VM rebuilt)",
+                _selectedAgent?.AgentId);
         }
     }
 
@@ -86,6 +111,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
         IElevenLabsClient client,
         IDialogService dialog,
         IEventAggregator events,
+        Core.Abstractions.IDraftStore drafts,
         ILogger<AgentListViewModel> logger,
         ISuggestionEngine suggestions,
         IWindowManager windowManager)
@@ -93,6 +119,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
         _client = client;
         _dialog = dialog;
         _events = events;
+        _drafts = drafts;
         _logger = logger;
         _suggestions = suggestions;
         _windowManager = windowManager;
