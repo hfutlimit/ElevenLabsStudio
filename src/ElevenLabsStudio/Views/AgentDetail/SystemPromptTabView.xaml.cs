@@ -4,11 +4,11 @@ using System.Windows.Media;
 
 namespace ElevenLabsStudio.Views.AgentDetail;
 
-public partial class SystemPromptTab : UserControl
+public partial class SystemPromptTabView : UserControl
 {
     private const int ElevenLabsPromptWarn = 8000;
 
-    public SystemPromptTab()
+    public SystemPromptTabView()
     {
         InitializeComponent();
         Prompt.TextChanged += (_, _) => UpdateLength();

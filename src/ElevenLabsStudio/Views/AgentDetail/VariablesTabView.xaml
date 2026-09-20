@@ -1,28 +1,25 @@
-<UserControl x:Class="ElevenLabsStudio.Views.AgentDetail.WorkflowTab"
+<UserControl x:Class="ElevenLabsStudio.Views.AgentDetail.VariablesTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:domain="clr-namespace:ElevenLabsStudio.Core.Domain;assembly=ElevenLabsStudio.Core">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Grid Margin="0,12,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="2*" />
         </Grid.RowDefinitions>
 
-        <!-- Header with Add Node -->
+        <!-- Header with Add Variable -->
         <DockPanel Grid.Row="0" Margin="0,0,0,8">
-            <Button x:Name="AddNode"
+            <Button x:Name="AddVariable"
                     DockPanel.Dock="Right"
-                    Content="+ 添加节点"
+                    Content="+ 添加变量"
                     Height="32"
                     Padding="12,0"
                     Margin="8,0,0,0"
                     Background="{StaticResource App.Accent}"
                     Foreground="White"
                     BorderThickness="0" />
-            <TextBlock Text="节点序列"
+            <TextBlock Text="Prompt 变量"
                        FontWeight="SemiBold"
                        FontSize="12"
                        Foreground="{StaticResource App.Text}"
@@ -31,8 +28,8 @@
 
         <!-- Editable DataGrid -->
         <DataGrid Grid.Row="1"
-                  x:Name="NodesGrid"
-                  ItemsSource="{Binding Nodes}"
+                  x:Name="VariablesGrid"
+                  ItemsSource="{Binding Variables}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   HeadersVisibility="Column"
@@ -43,52 +40,30 @@
                   RowBackground="{StaticResource App.Surface}"
                   AlternatingRowBackground="{StaticResource App.SurfaceAlt}">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Id"
-                                    Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}"
-                                    Width="120" />
-                <DataGridTextColumn Header="Type"
-                                    Binding="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
-                                    Width="140" />
                 <DataGridTextColumn Header="Name"
                                     Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="160" />
+                <DataGridTextColumn Header="Value"
+                                    Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
                                     Width="*" />
+                <DataGridTextColumn Header="Type"
+                                    Binding="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="120" />
                 <DataGridTemplateColumn Header="" Width="56">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="✕"
-                                    Click="RemoveNode_Click"
+                                    Click="RemoveVariable_Click"
                                     Tag="{Binding}"
                                     Width="28" Height="28"
                                     Background="Transparent"
                                     Foreground="{StaticResource App.Danger}"
                                     BorderThickness="0"
-                                    ToolTip="删除节点" />
+                                    ToolTip="删除变量" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-
-        <TextBlock Grid.Row="2"
-                   Text="Raw JSON (只读 — 真实 API 不允许在 Edit 时直接修改)"
-                   FontWeight="SemiBold"
-                   FontSize="12"
-                   Foreground="{StaticResource App.TextSecondary}"
-                   Margin="0,12,0,4" />
-
-        <Border Grid.Row="3" Style="{StaticResource App.SoftCard}" Padding="10">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Auto">
-                <TextBox x:Name="RawJson"
-                         IsReadOnly="True"
-                         FontFamily="Consolas, Cascadia Mono, monospace"
-                         FontSize="11"
-                         BorderThickness="0"
-                         Background="Transparent"
-                         Foreground="{StaticResource App.TextSecondary}"
-                         TextWrapping="NoWrap"
-                         AcceptsReturn="True" />
-            </ScrollViewer>
-        </Border>
     </Grid>
 </UserControl>

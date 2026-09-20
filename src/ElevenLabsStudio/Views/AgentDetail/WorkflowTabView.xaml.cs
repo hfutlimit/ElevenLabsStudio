@@ -6,9 +6,9 @@ using ElevenLabsStudio.ViewModels.AgentDetail;
 
 namespace ElevenLabsStudio.Views.AgentDetail;
 
-public partial class WorkflowTab : UserControl
+public partial class WorkflowTabView : UserControl
 {
-    public WorkflowTab()
+    public WorkflowTabView()
     {
         InitializeComponent();
     }

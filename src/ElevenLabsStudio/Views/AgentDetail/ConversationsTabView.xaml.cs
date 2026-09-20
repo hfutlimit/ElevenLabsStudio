@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace ElevenLabsStudio.Views.AgentDetail;
 
-public partial class ConversationsTab : UserControl
+public partial class ConversationsTabView : UserControl
 {
-    public ConversationsTab()
+    public ConversationsTabView()
     {
         InitializeComponent();
     }

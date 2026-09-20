@@ -5,9 +5,9 @@ using ElevenLabsStudio.ViewModels.AgentDetail;
 
 namespace ElevenLabsStudio.Views.AgentDetail;
 
-public partial class VariablesTab : UserControl
+public partial class VariablesTabView : UserControl
 {
-    public VariablesTab()
+    public VariablesTabView()
     {
         InitializeComponent();
     }

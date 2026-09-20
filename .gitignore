@@ -77,3 +77,4 @@ docs/screenshots/*.png
 *.xbap
 *.exe.mdb
 *.dll.mdbpush.log
+_e2e_dumps/

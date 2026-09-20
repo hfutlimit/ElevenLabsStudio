@@ -4,11 +4,11 @@ using System.Windows.Media;
 
 namespace ElevenLabsStudio.Views.AgentDetail;
 
-public partial class FirstMessageTab : UserControl
+public partial class FirstMessageTabView : UserControl
 {
     private const int FirstMessageWarn = 500;
 
-    public FirstMessageTab()
+    public FirstMessageTabView()
     {
         InitializeComponent();
         FirstMessage.TextChanged += (_, _) => UpdateLength();
