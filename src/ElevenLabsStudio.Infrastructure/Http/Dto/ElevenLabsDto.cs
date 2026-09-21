@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
 
 namespace ElevenLabsStudio.Infrastructure.Http.Dto;
 
@@ -11,183 +12,216 @@ namespace ElevenLabsStudio.Infrastructure.Http.Dto;
 
 internal sealed class ElevenLabsAgentListResponseDto
 {
-    [JsonPropertyName("agents")]
-    public List<ElevenLabsAgentDto> Agents { get; set; } = new();
+	[JsonPropertyName("agents")]
+	public List<ElevenLabsAgentSummaryDto> Agents { get; set; } = new();
+}
+
+internal sealed class ElevenLabsAgentSummaryDto
+{
+	[JsonPropertyName("agent_id")]
+	public string AgentId { get; set; } = string.Empty;
+
+	[JsonPropertyName("name")]
+	public string Name { get; set; } = string.Empty;
+
+	[JsonPropertyName("voice_id")]
+	public string? VoiceId { get; set; }
+
+	[JsonPropertyName("created_at_unix_secs")]
+	public long? CreatedAtUnixSecs { get; set; }
 }
 
 internal sealed class ElevenLabsAgentDto
 {
-    [JsonPropertyName("agent_id")]
-    public string AgentId { get; set; } = string.Empty;
+	[JsonPropertyName("agent_id")]
+	public string AgentId { get; set; } = string.Empty;
 
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+	[JsonPropertyName("name")]
+	public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("conversation_config")]
-    public ElevenLabsConversationConfigDto ConversationConfig { get; set; } = new();
+	[JsonPropertyName("conversation_config")]
+	public ElevenLabsConversationConfigDto ConversationConfig { get; set; } = new();
 
-    [JsonPropertyName("workflow")]
-    public ElevenLabsWorkflowDto? Workflow { get; set; }
+	[JsonPropertyName("workflow")]
+	public JsonObject? Workflow { get; set; }
 
-    [JsonPropertyName("metadata")]
-    public ElevenLabsMetadataDto Metadata { get; set; } = new();
+	[JsonPropertyName("metadata")]
+	public ElevenLabsMetadataDto Metadata { get; set; } = new();
 }
 
 internal sealed class ElevenLabsWorkflowDto
 {
-    [JsonPropertyName("nodes")]
-    public List<ElevenLabsWorkflowNodeDto> Nodes { get; set; } = new();
+	[JsonPropertyName("nodes")]
+	public List<ElevenLabsWorkflowNodeDto> Nodes { get; set; } = new();
 }
 
 internal sealed class ElevenLabsWorkflowNodeDto
 {
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
+	[JsonPropertyName("id")]
+	public string Id { get; set; } = string.Empty;
 
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty;
+	[JsonPropertyName("type")]
+	public string Type { get; set; } = string.Empty;
 
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+	[JsonPropertyName("name")]
+	public string Name { get; set; } = string.Empty;
 }
 
 internal sealed class ElevenLabsConversationConfigDto
 {
-    [JsonPropertyName("agent")]
-    public ElevenLabsConversationAgentDto Agent { get; set; } = new();
+	[JsonPropertyName("agent")]
+	public ElevenLabsConversationAgentDto Agent { get; set; } = new();
 
-    [JsonPropertyName("tts")]
-    public ElevenLabsTtsDto Tts { get; set; } = new();
+	[JsonPropertyName("tts")]
+	public ElevenLabsTtsDto Tts { get; set; } = new();
 }
 
 internal sealed class ElevenLabsConversationAgentDto
 {
-    [JsonPropertyName("prompt")]
-    public ElevenLabsPromptDto Prompt { get; set; } = new();
+	[JsonPropertyName("prompt")]
+	public ElevenLabsPromptDto Prompt { get; set; } = new();
 
-    [JsonPropertyName("first_message")]
-    public string? FirstMessage { get; set; }
+	[JsonPropertyName("first_message")]
+	public string? FirstMessage { get; set; }
 
-    [JsonPropertyName("language")]
-    public string? Language { get; set; }
+	[JsonPropertyName("language")]
+	public string? Language { get; set; }
 }
 
 internal sealed class ElevenLabsPromptDto
 {
-    [JsonPropertyName("prompt")]
-    public string Text { get; set; } = string.Empty;
+	[JsonPropertyName("prompt")]
+	public string Text { get; set; } = string.Empty;
 
-    [JsonPropertyName("variables")]
-    public List<ElevenLabsVariableDto>? Variables { get; set; }
+	[JsonPropertyName("variables")]
+	public List<ElevenLabsVariableDto>? Variables { get; set; }
 }
 
 internal sealed class ElevenLabsVariableDto
 {
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+	[JsonPropertyName("name")]
+	public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("value")]
-    public string? Value { get; set; }
+	[JsonPropertyName("value")]
+	public string? Value { get; set; }
 
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = "string";
+	[JsonPropertyName("type")]
+	public string Type { get; set; } = "string";
 }
 
 internal sealed class ElevenLabsTtsDto
 {
-    [JsonPropertyName("voice_id")]
-    public string? VoiceId { get; set; }
+	[JsonPropertyName("voice_id")]
+	public string? VoiceId { get; set; }
 }
 
 internal sealed class ElevenLabsMetadataDto
 {
-    [JsonPropertyName("created_at")]
-    public DateTimeOffset? CreatedAt { get; set; }
+	[JsonPropertyName("created_at")]
+	public DateTimeOffset? CreatedAt { get; set; }
 
-    [JsonPropertyName("updated_at")]
-    public DateTimeOffset? UpdatedAt { get; set; }
+	[JsonPropertyName("updated_at")]
+	public DateTimeOffset? UpdatedAt { get; set; }
 }
 
 // ---- Conversation ----
 
 internal sealed class ElevenLabsConversationListResponseDto
 {
-    [JsonPropertyName("conversations")]
-    public List<ElevenLabsConversationDto> Conversations { get; set; } = new();
+	[JsonPropertyName("conversations")]
+	public List<ElevenLabsConversationSummaryDto> Conversations { get; set; } = new();
 
-    [JsonPropertyName("next_cursor")]
-    public string? NextCursor { get; set; }
+	[JsonPropertyName("next_cursor")]
+	public string? NextCursor { get; set; }
 }
 
-internal sealed class ElevenLabsConversationDto
+internal sealed class ElevenLabsConversationSummaryDto
 {
-    [JsonPropertyName("conversation_id")]
-    public string ConversationId { get; set; } = string.Empty;
+	[JsonPropertyName("conversation_id")]
+	public string ConversationId { get; set; } = string.Empty;
 
-    [JsonPropertyName("agent_id")]
-    public string AgentId { get; set; } = string.Empty;
+	[JsonPropertyName("agent_id")]
+	public string AgentId { get; set; } = string.Empty;
 
-    [JsonPropertyName("start_time_unix_secs")]
-    public long? StartUnix { get; set; }
+	[JsonPropertyName("start_time_unix_secs")]
+	public long? StartUnix { get; set; }
 
-    [JsonPropertyName("call_duration_secs")]
-    public int? CallDurationSecs { get; set; }
+	[JsonPropertyName("call_duration_secs")]
+	public int? CallDurationSecs { get; set; }
 
-    [JsonPropertyName("status")]
-    public string Status { get; set; } = "unknown";
+	[JsonPropertyName("status")]
+	public string Status { get; set; } = "unknown";
+}
 
-    [JsonPropertyName("transcript")]
-    public List<ElevenLabsTranscriptTurnDto> Transcript { get; set; } = new();
+internal sealed class ElevenLabsConversationDetailDto
+{
+	[JsonPropertyName("conversation_id")]
+	public string ConversationId { get; set; } = string.Empty;
+
+	[JsonPropertyName("agent_id")]
+	public string AgentId { get; set; } = string.Empty;
+
+	[JsonPropertyName("start_time_unix_secs")]
+	public long? StartUnix { get; set; }
+
+	[JsonPropertyName("call_duration_secs")]
+	public int? CallDurationSecs { get; set; }
+
+	[JsonPropertyName("status")]
+	public string Status { get; set; } = "unknown";
+
+	[JsonPropertyName("transcript")]
+	public List<ElevenLabsTranscriptTurnDto> Transcript { get; set; } = new();
 }
 
 internal sealed class ElevenLabsTranscriptTurnDto
 {
-    [JsonPropertyName("role")]
-    public string Role { get; set; } = "user";
+	[JsonPropertyName("role")]
+	public string Role { get; set; } = "user";
 
-    [JsonPropertyName("message")]
-    public string Message { get; set; } = string.Empty;
+	[JsonPropertyName("message")]
+	public string Message { get; set; } = string.Empty;
 
-    [JsonPropertyName("time_in_call_secs")]
-    public double? TimeInCallSecs { get; set; }
+	[JsonPropertyName("time_in_call_secs")]
+	public double? TimeInCallSecs { get; set; }
 }
 
 // ---- Voice ----
 
 internal sealed class ElevenLabsVoiceListResponseDto
 {
-    [JsonPropertyName("voices")]
-    public List<ElevenLabsVoiceDto> Voices { get; set; } = new();
+	[JsonPropertyName("voices")]
+	public List<ElevenLabsVoiceDto> Voices { get; set; } = new();
 }
 
 internal sealed class ElevenLabsVoiceDto
 {
-    [JsonPropertyName("voice_id")]
-    public string VoiceId { get; set; } = string.Empty;
+	[JsonPropertyName("voice_id")]
+	public string VoiceId { get; set; } = string.Empty;
 
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+	[JsonPropertyName("name")]
+	public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("category")]
-    public string? Category { get; set; }
+	[JsonPropertyName("category")]
+	public string? Category { get; set; }
 
-    [JsonPropertyName("preview_url")]
-    public string? PreviewUrl { get; set; }
+	[JsonPropertyName("preview_url")]
+	public string? PreviewUrl { get; set; }
 }
 
 // ---- Error envelope ----
 
 internal sealed class ElevenLabsErrorDto
 {
-    [JsonPropertyName("detail")]
-    public ElevenLabsErrorDetailDto? Detail { get; set; }
+	[JsonPropertyName("detail")]
+	public ElevenLabsErrorDetailDto? Detail { get; set; }
 }
 
 internal sealed class ElevenLabsErrorDetailDto
 {
-    [JsonPropertyName("status")]
-    public string? Status { get; set; }
+	[JsonPropertyName("status")]
+	public string? Status { get; set; }
 
-    [JsonPropertyName("message")]
-    public string Message { get; set; } = string.Empty;
+	[JsonPropertyName("message")]
+	public string Message { get; set; } = string.Empty;
 }

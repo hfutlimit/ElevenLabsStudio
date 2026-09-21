@@ -13,4 +13,4 @@ public sealed record AgentUpdatedEvent(string AgentId, Agent Snapshot);
 /// Published after an Agent list refresh finishes, signalling other VMs to
 /// drop stale references and rebind any open detail panes.
 /// </summary>
-public sealed record AgentListRefreshedEvent(IReadOnlyList<Agent> Agents);
+public sealed record AgentListRefreshedEvent(IReadOnlyList<AgentSummary> Agents);

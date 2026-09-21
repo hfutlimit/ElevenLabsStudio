@@ -26,50 +26,50 @@ namespace ElevenLabsStudio.Infrastructure;
 /// </summary>
 public sealed class RuntimeClient : IElevenLabsClient
 {
-    private readonly Mock.MockElevenLabsClient _mock;
-    private readonly Http.ElevenLabsHttpClient _real;
-    private readonly IOptionsMonitor<ElevenLabsOptions> _options;
+	private readonly Mock.MockElevenLabsClient _mock;
+	private readonly Http.ElevenLabsHttpClient _real;
+	private readonly IOptionsMonitor<ElevenLabsOptions> _options;
 
-    public RuntimeClient(
-        Mock.MockElevenLabsClient mock,
-        Http.ElevenLabsHttpClient real,
-        IOptionsMonitor<ElevenLabsOptions> options)
-    {
-        _mock = mock;
-        _real = real;
-        _options = options;
-    }
+	public RuntimeClient(
+		Mock.MockElevenLabsClient mock,
+		Http.ElevenLabsHttpClient real,
+		IOptionsMonitor<ElevenLabsOptions> options)
+	{
+		_mock = mock;
+		_real = real;
+		_options = options;
+	}
 
-    private IElevenLabsClient Route
-    {
-        get
-        {
-            var mock = _options.CurrentValue.Mock;
-            return mock ? _mock : _real;
-        }
-    }
+	private IElevenLabsClient Route
+	{
+		get
+		{
+			var mock = _options.CurrentValue.Mock;
+			return mock ? _mock : _real;
+		}
+	}
 
-    public Task<IReadOnlyList<Agent>> ListAgentsAsync(CancellationToken ct = default) =>
-        Route.ListAgentsAsync(ct);
+	public Task<IReadOnlyList<AgentSummary>> ListAgentsAsync(CancellationToken ct = default) =>
+		Route.ListAgentsAsync(ct);
 
-    public Task<Agent> GetAgentAsync(string agentId, CancellationToken ct = default) =>
-        Route.GetAgentAsync(agentId, ct);
+	public Task<Agent> GetAgentAsync(string agentId, CancellationToken ct = default) =>
+		Route.GetAgentAsync(agentId, ct);
 
-    public Task<Agent> UpdateAgentAsync(string agentId, AgentUpdate update, CancellationToken ct = default) =>
-        Route.UpdateAgentAsync(agentId, update, ct);
+	public Task<Agent> UpdateAgentAsync(string agentId, AgentUpdate update, CancellationToken ct = default) =>
+		Route.UpdateAgentAsync(agentId, update, ct);
 
-    public Task<IReadOnlyList<ConversationRecord>> ListConversationsAsync(
-        string agentId,
-        DateTimeOffset? from = null,
-        DateTimeOffset? to = null,
-        int pageSize = 100,
-        string? cursor = null,
-        CancellationToken ct = default) =>
-        Route.ListConversationsAsync(agentId, from, to, pageSize, cursor, ct);
+	public Task<IReadOnlyList<ConversationRecord>> ListConversationsAsync(
+		string agentId,
+		DateTimeOffset? from = null,
+		DateTimeOffset? to = null,
+		int pageSize = 100,
+		string? cursor = null,
+		CancellationToken ct = default) =>
+		Route.ListConversationsAsync(agentId, from, to, pageSize, cursor, ct);
 
-    public Task<ConversationRecord> GetConversationAsync(string conversationId, CancellationToken ct = default) =>
-        Route.GetConversationAsync(conversationId, ct);
+	public Task<ConversationRecord> GetConversationAsync(string conversationId, CancellationToken ct = default) =>
+		Route.GetConversationAsync(conversationId, ct);
 
-    public Task<IReadOnlyList<Voice>> ListVoicesAsync(CancellationToken ct = default) =>
-        Route.ListVoicesAsync(ct);
+	public Task<IReadOnlyList<Voice>> ListVoicesAsync(CancellationToken ct = default) =>
+		Route.ListVoicesAsync(ct);
 }

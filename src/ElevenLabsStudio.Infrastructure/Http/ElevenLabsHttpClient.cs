@@ -21,206 +21,206 @@ namespace ElevenLabsStudio.Infrastructure.Http;
 /// </summary>
 public sealed class ElevenLabsHttpClient : IElevenLabsClient
 {
-    private readonly HttpClient _http;
-    private readonly ILogger<ElevenLabsHttpClient> _logger;
-    private readonly IOptionsMonitor<ElevenLabsOptions> _options;
+	private readonly HttpClient _http;
+	private readonly ILogger<ElevenLabsHttpClient> _logger;
+	private readonly IOptionsMonitor<ElevenLabsOptions> _options;
 
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-    };
+	private static readonly JsonSerializerOptions JsonOpts = new()
+	{
+		PropertyNameCaseInsensitive = true,
+		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+	};
 
-    /// <summary>
-    /// Wire options for REQUEST bodies: snake_case property names (the
-    /// ElevenLabs API is snake_case, and embedded Domain records like
-    /// <c>Variable(Name, Value, Type)</c> would otherwise serialize as
-    /// PascalCase), and null-omission so a partial PATCH update never
-    /// sends <c>"first_message": null</c>-style keys that the server
-    /// could interpret as "clear this field" (review #7).
-    /// </summary>
-    private static readonly JsonSerializerOptions WireWriteOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
+	/// <summary>
+	/// Wire options for REQUEST bodies: snake_case property names (the
+	/// ElevenLabs API is snake_case, and embedded Domain records like
+	/// <c>Variable(Name, Value, Type)</c> would otherwise serialize as
+	/// PascalCase), and null-omission so a partial PATCH update never
+	/// sends <c>"first_message": null</c>-style keys that the server
+	/// could interpret as "clear this field" (review #7).
+	/// </summary>
+	private static readonly JsonSerializerOptions WireWriteOpts = new()
+	{
+		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+		DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+	};
 
-    public ElevenLabsHttpClient(
-        HttpClient http,
-        ILogger<ElevenLabsHttpClient> logger,
-        IOptionsMonitor<ElevenLabsOptions> options)
-    {
-        _http = http;
-        _logger = logger;
-        _options = options;
-    }
+	public ElevenLabsHttpClient(
+		HttpClient http,
+		ILogger<ElevenLabsHttpClient> logger,
+		IOptionsMonitor<ElevenLabsOptions> options)
+	{
+		_http = http;
+		_logger = logger;
+		_options = options;
+	}
 
-    /// <summary>
-    /// Apply auth headers to a single request message. Never touches
-    /// <see cref="HttpClient.DefaultRequestHeaders"/> — that collection
-    /// is not thread-safe and was previously mutated per request,
-    /// racing whenever two calls (list + conversations) overlapped
-    /// (review #7).
-    /// </summary>
-    private void ApplyAuth(HttpRequestMessage request)
-    {
-        var apiKey = _options.CurrentValue.ApiKey;
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            throw new ElevenLabsAuthException(
-                "ElevenLabs API key is not configured. Set ElevenLabs:ApiKey in appsettings.json or ELEVENLABS_API_KEY environment variable.");
-        }
+	/// <summary>
+	/// Apply auth headers to a single request message. Never touches
+	/// <see cref="HttpClient.DefaultRequestHeaders"/> — that collection
+	/// is not thread-safe and was previously mutated per request,
+	/// racing whenever two calls (list + conversations) overlapped
+	/// (review #7).
+	/// </summary>
+	private void ApplyAuth(HttpRequestMessage request)
+	{
+		var apiKey = _options.CurrentValue.ApiKey;
+		if (string.IsNullOrWhiteSpace(apiKey))
+		{
+			throw new ElevenLabsAuthException(
+				"ElevenLabs API key is not configured. Set ElevenLabs:ApiKey in appsettings.json or ELEVENLABS_API_KEY environment variable.");
+		}
 
-        request.Headers.Add("xi-api-key", apiKey);
-        request.Headers.Accept.ParseAdd("application/json");
+		request.Headers.Add("xi-api-key", apiKey);
+		request.Headers.Accept.ParseAdd("application/json");
 
-        // Fallback for hand-built HttpClients (tests) whose BaseAddress
-        // was never set by the DI configure action.
-        var baseUrl = _options.CurrentValue.BaseUrl;
-        if (!string.IsNullOrWhiteSpace(baseUrl) && _http.BaseAddress is null)
-        {
-            _http.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
-        }
-    }
+		// Fallback for hand-built HttpClients (tests) whose BaseAddress
+		// was never set by the DI configure action.
+		var baseUrl = _options.CurrentValue.BaseUrl;
+		if (!string.IsNullOrWhiteSpace(baseUrl) && _http.BaseAddress is null)
+		{
+			_http.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
+		}
+	}
 
-    public async Task<IReadOnlyList<Agent>> ListAgentsAsync(CancellationToken ct = default)
-    {
-        var url = "v1/convai/agents";
-        _logger.LogInformation("GET {Url}", url);
+	public async Task<IReadOnlyList<AgentSummary>> ListAgentsAsync(CancellationToken ct = default)
+	{
+		var url = "v1/convai/agents";
+		_logger.LogInformation("GET {Url}", url);
 
-        var dto = await SendAsync<ElevenLabsAgentListResponseDto>(
-            HttpMethod.Get, url, ct);
-        return dto.Agents.Select(MapToAgent).ToList();
-    }
+		var dto = await SendAsync<ElevenLabsAgentListResponseDto>(
+			HttpMethod.Get, url, ct);
+		return dto.Agents.Select(MapToAgentSummary).ToList();
+	}
 
-    public async Task<Agent> GetAgentAsync(string agentId, CancellationToken ct = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
-        var url = $"v1/convai/agents/{Uri.EscapeDataString(agentId)}";
-        _logger.LogInformation("GET {Url}", url);
+	public async Task<Agent> GetAgentAsync(string agentId, CancellationToken ct = default)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
+		var url = $"v1/convai/agents/{Uri.EscapeDataString(agentId)}";
+		_logger.LogInformation("GET {Url}", url);
 
-        var dto = await SendAsync<ElevenLabsAgentDto>(HttpMethod.Get, url, ct);
-        return MapToAgent(dto);
-    }
+		var dto = await SendAsync<ElevenLabsAgentDto>(HttpMethod.Get, url, ct);
+		return MapToAgent(dto);
+	}
 
-    public async Task<Agent> UpdateAgentAsync(
-        string agentId,
-        AgentUpdate update,
-        CancellationToken ct = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
-        ArgumentNullException.ThrowIfNull(update);
+	public async Task<Agent> UpdateAgentAsync(
+		string agentId,
+		AgentUpdate update,
+		CancellationToken ct = default)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
+		ArgumentNullException.ThrowIfNull(update);
 
-        var url = $"v1/convai/agents/{Uri.EscapeDataString(agentId)}";
-        _logger.LogInformation("PATCH {Url}", url);
+		var url = $"v1/convai/agents/{Uri.EscapeDataString(agentId)}";
+		_logger.LogInformation("PATCH {Url}", url);
 
-        // Wire shape mirrors the GET model (PromptAgentAPIModel in the
-        // public OpenAPI spec): the prompt TEXT and its VARIABLES both
-        // live inside conversation_config.agent.prompt. The previous
-        // payload sent variables as agent.variables.items — a path the
-        // read side never uses, so a round-trip was impossible
-        // (review #7). Null fields are omitted by WireWriteOpts so the
-        // server's partial-update merge never sees "clear this field".
-        var payload = new
-        {
-            conversation_config = new
-            {
-                agent = new
-                {
-                    prompt = (update.Prompt is null && update.Variables is null)
-                        ? null
-                        : new
-                        {
-                            prompt = update.Prompt,
-                            variables = update.Variables,
-                        },
-                    first_message = update.FirstMessage,
-                },
-                tts = update.VoiceId is null ? null : new { voice_id = update.VoiceId },
-            },
-            workflow = update.WorkflowNodes is null ? null : new { nodes = update.WorkflowNodes },
-        };
+		// Wire shape mirrors the GET model (PromptAgentAPIModel in the
+		// public OpenAPI spec): the prompt TEXT and its VARIABLES both
+		// live inside conversation_config.agent.prompt. The previous
+		// payload sent variables as agent.variables.items — a path the
+		// read side never uses, so a round-trip was impossible
+		// (review #7). Null fields are omitted by WireWriteOpts so the
+		// server's partial-update merge never sees "clear this field".
+		var payload = new
+		{
+			conversation_config = new
+			{
+				agent = new
+				{
+					prompt = (update.Prompt is null && update.Variables is null)
+						? null
+						: new
+						{
+							prompt = update.Prompt,
+							variables = update.Variables,
+						},
+					first_message = update.FirstMessage,
+				},
+				tts = update.VoiceId is null ? null : new { voice_id = update.VoiceId },
+			},
+			workflow = update.Workflow is null ? null : WorkflowJsonUpdater.Apply(update.Workflow),
+		};
 
-        var dto = await SendAsync<ElevenLabsAgentDto>(
-            HttpMethod.Patch, url, ct, payload);
-        return MapToAgent(dto);
-    }
+		var dto = await SendAsync<ElevenLabsAgentDto>(
+			HttpMethod.Patch, url, ct, payload);
+		return MapToAgent(dto);
+	}
 
-    public async Task<IReadOnlyList<ConversationRecord>> ListConversationsAsync(
-        string agentId,
-        DateTimeOffset? from = null,
-        DateTimeOffset? to = null,
-        int pageSize = 100,
-        string? cursor = null,
-        CancellationToken ct = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
+	public async Task<IReadOnlyList<ConversationRecord>> ListConversationsAsync(
+		string agentId,
+		DateTimeOffset? from = null,
+		DateTimeOffset? to = null,
+		int pageSize = 100,
+		string? cursor = null,
+		CancellationToken ct = default)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(agentId);
 
-        var query = new List<string>
-        {
-            $"agent_id={Uri.EscapeDataString(agentId)}",
-            $"page_size={Math.Clamp(pageSize, 1, 1000)}",
-        };
-        if (from is not null) query.Add($"start_time_unix_secs_gte={from.Value.ToUnixTimeSeconds()}");
-        if (to is not null) query.Add($"start_time_unix_secs_lte={to.Value.ToUnixTimeSeconds()}");
-        if (cursor is not null) query.Add($"cursor={Uri.EscapeDataString(cursor)}");
+		var query = new List<string>
+		{
+			$"agent_id={Uri.EscapeDataString(agentId)}",
+			$"page_size={Math.Clamp(pageSize, 1, 100)}",
+		};
+		if (from is not null) query.Add($"call_start_after_unix={from.Value.ToUnixTimeSeconds()}");
+		if (to is not null) query.Add($"call_start_before_unix={to.Value.ToUnixTimeSeconds()}");
+		if (cursor is not null) query.Add($"cursor={Uri.EscapeDataString(cursor)}");
 
-        var url = $"v1/convai/conversations?{string.Join('&', query)}";
-        _logger.LogInformation("GET {Url}", url);
+		var url = $"v1/convai/conversations?{string.Join('&', query)}";
+		_logger.LogInformation("GET {Url}", url);
 
-        var dto = await SendAsync<ElevenLabsConversationListResponseDto>(
-            HttpMethod.Get, url, ct);
-        return dto.Conversations.Select(MapToConversation).ToList();
-    }
+		var dto = await SendAsync<ElevenLabsConversationListResponseDto>(
+			HttpMethod.Get, url, ct);
+		return dto.Conversations.Select(MapToConversationSummary).ToList();
+	}
 
-    public async Task<ConversationRecord> GetConversationAsync(
-        string conversationId,
-        CancellationToken ct = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
+	public async Task<ConversationRecord> GetConversationAsync(
+		string conversationId,
+		CancellationToken ct = default)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
 
-        var url = $"v1/convai/conversations/{Uri.EscapeDataString(conversationId)}";
-        _logger.LogInformation("GET {Url}", url);
+		var url = $"v1/convai/conversations/{Uri.EscapeDataString(conversationId)}";
+		_logger.LogInformation("GET {Url}", url);
 
-        var dto = await SendAsync<ElevenLabsConversationDto>(
-            HttpMethod.Get, url, ct);
-        return MapToConversation(dto);
-    }
+		var dto = await SendAsync<ElevenLabsConversationDetailDto>(
+			HttpMethod.Get, url, ct);
+		return MapToConversationDetail(dto);
+	}
 
-    public async Task<IReadOnlyList<Voice>> ListVoicesAsync(CancellationToken ct = default)
-    {
-        var url = "v1/voices";
-        _logger.LogInformation("GET {Url}", url);
+	public async Task<IReadOnlyList<Voice>> ListVoicesAsync(CancellationToken ct = default)
+	{
+		var url = "v1/voices";
+		_logger.LogInformation("GET {Url}", url);
 
-        var dto = await SendAsync<ElevenLabsVoiceListResponseDto>(
-            HttpMethod.Get, url, ct);
-        return dto.Voices.Select(MapToVoice).ToList();
-    }
+		var dto = await SendAsync<ElevenLabsVoiceListResponseDto>(
+			HttpMethod.Get, url, ct);
+		return dto.Voices.Select(MapToVoice).ToList();
+	}
 
-    private async Task<T> SendAsync<T>(
-        HttpMethod method,
-        string url,
-        CancellationToken ct,
-        object? body = null)
-    {
-        using var request = new HttpRequestMessage(method, url);
-        ApplyAuth(request);
-        if (body is not null)
-        {
-            request.Content = JsonContent.Create(body, mediaType: null, options: WireWriteOpts);
-        }
+	private async Task<T> SendAsync<T>(
+		HttpMethod method,
+		string url,
+		CancellationToken ct,
+		object? body = null)
+	{
+		using var request = new HttpRequestMessage(method, url);
+		ApplyAuth(request);
+		if (body is not null)
+		{
+			request.Content = JsonContent.Create(body, mediaType: null, options: WireWriteOpts);
+		}
 
-        using var response = await _http.SendAsync(request, ct);
-        var text = await response.Content.ReadAsStringAsync(ct);
+		using var response = await _http.SendAsync(request, ct);
+		var text = await response.Content.ReadAsStringAsync(ct);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            throw ElevenLabsExceptionFactory.FromHttp(response.StatusCode, text);
-        }
+		if (!response.IsSuccessStatusCode)
+		{
+			throw ElevenLabsExceptionFactory.FromHttp(response.StatusCode, text);
+		}
 
-        return JsonSerializer.Deserialize<T>(text, JsonOpts)
-            ?? throw new ElevenLabsException(
-                $"ElevenLabs returned empty body for {url}",
-                httpStatus: (int)response.StatusCode);
-    }
+		return JsonSerializer.Deserialize<T>(text, JsonOpts)
+			?? throw new ElevenLabsException(
+				$"ElevenLabs returned empty body for {url}",
+				httpStatus: (int)response.StatusCode);
+	}
 }

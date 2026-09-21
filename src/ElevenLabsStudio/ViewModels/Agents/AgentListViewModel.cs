@@ -20,246 +20,290 @@ namespace ElevenLabsStudio.ViewModels.Agents;
 /// </summary>
 public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>, IDisposable
 {
-    private readonly IElevenLabsClient _client;
-    private readonly IDialogService _dialog;
-    private readonly IEventAggregator _events;
-    private readonly Core.Abstractions.IDraftStore _drafts;
-    private readonly IAgentDetailViewModelFactory _detailFactory;
-    private readonly ILogger<AgentListViewModel> _logger;
-    private readonly ISuggestionEngine _suggestions;
-    private readonly IWindowManager _windowManager;
-    private bool _subscribed;
+	private readonly IElevenLabsClient _client;
+	private readonly IDialogService _dialog;
+	private readonly IEventAggregator _events;
+	private readonly Core.Abstractions.IDraftStore _drafts;
+	private readonly IAgentDetailViewModelFactory _detailFactory;
+	private readonly ILogger<AgentListViewModel> _logger;
+	private readonly ISuggestionEngine _suggestions;
+	private readonly IWindowManager _windowManager;
+	private bool _subscribed;
+	private CancellationTokenSource? _selectionCts;
+	private long _selectionGeneration;
 
-    public BindableCollection<Agent> Agents { get; } = new();
+	public BindableCollection<AgentSummary> Agents { get; } = new();
 
-    /// <summary>Filtered / sorted view of <see cref="Agents"/> for the ListBox.</summary>
-    public ICollectionView AgentsView { get; }
+	/// <summary>Filtered / sorted view of <see cref="Agents"/> for the ListBox.</summary>
+	public ICollectionView AgentsView { get; }
 
-    private string _filterText = string.Empty;
-    public string FilterText
-    {
-        get => _filterText;
-        set
-        {
-            if (Set(ref _filterText, value))
-            {
-                AgentsView.Refresh();
-                NotifyOfPropertyChange(nameof(HasNoAgents));
-            }
-        }
-    }
+	private string _filterText = string.Empty;
+	public string FilterText
+	{
+		get => _filterText;
+		set
+		{
+			if (Set(ref _filterText, value))
+			{
+				AgentsView.Refresh();
+				NotifyOfPropertyChange(nameof(HasNoAgents));
+			}
+		}
+	}
 
-    private Agent? _selectedAgent;
-    public Agent? SelectedAgent
-    {
-        get => _selectedAgent;
-        set
-        {
-            if (!Set(ref _selectedAgent, value)) return;
+	private AgentSummary? _selectedAgent;
+	public AgentSummary? SelectedAgent
+	{
+		get => _selectedAgent;
+		set => _ = SelectAgentGuardedAsync(value);
+	}
 
-            // Save the previous detail's edits (if any) so the user
-            // can come back to them after navigating away. We do this
-            // before constructing the new detail because the new
-            // detail's DraftKey might already exist (different agent)
-            // and the old draft has to land in the previous key.
-            if (AgentDetail is { } previous)
-            {
-                if (previous.IsDirty)
-                {
-                    _logger.LogInformation(
-                        "Saving draft for {AgentId} before switching to {NewAgentId}",
-                        previous.Agent.AgentId, value?.AgentId);
-                    previous.SaveDraft();
-                }
-            }
+	public AgentDetailViewModel? AgentDetail { get; private set; }
 
-            // Build the new detail and try to restore a saved draft
-            // for it. The restore silently overwrites the tab
-            // contents with whatever the user had been typing.
-            AgentDetailViewModel? next = null;
-            if (_selectedAgent is not null)
-            {
-                next = _detailFactory.Create(_selectedAgent);
-                if (next.TryRestoreDraft())
-                {
-                    _logger.LogInformation(
-                        "Restored draft for newly-selected {AgentId}", _selectedAgent.AgentId);
-                }
-            }
+	public bool HasNoAgents => Agents.Count == 0;
 
-            AgentDetail = next;
-            // Set() only fires for the property that owns the backing
-            // store (SelectedAgent) so we push AgentDetail updates manually.
-            NotifyOfPropertyChange(nameof(AgentDetail));
-            _logger.LogDebug(
-                "Sidebar selection changed: {AgentId} (detail VM rebuilt)",
-                _selectedAgent?.AgentId);
-        }
-    }
+	public AgentListViewModel(
+		IElevenLabsClient client,
+		IDialogService dialog,
+		IEventAggregator events,
+		Core.Abstractions.IDraftStore drafts,
+		IAgentDetailViewModelFactory detailFactory,
+		ILogger<AgentListViewModel> logger,
+		ISuggestionEngine suggestions,
+		IWindowManager windowManager)
+	{
+		_client = client;
+		_dialog = dialog;
+		_events = events;
+		_drafts = drafts;
+		_detailFactory = detailFactory;
+		_logger = logger;
+		_suggestions = suggestions;
+		_windowManager = windowManager;
 
-    public AgentDetailViewModel? AgentDetail { get; private set; }
+		// Subscribe to the cross-VM notification channel. HandleAsync
+		// (below) updates our local snapshot in place, so the
+		// sidebar's stale copy of a freshly-pushed agent never lingers
+		// after a successful update. Unsubscription happens in Dispose.
+		_events.SubscribeOnUIThread(this);
+		_subscribed = true;
 
-    public bool HasNoAgents => Agents.Count == 0;
+		AgentsView = CollectionViewSource.GetDefaultView(Agents);
 
-    public AgentListViewModel(
-        IElevenLabsClient client,
-        IDialogService dialog,
-        IEventAggregator events,
-        Core.Abstractions.IDraftStore drafts,
-        IAgentDetailViewModelFactory detailFactory,
-        ILogger<AgentListViewModel> logger,
-        ISuggestionEngine suggestions,
-        IWindowManager windowManager)
-    {
-        _client = client;
-        _dialog = dialog;
-        _events = events;
-        _drafts = drafts;
-        _detailFactory = detailFactory;
-        _logger = logger;
-        _suggestions = suggestions;
-        _windowManager = windowManager;
+		AgentsView.Filter = FilterAgent;
+		Agents.CollectionChanged += (_, _) =>
+			NotifyOfPropertyChange(nameof(HasNoAgents));
+	}
 
-        // Subscribe to the cross-VM notification channel. HandleAsync
-        // (below) updates our local snapshot in place, so the
-        // sidebar's stale copy of a freshly-pushed agent never lingers
-        // after a successful update. Unsubscription happens in Dispose.
-        _events.SubscribeOnPublishedThread(this);
-        _subscribed = true;
+	/// <summary>
+	/// Unsubscribe from the event aggregator so the singleton VM
+	/// doesn't leak a handler back to itself after the host tears
+	/// down. CMs <c>BootstrapperBase</c> previously owned this
+	/// lifetime; we now manage it ourselves because the VM is
+	/// created via MS DI as a singleton.
+	/// </summary>
+	public void Dispose()
+	{
+		AgentDetail?.Dispose();
+		_selectionCts?.Cancel();
+		_selectionCts?.Dispose();
+		_selectionCts = null;
+		if (!_subscribed) return;
+		// CM5 IEventAggregator only exposes Unsubscribe(object) +
+		// UnsubscribeAll(); the per-thread variant lives on the
+		// IHandle<T> extensions, not the aggregator itself.
+		_events.Unsubscribe(this);
+		_subscribed = false;
+		_logger.LogDebug("AgentListViewModel unsubscribed from event aggregator");
+	}
 
-        AgentsView = CollectionViewSource.GetDefaultView(Agents);
+	private bool FilterAgent(object obj)
+	{
+		if (obj is not AgentSummary a) return false;
+		if (string.IsNullOrWhiteSpace(_filterText)) return true;
+		var f = _filterText.Trim();
+		return a.Name.Contains(f, StringComparison.OrdinalIgnoreCase)
+			|| a.AgentId.Contains(f, StringComparison.OrdinalIgnoreCase);
+	}
 
-        // Fire LoadAsync from ctor instead of OnViewLoaded. CM5's
-        // ContentControl + cal:View.Model does not reliably trigger
-        // OnViewLoaded on the VM when the ContentControl is nested
-        // inside another ContentControl (ShellView), so the load
-        // would silently never happen. Kicking off here means the list
-        // is populated as soon as the AgentListViewModel exists in the
-        // DI graph.
-        _ = LoadAsync();
-        AgentsView.Filter = FilterAgent;
-        Agents.CollectionChanged += (_, _) =>
-            NotifyOfPropertyChange(nameof(HasNoAgents));
-    }
+	/// <summary>
+	/// Open the pull-by-id dialog. On success, append the agent to the
+	/// local list and select it so the right pane renders its detail.
+	/// </summary>
+	public async Task PullAgentByIdAsync()
+	{
+		var dialogVm = new PullAgentDialogViewModel(_client, _dialog, _logger);
+		var ok = await _windowManager.ShowDialogAsync(dialogVm);
+		if (ok == true && dialogVm.Result is { } pulled)
+		{
+			var summary = ToSummary(pulled);
+			// Replace if already present (re-pull).
+			var idx = Agents.IndexOf(Agents.FirstOrDefault(a => a.AgentId == pulled.AgentId)!);
+			if (idx >= 0)
+			{
+				Agents[idx] = summary;
+			}
+			else
+			{
+				Agents.Add(summary);
+			}
+			await SelectAgentAsync(summary);
+			await _events.PublishOnUIThreadAsync(
+				new AgentListRefreshedEvent(Agents.ToList()));
+		}
+	}
 
-    /// <summary>
-    /// Unsubscribe from the event aggregator so the singleton VM
-    /// doesn't leak a handler back to itself after the host tears
-    /// down. CMs <c>BootstrapperBase</c> previously owned this
-    /// lifetime; we now manage it ourselves because the VM is
-    /// created via MS DI as a singleton.
-    /// </summary>
-    public void Dispose()
-    {
-        if (!_subscribed) return;
-        // CM5 IEventAggregator only exposes Unsubscribe(object) +
-        // UnsubscribeAll(); the per-thread variant lives on the
-        // IHandle<T> extensions, not the aggregator itself.
-        _events.Unsubscribe(this);
-        _subscribed = false;
-        _logger.LogDebug("AgentListViewModel unsubscribed from event aggregator");
-    }
+	public Task HandleAsync(AgentUpdatedEvent message, CancellationToken ct)
+	{
+		var existing = Agents.FirstOrDefault(a => a.AgentId == message.AgentId);
+		if (existing is not null)
+		{
+			var idx = Agents.IndexOf(existing);
+			if (idx >= 0)
+			{
+				Agents[idx] = ToSummary(message.Snapshot, existing.CreatedAt);
+			}
+		}
+		return Task.CompletedTask;
+	}
 
-    private bool FilterAgent(object obj)
-    {
-        if (obj is not Agent a) return false;
-        if (string.IsNullOrWhiteSpace(_filterText)) return true;
-        var f = _filterText.Trim();
-        return a.Name.Contains(f, StringComparison.OrdinalIgnoreCase)
-            || a.AgentId.Contains(f, StringComparison.OrdinalIgnoreCase);
-    }
+	/// <summary>
+	/// Pulls the agent list from the (mock or real) client and populates
+	/// the bound collection. Already wired up to run from the ctor so
+	/// the UI never sits empty.
+	/// </summary>
+	public async Task LoadAsync(CancellationToken ct = default)
+	{
+		IsBusy = true;
+		BusyMessage = "正在加载 Agent…";
+		try
+		{
+			var selectedId = _selectedAgent?.AgentId;
+			var items = await _client.ListAgentsAsync(ct);
+			Agents.Clear();
+			Agents.AddRange(items);
 
-    /// <summary>
-    /// Open the pull-by-id dialog. On success, append the agent to the
-    /// local list and select it so the right pane renders its detail.
-    /// </summary>
-    public async Task PullAgentByIdAsync()
-    {
-        var dialogVm = new PullAgentDialogViewModel(_client, _dialog, _logger);
-        var ok = await _windowManager.ShowDialogAsync(dialogVm);
-        if (ok == true && dialogVm.Result is { } pulled)
-        {
-            // Replace if already present (re-pull).
-            var idx = Agents.IndexOf(Agents.FirstOrDefault(a => a.AgentId == pulled.AgentId)!);
-            if (idx >= 0)
-            {
-                Agents[idx] = pulled;
-            }
-            else
-            {
-                Agents.Add(pulled);
-            }
-            SelectedAgent = pulled;
-            await _events.PublishOnBackgroundThreadAsync(
-                new AgentListRefreshedEvent(Agents.ToList()));
-        }
-    }
+			// Auto-select the first agent so the right pane shows the
+			// 4-tab detail immediately. The user can pick another
+			// one to switch.
+			var next = selectedId is null
+				? Agents.FirstOrDefault()
+				: Agents.FirstOrDefault(agent => agent.AgentId == selectedId)
+					?? Agents.FirstOrDefault();
+			await SelectAgentAsync(next, ct);
 
-    public Task HandleAsync(AgentUpdatedEvent message, CancellationToken ct)
-    {
-        var existing = Agents.FirstOrDefault(a => a.AgentId == message.AgentId);
-        if (existing is not null)
-        {
-            var idx = Agents.IndexOf(existing);
-            if (idx >= 0)
-            {
-                Agents[idx] = message.Snapshot;
-                if (_selectedAgent?.AgentId == message.AgentId)
-                {
-                    SelectedAgent = message.Snapshot;
-                }
-            }
-        }
-        return Task.CompletedTask;
-    }
+			await _events.PublishOnUIThreadAsync(
+				new AgentListRefreshedEvent(items));
+		}
+		catch (OperationCanceledException) when (ct.IsCancellationRequested)
+		{
+			throw;
+		}
+		catch (ElevenLabsAuthException ex)
+		{
+			_logger.LogError(ex, "ElevenLabs auth failed while loading agents");
+			await _dialog.ShowErrorAsync(
+				"鉴权失败",
+				"API Key 无效或缺失。请在 appsettings.json 的 ElevenLabs.ApiKey 配置后重启。");
+		}
+		catch (ElevenLabsException ex)
+		{
+			_logger.LogError(ex, "ElevenLabs error while loading agents (status={Status})", ex.HttpStatus);
+			await _dialog.ShowErrorAsync("加载失败", $"无法加载 Agent（HTTP {ex.HttpStatus}）。");
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Unexpected error while loading agents");
+			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+		}
+		finally
+		{
+			IsBusy = false;
+			NotifyOfPropertyChange(nameof(BusyMessage));
+		}
+	}
 
-    /// <summary>
-    /// Pulls the agent list from the (mock or real) client and populates
-    /// the bound collection. Already wired up to run from the ctor so
-    /// the UI never sits empty.
-    /// </summary>
-    public async Task LoadAsync()
-    {
-        IsBusy = true;
-        BusyMessage = "正在加载 Agent…";
-        try
-        {
-            var items = await _client.ListAgentsAsync();
-            Agents.Clear();
-            Agents.AddRange(items);
+	public async Task SelectAgentAsync(
+		AgentSummary? summary,
+		CancellationToken ct = default)
+	{
+		if (!Set(ref _selectedAgent, summary))
+		{
+			return;
+		}
 
-            // Auto-select the first agent so the right pane shows the
-            // 4-tab detail immediately. The user can pick another
-            // one to switch.
-            if (SelectedAgent is null && Agents.Count > 0)
-            {
-                SelectedAgent = Agents[0];
-            }
+		if (AgentDetail is { IsDirty: true } previous)
+		{
+			_logger.LogInformation(
+				"Saving draft for {AgentId} before switching to {NewAgentId}",
+				previous.Agent.AgentId,
+				summary?.AgentId);
+			previous.SaveDraft();
+		}
+		AgentDetail?.Dispose();
 
-            await _events.PublishOnBackgroundThreadAsync(
-                new AgentListRefreshedEvent(items));
-        }
-        catch (ElevenLabsAuthException ex)
-        {
-            _logger.LogError(ex, "ElevenLabs auth failed while loading agents");
-            await _dialog.ShowErrorAsync(
-                "鉴权失败",
-                "API Key 无效或缺失。请在 appsettings.json 的 ElevenLabs.ApiKey 配置后重启。");
-        }
-        catch (ElevenLabsException ex)
-        {
-            _logger.LogError(ex, "ElevenLabs error while loading agents (status={Status})", ex.HttpStatus);
-            await _dialog.ShowErrorAsync("加载失败", $"无法加载 Agent（HTTP {ex.HttpStatus}）。");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error while loading agents");
-            await _dialog.ShowErrorAsync("未知错误", ex.Message);
-        }
-        finally
-        {
-            IsBusy = false;
-            NotifyOfPropertyChange(nameof(BusyMessage));
-        }
-    }
+		_selectionCts?.Cancel();
+		_selectionCts?.Dispose();
+		_selectionCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+		var selectionToken = _selectionCts.Token;
+		var generation = Interlocked.Increment(ref _selectionGeneration);
+
+		AgentDetail = null;
+		NotifyOfPropertyChange(nameof(AgentDetail));
+		if (summary is null)
+		{
+			return;
+		}
+
+		try
+		{
+			var fullAgent = await _client.GetAgentAsync(summary.AgentId, selectionToken);
+			if (generation != _selectionGeneration
+				|| _selectedAgent?.AgentId != summary.AgentId
+				|| selectionToken.IsCancellationRequested)
+			{
+				return;
+			}
+
+			var next = _detailFactory.Create(fullAgent);
+			if (next.TryRestoreDraft())
+			{
+				_logger.LogInformation("Restored draft for {AgentId}", fullAgent.AgentId);
+			}
+			AgentDetail = next;
+			NotifyOfPropertyChange(nameof(AgentDetail));
+			await next.InitializeAsync(selectionToken);
+		}
+		catch (OperationCanceledException) when (selectionToken.IsCancellationRequested)
+		{
+		}
+		catch (ElevenLabsAuthException ex)
+		{
+			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
+			_logger.LogError(ex, "ElevenLabs auth failed while loading agent {AgentId}", summary.AgentId);
+			await _dialog.ShowErrorAsync("鉴权失败", "API Key 无效或缺失。", ct);
+		}
+		catch (ElevenLabsException ex)
+		{
+			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
+			_logger.LogError(ex, "ElevenLabs error loading agent {AgentId}", summary.AgentId);
+			await _dialog.ShowErrorAsync("加载失败", $"无法加载 Agent（HTTP {ex.HttpStatus}）。", ct);
+		}
+	}
+
+	private async Task SelectAgentGuardedAsync(AgentSummary? summary)
+	{
+		try
+		{
+			await SelectAgentAsync(summary);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Unexpected selection failure for {AgentId}", summary?.AgentId);
+			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+		}
+	}
+
+	private static AgentSummary ToSummary(Agent agent, DateTimeOffset? createdAt = null) =>
+		new(agent.AgentId, agent.Name, agent.VoiceId, createdAt ?? agent.UpdatedAt);
 }

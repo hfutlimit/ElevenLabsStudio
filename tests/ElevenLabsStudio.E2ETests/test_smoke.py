@@ -21,6 +21,19 @@ and skip the run when the .exe is missing.
 from __future__ import annotations
 
 import pytest
+from pywinauto import Desktop
+
+
+def _owned_dialog(launched_exe, title_re: str):
+    """Resolve an owned WPF window by HWND, then inspect it through UIA.
+
+    pywinauto's UIA top-level enumeration omits Caliburn's owned dialog
+    windows even though they are visible and have native handles.
+    """
+    native = Desktop(backend="win32").window(
+        process=launched_exe.proc.pid, title_re=title_re)
+    native.wait("visible", timeout=10)
+    return Desktop(backend="uia").window(handle=native.handle)
 
 
 @pytest.mark.e2e
@@ -64,9 +77,9 @@ def test_gear_button_opens_settings_dialog(launched_exe) -> None:
         gear = main_window.child_window(title="设置", control_type="Button")
     assert gear.exists(timeout=5), "settings gear button not found in title bar"
 
-    gear.click()
-    # The SettingsView is a separate Window; wait for it to appear.
-    settings = launched_exe.app.window(title_re="设置.*ElevenLabs Studio")
+    gear.invoke()
+    # Owned WPF dialogs are located by native handle first; see helper.
+    settings = _owned_dialog(launched_exe, "设置.*ElevenLabs Studio")
     settings.wait("ready", timeout=10)
     assert settings.exists(), "Settings dialog did not open after clicking the gear"
 
@@ -74,3 +87,21 @@ def test_gear_button_opens_settings_dialog(launched_exe) -> None:
     assert settings.child_window(title_re="使用离线 Mock 数据.*", control_type="CheckBox").exists()
     assert settings.child_window(control_type="Edit", auto_id="ApiKey").exists() or \
            settings.child_window(control_type="Edit").exists()
+
+
+@pytest.mark.e2e
+def test_pull_button_opens_pull_agent_dialog(launched_exe) -> None:
+    """Click the sidebar action and assert the pull-by-ID dialog opens."""
+    launched_exe.main_window.wait("ready", timeout=15)
+    main_window = launched_exe.main_window
+
+    pull = main_window.child_window(
+        title_re=".*拉取 Agent.*", auto_id="PullAgentById", control_type="Button")
+    if not pull.exists():
+        pull = main_window.child_window(title_re=".*拉取 Agent.*", control_type="Button")
+    assert pull.exists(timeout=5), "pull Agent button not found in sidebar"
+
+    pull.invoke()
+    dialog = _owned_dialog(launched_exe, "按 ID 拉取 Agent")
+    dialog.wait("ready", timeout=10)
+    assert dialog.exists(), "Pull Agent dialog did not open after clicking the button"
