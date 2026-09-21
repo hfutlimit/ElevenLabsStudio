@@ -3,14 +3,22 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Grid Margin="32" VerticalAlignment="Center" HorizontalAlignment="Center">
-        <StackPanel MaxWidth="360" HorizontalAlignment="Center">
-            <materialDesign:PackIcon Kind="RobotOutline"
-                                     Width="56" Height="56"
-                                     Foreground="{StaticResource App.TextMuted}"
-                                     HorizontalAlignment="Center"
-                                     Margin="0,0,0,16" />
+        <StackPanel MaxWidth="380" HorizontalAlignment="Center">
+            <Border Width="76" Height="76"
+                    CornerRadius="22"
+                    Background="{StaticResource App.AccentSoft}"
+                    BorderBrush="{StaticResource App.AccentBorder}"
+                    BorderThickness="1"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,18">
+                <materialDesign:PackIcon Kind="RobotOutline"
+                                         Width="36" Height="36"
+                                         Foreground="{StaticResource App.Accent}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" />
+            </Border>
             <TextBlock Text="选择 Agent 开始"
-                       FontSize="16"
+                       FontSize="18"
                        FontWeight="SemiBold"
                        Foreground="{StaticResource App.Text}"
                        HorizontalAlignment="Center"
@@ -19,10 +27,11 @@
                        TextAlignment="Center"
                        Foreground="{StaticResource App.TextSecondary}"
                        FontSize="12"
+                       LineHeight="20"
                        Margin="0,0,0,16">
-                <Run Text="左侧选一个 Agent，或点" />
-                <Run Text="📥 拉取 Agent" FontWeight="SemiBold" />
-                <Run Text="从 ElevenLabs 拉一个新 agent 到本地。" />
+                <Run Text="从左侧选择一个 Agent 查看完整配置，" />
+                <LineBreak />
+                <Run Text="或拉取新的 ElevenLabs Agent 到本地。" />
             </TextBlock>
         </StackPanel>
     </Grid>

@@ -7,84 +7,113 @@
         xmlns:cal="http://www.caliburnproject.org"
         mc:Ignorable="d"
         Title="设置 · ElevenLabs Studio"
-        Height="520" Width="560"
+        Height="540" Width="620"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource App.Surface}"
+        Background="{StaticResource App.Canvas}"
         TextElement.Foreground="{StaticResource App.Text}"
         FontFamily="{DynamicResource MaterialDesign.Font}">
-    <Border BorderBrush="{StaticResource App.Border}"
-            BorderThickness="1"
-            Background="{StaticResource App.Surface}">
-        <Grid Margin="24">
+    <Border Style="{StaticResource App.ElevatedCard}"
+            Margin="18">
+        <Grid Margin="24,22">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                <TextBlock Text="设置"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource App.Text}" />
-                <TextBlock Text="保存后写入 appsettings.json 并立即热重载，无需重启。"
-                           FontSize="11"
-                           Foreground="{StaticResource App.TextMuted}"
-                           Margin="0,4,0,0" />
-            </StackPanel>
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="48" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Width="40" Height="40"
+                        CornerRadius="12"
+                        Background="{StaticResource App.AccentSoft}"
+                        BorderBrush="{StaticResource App.AccentBorder}"
+                        BorderThickness="1"
+                        VerticalAlignment="Top">
+                    <materialDesign:PackIcon Kind="TuneVariant"
+                                             Width="20" Height="20"
+                                             Foreground="{StaticResource App.Accent}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="设置"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource App.Text}" />
+                    <TextBlock Text="连接 ElevenLabs，并配置应用的运行模式"
+                               FontSize="11"
+                               Foreground="{StaticResource App.TextMuted}"
+                               Margin="0,3,0,0" />
+                </StackPanel>
+            </Grid>
 
             <!-- Api key -->
-            <StackPanel Grid.Row="1" Margin="0,0,0,18">
-                <TextBlock Text="ElevenLabs API Key"
-                           FontSize="11"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource App.TextSecondary}"
-                           Margin="0,0,0,6" />
-                <PasswordBox x:Name="ApiKey"
-                             Height="36"
-                             FontSize="13"
-                             Padding="10,6"
-                             BorderBrush="{StaticResource App.BorderStrong}"
-                             Background="{StaticResource App.Surface}"
-                             Foreground="{StaticResource App.Text}" />
-                <TextBlock Text="也可以通过环境变量 ELEVENLABS_API_KEY 设置。"
-                           FontSize="10"
-                           Foreground="{StaticResource App.TextMuted}"
-                           Margin="0,4,0,0" />
-            </StackPanel>
+            <Border Grid.Row="1"
+                    Style="{StaticResource App.SectionCard}"
+                    Padding="16"
+                    Margin="0,0,0,14">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <materialDesign:PackIcon Kind="KeyOutline"
+                                                 Width="16" Height="16"
+                                                 Margin="0,0,7,0"
+                                                 Foreground="{StaticResource App.Accent}" />
+                        <TextBlock Text="ElevenLabs API Key"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource App.Text}" />
+                    </StackPanel>
+                    <PasswordBox x:Name="ApiKey"
+                                 Height="40"
+                                 FontSize="13"
+                                 Padding="11,7"
+                                 BorderBrush="{StaticResource App.BorderStrong}"
+                                 Background="{StaticResource App.Surface}"
+                                 Foreground="{StaticResource App.Text}" />
+                    <TextBlock Text="也可以通过环境变量 ELEVENLABS_API_KEY 设置"
+                               FontSize="10"
+                               Foreground="{StaticResource App.TextMuted}"
+                               Margin="0,7,0,0" />
+                </StackPanel>
+            </Border>
 
             <!-- Mock mode -->
             <Border Grid.Row="2"
-                    BorderBrush="{StaticResource App.Border}"
-                    BorderThickness="1"
-                    Background="{StaticResource App.SurfaceAlt}"
-                    Padding="14"
-                    CornerRadius="4">
+                    Style="{StaticResource App.SectionCard}"
+                    Padding="16">
                 <StackPanel>
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Right"
-                                   x:Name="MockBadge"
-                                   Padding="6,2"
-                                   FontSize="10"
-                                   Background="{StaticResource App.AccentSoft}"
-                                   Foreground="{StaticResource App.Accent}"
-                                   Text="{Binding MockBadgeText}" />
-                        <TextBlock Text="Mock 模式"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource App.Text}" />
+                        <Border DockPanel.Dock="Right" Style="{StaticResource App.Badge}">
+                            <TextBlock x:Name="MockBadge"
+                                       FontSize="10"
+                                       Foreground="{StaticResource App.Accent}"
+                                       Text="{Binding MockBadgeText}" />
+                        </Border>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DatabaseOutline"
+                                                     Width="16" Height="16"
+                                                     Margin="0,0,7,0"
+                                                     Foreground="{StaticResource App.Accent}" />
+                            <TextBlock Text="数据来源"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource App.Text}" />
+                        </StackPanel>
                     </DockPanel>
                     <CheckBox x:Name="MockMode"
                               Content="使用离线 Mock 数据（无需 API Key）"
-                              Margin="0,8,0,0"
+                              Margin="0,12,0,0"
                               FontSize="12"
                               Foreground="{StaticResource App.Text}" />
                     <TextBlock Text="关闭后，应用将使用上方 API Key 访问 api.elevenlabs.io。"
                                FontSize="11"
                                Foreground="{StaticResource App.TextSecondary}"
-                               Margin="0,4,0,0"
+                               Margin="24,5,0,0"
                                TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
@@ -94,30 +123,29 @@
                        x:Name="StatusText"
                        FontSize="11"
                        Foreground="{StaticResource App.Danger}"
-                       Margin="0,12,0,0"
+                       Margin="2,12,0,0"
                        TextWrapping="Wrap" />
 
             <!-- Footer buttons -->
             <StackPanel Grid.Row="4"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
-                        Margin="0,16,0,0">
+                        Margin="0,18,0,0">
                 <Button x:Name="Cancel"
                         cal:Message.Attach="[Event Click] = [Action CancelAsync()]"
+                        Style="{StaticResource App.SecondaryButton}"
                         Content="取消"
-                        Width="90" Height="34"
-                        Margin="0,0,8,0"
-                        Background="{StaticResource App.SurfaceAlt}"
-                        Foreground="{StaticResource App.Text}"
-                        BorderBrush="{StaticResource App.BorderStrong}" />
+                        Width="92"
+                        Margin="0,0,10,0" />
                 <Button x:Name="Save"
                         cal:Message.Attach="[Event Click] = [Action SaveAsync()]"
-                        Content="保存"
-                        Width="90" Height="34"
-                        Background="{StaticResource App.Accent}"
-                        Foreground="White"
-                        BorderThickness="0"
-                        FontWeight="SemiBold" />
+                        Style="{StaticResource App.PrimaryButton}"
+                        Width="104">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSaveOutline" Width="15" Height="15" Margin="0,0,6,0" />
+                        <TextBlock Text="保存设置" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
     </Border>

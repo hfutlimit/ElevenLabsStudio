@@ -8,7 +8,7 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="ElevenLabs Studio"
-        Height="820" Width="1320"
+        Height="840" Width="1360"
         MinHeight="600" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
@@ -21,22 +21,24 @@
         xmlns:vm="clr-namespace:ElevenLabsStudio.ViewModels">
 
     <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="44"
-                            ResizeBorderThickness="6"
+        <shell:WindowChrome CaptionHeight="52"
+                            ResizeBorderThickness="8"
                             CornerRadius="0"
                             GlassFrameThickness="0"
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
-    <!-- Outer border = single-pixel rounded-rect outline of the window. -->
-    <Border BorderBrush="{StaticResource App.Border}"
+    <Border BorderBrush="{StaticResource App.BorderStrong}"
             BorderThickness="1"
-            Background="{StaticResource App.Surface}">
-        <Grid>
+            Background="{StaticResource App.Canvas}"
+            CornerRadius="14"
+            Margin="8"
+            Effect="{StaticResource App.WindowShadow}">
+		<Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="44" />
+                <RowDefinition Height="52" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="28" />
+                <RowDefinition Height="32" />
             </Grid.RowDefinitions>
 
             <!-- 1. Custom title bar -->
@@ -48,25 +50,24 @@
                     <!-- Left: brand -->
                     <StackPanel DockPanel.Dock="Left"
                                 Orientation="Horizontal"
-                                Margin="14,0,0,0"
+                                Margin="18,0,0,0"
                                 VerticalAlignment="Center">
-                        <Border Width="22" Height="22"
-                                CornerRadius="4"
+                        <Border Width="30" Height="30"
+                                CornerRadius="9"
                                 Background="{StaticResource App.Accent}">
-                            <TextBlock Text="🎙"
-                                       FontSize="13"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                            <materialDesign:PackIcon Kind="MicrophoneOutline"
+                                                     Width="17" Height="17"
+                                                     Foreground="White"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center" />
                         </Border>
                         <TextBlock Text="ElevenLabs Studio"
-                                   FontSize="14"
+                                   FontSize="15"
                                    FontWeight="SemiBold"
-                                   Margin="10,0,0,0"
+                                   Margin="11,0,0,0"
                                    VerticalAlignment="Center" />
-                        <Border Background="#EEF2FF"
-                                CornerRadius="3"
-                                Padding="6,2"
+                        <Border Style="{StaticResource App.Badge}"
+                                Padding="7,2"
                                 Margin="10,0,0,0">
                             <TextBlock Text="v0.1"
                                        FontSize="10"
@@ -81,6 +82,7 @@
                         <Button x:Name="OpenSettings"
                                 cal:Message.Attach="[Event Click] = [Action OpenSettingsAsync()]"
                                 Style="{StaticResource CaptionButton}"
+                                Margin="2,3"
                                 ToolTip="设置"
                                 AutomationProperties.Name="设置">
                             <materialDesign:PackIcon Kind="CogOutline"
@@ -88,12 +90,14 @@
                         </Button>
                         <Button x:Name="Minimize"
                                 Style="{StaticResource CaptionButton}"
+                                Margin="2,3"
                                 ToolTip="最小化">
                             <materialDesign:PackIcon Kind="WindowMinimize"
                                                      Width="14" Height="14" />
                         </Button>
                         <Button x:Name="MaximizeRestore"
                                 Style="{StaticResource CaptionButton}"
+                                Margin="2,3"
                                 ToolTip="最大化">
                             <materialDesign:PackIcon x:Name="MaximizeIcon"
                                                      Kind="WindowMaximize"
@@ -101,6 +105,8 @@
                         </Button>
                         <Button x:Name="CloseWindow"
                                 Style="{StaticResource CaptionButton}"
+                                Margin="2,3,6,3"
+                                Foreground="{StaticResource App.Danger}"
                                 ToolTip="关闭">
                             <materialDesign:PackIcon Kind="Close"
                                                      Width="14" Height="14" />
@@ -115,16 +121,16 @@
             </Border>
 
             <!-- 2. Main split -->
-            <Grid Grid.Row="1" Margin="16,14,16,8">
+            <Grid Grid.Row="1" Margin="20,18,20,14">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="310" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <!-- Left: agent menu (borderless card) -->
                 <ContentControl Grid.Column="0"
                                 cal:View.Model="{Binding AgentsVm}"
-                                Margin="0,0,12,0" />
+                                Margin="0,0,16,0" />
 
                 <!-- Right: detail panel. The DataContextChanged code-behind
                      handler resolves the right view for whatever VM
@@ -134,10 +140,7 @@
                      never re-rendered the view. -->
                 <Border x:Name="DetailBorder"
                         Grid.Column="1"
-                        BorderBrush="{StaticResource App.Border}"
-                        BorderThickness="1"
-                        Background="{StaticResource App.Surface}"
-                        CornerRadius="4">
+                        Style="{StaticResource App.ElevatedCard}">
                     <ContentControl x:Name="DetailHost"
                                     DataContext="{Binding AgentDetail}"
                                     DataContextChanged="DetailHost_DataContextChanged"
@@ -147,19 +150,19 @@
 
             <!-- 3. Status bar -->
             <Border Grid.Row="2"
-                    Background="{StaticResource App.SurfaceAlt}"
+                    Background="{StaticResource App.Surface}"
                     BorderBrush="{StaticResource App.Border}"
                     BorderThickness="0,1,0,0">
                 <DockPanel LastChildFill="True">
                     <TextBlock DockPanel.Dock="Right"
                                Text="{Binding CurrentTime, StringFormat='{}{0:HH:mm:ss}'}"
                                VerticalAlignment="Center"
-                               Margin="0,0,12,0"
+                               Margin="0,0,16,0"
                                FontSize="11"
                                Foreground="{StaticResource App.TextMuted}" />
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center"
-                                Margin="12,0,0,0">
+                                Margin="16,0,0,0">
                         <ProgressBar Style="{DynamicResource MaterialDesign.LinearProgressBar}"
                                      Width="80"
                                      Height="2"

@@ -3,90 +3,110 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:cal="http://www.caliburnproject.org">
-    <Grid Margin="16">
+    <Grid Margin="22,20,22,18">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock Text="{Binding Agent.Name}"
-                       FontSize="18"
-                       FontWeight="SemiBold"
-                       Foreground="{StaticResource App.Text}" />
-            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                <materialDesign:PackIcon Kind="Identifier"
-                                         Width="14" Height="14"
-                                         Margin="0,0,6,0"
-                                         VerticalAlignment="Center"
-                                         Foreground="{StaticResource App.TextMuted}" />
-                <TextBlock Text="{Binding Agent.AgentId}"
-                           FontSize="12"
-                           FontFamily="Consolas, Cascadia Mono, monospace"
-                           Foreground="{StaticResource App.TextSecondary}" />
-            </StackPanel>
-        </StackPanel>
+        <Border Grid.Row="0"
+                Style="{StaticResource App.SectionCard}"
+                Padding="16,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-        <!-- Toolbar -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
-            <Button x:Name="Push"
-                    Content="📤 推送"
-                    Height="32"
-                    Padding="14,0"
-                    Margin="0,0,8,0"
-                    Background="{StaticResource App.Accent}"
-                    Foreground="White"
-                    BorderThickness="0"
-                    FontWeight="SemiBold" />
-            <Button x:Name="ReloadAsync"
-                    Content="🔄 刷新"
-                    Height="32"
-                    Padding="14,0"
-                    Margin="0,0,8,0"
-                    Background="{StaticResource App.Surface}"
-                    Foreground="{StaticResource App.Text}"
-                    BorderBrush="{StaticResource App.BorderStrong}" />
-            <Button x:Name="DryRun"
-                    Content="🧪 试运行"
-                    Height="32"
-                    Padding="14,0"
-                    Background="Transparent"
-                    Foreground="{StaticResource App.TextSecondary}"
-                    BorderThickness="0" />
-            <materialDesign:PackIcon Kind="ClockOutline"
-                                     Width="14" Height="14"
-                                     Margin="16,0,6,0"
-                                     VerticalAlignment="Center"
-                                     Foreground="{StaticResource App.TextMuted}" />
-            <TextBlock Text="{Binding Agent.UpdatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
-                       VerticalAlignment="Center"
-                       FontSize="11"
-                       Foreground="{StaticResource App.TextSecondary}" />
-        </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="48" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="40" Height="40"
+                            CornerRadius="12"
+                            Background="{StaticResource App.Accent}"
+                            VerticalAlignment="Top">
+                        <materialDesign:PackIcon Kind="AccountVoice"
+                                                 Width="21" Height="21"
+                                                 Foreground="White"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Agent.Name}"
+                                   FontSize="19"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource App.Text}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <materialDesign:PackIcon Kind="Identifier"
+                                                     Width="13" Height="13"
+                                                     Margin="0,0,5,0"
+                                                     VerticalAlignment="Center"
+                                                     Foreground="{StaticResource App.TextMuted}" />
+                            <TextBlock Text="{Binding Agent.AgentId}"
+                                       FontSize="11"
+                                       FontFamily="Consolas, Cascadia Mono, monospace"
+                                       Foreground="{StaticResource App.TextSecondary}" />
+                            <Border Style="{StaticResource App.Badge}"
+                                    Margin="12,0,0,0"
+                                    Padding="7,2">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ClockOutline"
+                                                             Width="11" Height="11"
+                                                             Margin="0,0,4,0"
+                                                             Foreground="{StaticResource App.Accent}" />
+                                    <TextBlock Text="{Binding Agent.UpdatedAt, StringFormat='{}{0:MM-dd HH:mm}'}"
+                                               FontSize="10"
+                                               Foreground="{StaticResource App.Accent}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
 
-        <!-- Status hint for workflow dirty state -->
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Margin="0,0,0,12">
-            <TextBlock Text="改完后记得点「推送」同步"
-                       FontSize="10"
-                       Foreground="{StaticResource App.TextMuted}"
-                       VerticalAlignment="Center" />
-        </StackPanel>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button x:Name="DryRun"
+                            Style="{StaticResource App.GhostButton}"
+                            Margin="0,0,6,0"
+                            ToolTip="仅在本地重新分析建议">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FlaskOutline" Width="15" Height="15" Margin="0,0,6,0" />
+                            <TextBlock Text="试运行" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ReloadAsync"
+                            Style="{StaticResource App.SecondaryButton}"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh" Width="15" Height="15" Margin="0,0,6,0" />
+                            <TextBlock Text="刷新" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="Push"
+                            Style="{StaticResource App.PrimaryButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CloudUploadOutline" Width="15" Height="15" Margin="0,0,6,0" />
+                            <TextBlock Text="推送更新" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- Tabs -->
-        <TabControl Grid.Row="2"
+        <TabControl Grid.Row="1"
                     SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
                     Background="Transparent"
-                    BorderThickness="0">
+                    BorderThickness="0"
+                    Margin="0,16,0,0"
+                    ItemContainerStyle="{StaticResource App.TabItem}">
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="TextBox" Margin="0,0,6,0" />
+                        <materialDesign:PackIcon Kind="TextBoxOutline" Width="15" Height="15" Margin="0,0,6,0" />
                         <TextBlock Text="System Prompt" />
                     </StackPanel>
                 </TabItem.Header>
@@ -95,8 +115,8 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CommentTextOutline" Margin="0,0,6,0" />
-                        <TextBlock Text="First Msg" />
+                        <materialDesign:PackIcon Kind="CommentTextOutline" Width="15" Height="15" Margin="0,0,6,0" />
+                        <TextBlock Text="First Message" />
                     </StackPanel>
                 </TabItem.Header>
                 <ContentControl cal:View.Model="{Binding FirstMessageVm}" />
@@ -104,7 +124,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="GraphOutline" Margin="0,0,6,0" />
+                        <materialDesign:PackIcon Kind="GraphOutline" Width="15" Height="15" Margin="0,0,6,0" />
                         <TextBlock Text="Workflow" />
                     </StackPanel>
                 </TabItem.Header>
@@ -113,7 +133,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="VariableBox" Margin="0,0,6,0" />
+                        <materialDesign:PackIcon Kind="VariableBox" Width="15" Height="15" Margin="0,0,6,0" />
                         <TextBlock Text="Variables" />
                     </StackPanel>
                 </TabItem.Header>
@@ -122,7 +142,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="ForumOutline" Margin="0,0,6,0" />
+                        <materialDesign:PackIcon Kind="ForumOutline" Width="15" Height="15" Margin="0,0,6,0" />
                         <TextBlock Text="Conversations" />
                     </StackPanel>
                 </TabItem.Header>

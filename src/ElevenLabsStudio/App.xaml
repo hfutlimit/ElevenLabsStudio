@@ -10,77 +10,12 @@
                 <!-- Light, clean palette: white surface + Indigo accent. -->
                 <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Indigo" SecondaryColor="Teal" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+				<ResourceDictionary Source="Themes/DesignSystem.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- App-level converters used by Views. -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
-            <!-- Surface tokens — single source of truth for the whole
-                 app palette. Light + low-saturation so the indigo accent
-                 carries the contrast. -->
-            <SolidColorBrush x:Key="App.Surface" Color="#FFFFFF" />
-            <SolidColorBrush x:Key="App.SurfaceAlt" Color="#FAFBFC" />
-            <SolidColorBrush x:Key="App.SurfaceHover" Color="#F2F4F7" />
-            <SolidColorBrush x:Key="App.Border" Color="#E4E7EC" />
-            <SolidColorBrush x:Key="App.BorderStrong" Color="#C8CED6" />
-            <SolidColorBrush x:Key="App.Text" Color="#1F2933" />
-            <SolidColorBrush x:Key="App.TextSecondary" Color="#5A6776" />
-            <SolidColorBrush x:Key="App.TextMuted" Color="#8A95A2" />
-            <SolidColorBrush x:Key="App.Accent" Color="#4F46E5" />
-            <SolidColorBrush x:Key="App.AccentHover" Color="#4338CA" />
-            <SolidColorBrush x:Key="App.AccentSoft" Color="#EEF2FF" />
-            <SolidColorBrush x:Key="App.Danger" Color="#DC2626" />
-            <SolidColorBrush x:Key="App.DangerHover" Color="#B91C1C" />
-
-            <!-- Flat borderless button for the caption bar (min/max/close).
-                 Hover flips background to App.SurfaceHover; for the close
-                 button we swap text to App.Danger. -->
-            <Style x:Key="CaptionButton" TargetType="Button">
-                <Setter Property="Width" Value="44" />
-                <Setter Property="Height" Value="32" />
-                <Setter Property="Margin" Value="0" />
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="BorderBrush" Value="Transparent" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Foreground" Value="{StaticResource App.TextSecondary}" />
-                <Setter Property="FontFamily" Value="Segoe MDL2 Assets, Segoe Fluent Icons, Segoe UI Symbol" />
-                <Setter Property="Cursor" Value="Arrow" />
-                <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="Bd"
-                                    Background="{TemplateBinding Background}">
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Bd"
-                                            Property="Background"
-                                            Value="{StaticResource App.SurfaceHover}" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-
-            <!-- Pill-style badge (used in title bar and agent list rows). -->
-            <Style x:Key="App.Badge" TargetType="Border">
-                <Setter Property="CornerRadius" Value="3" />
-                <Setter Property="Padding" Value="6,2" />
-                <Setter Property="Background" Value="{StaticResource App.AccentSoft}" />
-            </Style>
-
-            <!-- Soft card surface for inner panels (4-tab body, workflow
-                 inspector, transcript area). -->
-            <Style x:Key="App.SoftCard" TargetType="Border">
-                <Setter Property="Background" Value="{StaticResource App.SurfaceAlt}" />
-                <Setter Property="CornerRadius" Value="4" />
-                <Setter Property="BorderBrush" Value="{StaticResource App.Border}" />
-                <Setter Property="BorderThickness" Value="1" />
-            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

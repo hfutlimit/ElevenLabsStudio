@@ -3,37 +3,73 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:cal="http://www.caliburnproject.org">
-    <Border BorderBrush="{StaticResource App.Border}"
-            BorderThickness="1"
-            Background="{StaticResource App.Surface}"
-            CornerRadius="4">
+    <Border Style="{StaticResource App.ElevatedCard}">
         <DockPanel Margin="0">
-            <!-- Top: Pull + filter -->
-            <StackPanel DockPanel.Dock="Top" Margin="14,14,14,12">
+            <StackPanel DockPanel.Dock="Top" Margin="16,16,16,12">
+                <DockPanel Margin="0,0,0,14">
+                    <Border DockPanel.Dock="Left"
+                            Width="34" Height="34"
+                            CornerRadius="10"
+                            Background="{StaticResource App.AccentSoft}"
+                            BorderBrush="{StaticResource App.AccentBorder}"
+                            BorderThickness="1"
+                            Margin="0,0,10,0">
+                        <materialDesign:PackIcon Kind="RobotOutline"
+                                                 Width="18" Height="18"
+                                                 Foreground="{StaticResource App.Accent}"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Agents"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource App.Text}" />
+                        <TextBlock Text="管理与编辑对话 Agent"
+                                   FontSize="10"
+                                   Margin="0,2,0,0"
+                                   Foreground="{StaticResource App.TextMuted}" />
+                    </StackPanel>
+                </DockPanel>
                 <Button x:Name="PullAgentById"
                         cal:Message.Attach="[Event Click] = [Action PullAgentByIdAsync()]"
-                        Content="📥  拉取 Agent"
-                        Margin="0,0,0,10"
+                        Style="{StaticResource App.PrimaryButton}"
+                        Margin="0,0,0,12"
                         HorizontalAlignment="Stretch"
-                        Height="34"
-                        Background="{StaticResource App.Accent}"
-                        Foreground="White"
-                        BorderThickness="0"
-                        FontWeight="SemiBold" />
+                        AutomationProperties.Name="拉取 Agent">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="CloudDownloadOutline"
+                                                 Width="16" Height="16"
+                                                 Margin="0,0,7,0" />
+                        <TextBlock Text="拉取 Agent" />
+                    </StackPanel>
+                </Button>
                 <TextBox x:Name="FilterText"
-                         materialDesign:HintAssist.Hint="🔍 过滤 (Name 或 AgentId)"
+                         materialDesign:HintAssist.Hint="搜索名称或 Agent ID"
+                         materialDesign:TextFieldAssist.LeadingIcon="Magnify"
                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         FontSize="12" />
+                         Background="{StaticResource App.SurfaceAlt}"
+                         BorderBrush="{StaticResource App.BorderStrong}"
+                         FontSize="12"
+                         MinHeight="44" />
             </StackPanel>
 
-            <!-- Bottom: empty hint -->
-            <TextBlock DockPanel.Dock="Bottom"
-                       Text="未拉取任何 Agent。点击「📥 拉取 Agent」开始。"
-                       TextWrapping="Wrap"
-                       FontSize="11"
-                       Foreground="{StaticResource App.TextMuted}"
-                       Margin="14,8,14,14"
-                       Visibility="{Binding HasNoAgents, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <Border DockPanel.Dock="Bottom"
+                    Style="{StaticResource App.SectionCard}"
+                    Margin="16,8,16,16"
+                    Padding="12"
+                    Visibility="{Binding HasNoAgents, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="InformationOutline"
+                                             Width="16" Height="16"
+                                             Margin="0,0,8,0"
+                                             Foreground="{StaticResource App.Accent}" />
+                    <TextBlock Text="还没有 Agent，点击上方按钮开始。"
+                               TextWrapping="Wrap"
+                               FontSize="11"
+                               Foreground="{StaticResource App.TextSecondary}" />
+                </StackPanel>
+            </Border>
 
             <!-- Middle: list -->
             <ListBox x:Name="AgentsView"
@@ -42,29 +78,89 @@
                      BorderThickness="0"
                      HorizontalContentAlignment="Stretch">
                 <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
-                        <Setter Property="Padding" Value="10,8" />
-                        <Setter Property="Margin" Value="4,2" />
-                        <!-- UIA name = agent name so automation (e2e,
-                             screen readers) matches list items by the
-                             human label instead of the record
-                             ToString() that WPF uses by default. -->
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="8,2" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="FocusVisualStyle" Value="{StaticResource App.FocusVisual}" />
                         <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Grid>
+                                        <Border x:Name="Row"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="1"
+                                                CornerRadius="9"
+                                                Padding="11,10">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <Border x:Name="SelectionBar"
+                                                Width="3"
+                                                Height="24"
+                                                CornerRadius="2"
+                                                Background="{StaticResource App.Accent}"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Opacity="0" />
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Row" Property="Background" Value="{StaticResource App.SurfaceHover}" />
+                                            <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Border}" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Row" Property="Background" Value="{StaticResource App.AccentSoft}" />
+                                            <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.AccentBorder}" />
+                                            <Setter TargetName="SelectionBar" Property="Opacity" Value="1" />
+                                        </Trigger>
+										<Trigger Property="IsKeyboardFocused" Value="True">
+											<Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Accent}" />
+											<Setter TargetName="Row" Property="BorderThickness" Value="2" />
+										</Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel>
-                            <TextBlock Text="{Binding Name}"
-                                       FontWeight="SemiBold"
-                                       FontSize="13"
-                                       Foreground="{StaticResource App.Text}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="26" Height="26"
+                                    CornerRadius="8"
+                                    Background="{StaticResource App.Surface}"
+                                    BorderBrush="{StaticResource App.Border}"
+                                    BorderThickness="1"
+                                    VerticalAlignment="Top">
+                                <materialDesign:PackIcon Kind="AccountVoice"
+                                                         Width="14" Height="14"
+                                                         Foreground="{StaticResource App.Accent}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding Name}"
+                                           FontWeight="SemiBold"
+                                           FontSize="13"
+                                           Foreground="{StaticResource App.Text}" />
                             <TextBlock Text="{Binding AgentId}"
                                        FontSize="11"
                                        FontFamily="Consolas, Cascadia Mono, monospace"
                                        Foreground="{StaticResource App.TextMuted}"
+                                       TextTrimming="CharacterEllipsis"
                                        Margin="0,2,0,0" />
-                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="ClockOutline"
                                                          Width="11" Height="11"
                                                          Margin="0,0,4,0"
@@ -73,17 +169,25 @@
                                 <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:MM-dd HH:mm}'}"
                                            FontSize="11"
                                            Foreground="{StaticResource App.TextSecondary}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right">
                                 <materialDesign:PackIcon Kind="VolumeHigh"
                                                          Width="11" Height="11"
-                                                         Margin="10,0,4,0"
+                                                         Margin="8,0,4,0"
                                                          VerticalAlignment="Center"
                                                          Foreground="{StaticResource App.TextMuted}" />
                                 <TextBlock Text="{Binding VoiceId}"
                                            FontSize="11"
                                            FontFamily="Consolas, Cascadia Mono, monospace"
+                                           MaxWidth="72"
+                                           TextTrimming="CharacterEllipsis"
                                            Foreground="{StaticResource App.TextSecondary}" />
+                                </StackPanel>
+                            </Grid>
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

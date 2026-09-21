@@ -3,8 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:cal="http://www.caliburnproject.org"
-             Width="440">
-    <Grid Margin="20">
+             Width="480"
+             Background="{StaticResource App.Canvas}">
+    <Border Style="{StaticResource App.ElevatedCard}"
+            Margin="16"
+            Padding="22">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -13,24 +17,55 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   Text="拉取 Agent 到本地"
-                   FontSize="16"
-                   FontWeight="SemiBold"
-                   Foreground="{StaticResource App.Text}"
-                   Margin="0,0,0,4" />
-        <TextBlock Grid.Row="1"
-                   Text="从 ElevenLabs 读取并加入本地列表。"
-                   FontSize="11"
-                   Foreground="{StaticResource App.TextSecondary}"
-                   Margin="0,0,0,16" />
+        <Grid Grid.Row="0" Grid.RowSpan="2" Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Width="40" Height="40"
+                    CornerRadius="12"
+                    Background="{StaticResource App.AccentSoft}"
+                    BorderBrush="{StaticResource App.AccentBorder}"
+                    BorderThickness="1"
+                    VerticalAlignment="Top">
+                <materialDesign:PackIcon Kind="CloudDownloadOutline"
+                                         Width="20" Height="20"
+                                         Foreground="{StaticResource App.Accent}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="拉取 Agent 到本地"
+                           FontSize="17"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource App.Text}" />
+                <TextBlock Text="输入 ElevenLabs Agent ID，读取完整配置并加入列表"
+                           FontSize="11"
+                           Foreground="{StaticResource App.TextSecondary}"
+                           Margin="0,3,0,0" />
+            </StackPanel>
+        </Grid>
 
-        <TextBox Grid.Row="2"
-                 x:Name="AgentId"
-                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                 materialDesign:HintAssist.Hint="AgentId (例如 agent_abc123)"
-                 FontSize="13"
-                 Margin="0,0,0,8" />
+        <Border Grid.Row="2"
+                Style="{StaticResource App.SectionCard}"
+                Padding="14"
+                Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="Agent ID"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource App.TextSecondary}"
+                           Margin="1,0,0,7" />
+                <TextBox x:Name="AgentId"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         materialDesign:HintAssist.Hint="例如 agent_abc123"
+                         materialDesign:TextFieldAssist.LeadingIcon="Identifier"
+                         Background="{StaticResource App.Surface}"
+                         BorderBrush="{StaticResource App.BorderStrong}"
+                         FontSize="13"
+                         MinHeight="44" />
+            </StackPanel>
+        </Border>
 
         <TextBlock Grid.Row="3"
                    x:Name="ErrorText"
@@ -38,31 +73,30 @@
                    Foreground="{StaticResource App.Danger}"
                    FontSize="12"
                    TextWrapping="Wrap"
-                   Margin="0,0,0,8"
+                   Margin="2,0,2,8"
                    Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <StackPanel Grid.Row="4"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
-                    Margin="0,8,0,0">
+                    Margin="0,10,0,0">
             <Button x:Name="Cancel"
                     cal:Message.Attach="[Event Click] = [Action Cancel()]"
+                    Style="{StaticResource App.SecondaryButton}"
                     Content="取消"
-                    Width="80"
-                    Height="32"
-                    Margin="0,0,8,0"
-                    Background="{StaticResource App.SurfaceAlt}"
-                    Foreground="{StaticResource App.Text}"
-                    BorderBrush="{StaticResource App.Border}" />
+                    Width="86"
+                    Margin="0,0,10,0" />
             <Button x:Name="Confirm"
                     cal:Message.Attach="[Event Click] = [Action Confirm()]"
-                    Content="拉取"
-                    Width="80"
-                    Height="32"
-                    Background="{StaticResource App.Accent}"
-                    Foreground="White"
-                    BorderThickness="0"
-                    IsEnabled="{Binding CanConfirm}" />
+                    Style="{StaticResource App.PrimaryButton}"
+                    Width="98"
+                    IsEnabled="{Binding CanConfirm}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Download" Width="14" Height="14" Margin="0,0,6,0" />
+                    <TextBlock Text="拉取" />
+                </StackPanel>
+            </Button>
         </StackPanel>
     </Grid>
+    </Border>
 </UserControl>

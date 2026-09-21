@@ -2,42 +2,77 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
-    <Grid Margin="0,8,0,0">
+    <Grid Margin="0,14,0,0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="0.9*" />
+            <RowDefinition Height="1.1*" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource App.SoftCard}" Padding="0" Margin="0,0,0,8">
+        <Border Grid.Row="0" Style="{StaticResource App.SectionCard}" Padding="0" Margin="0,0,0,10">
             <DockPanel>
                 <Border DockPanel.Dock="Top"
-                        Background="{StaticResource App.Surface}"
+                        Background="Transparent"
                         BorderBrush="{StaticResource App.Border}"
                         BorderThickness="0,0,0,1"
-                        Padding="14,8">
+                        Padding="14,10">
                     <DockPanel>
                         <Button x:Name="ReloadAsync"
                                 DockPanel.Dock="Right"
-                                Style="{StaticResource MaterialDesignIconButton}"
-                                ToolTip="Refresh"
-                                Width="28" Height="28"
+                                Style="{StaticResource App.IconButton}"
+                                ToolTip="刷新会话"
+                                Width="30" Height="30"
                                 Foreground="{StaticResource App.TextSecondary}">
                             <materialDesign:PackIcon Kind="Refresh" Width="14" Height="14" />
                         </Button>
-                        <TextBlock Text="会话记录（近 7 天）"
-                                   FontWeight="SemiBold"
-                                   FontSize="11"
-                                   Foreground="{StaticResource App.TextSecondary}"
-                                   VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="History"
+                                                     Width="15" Height="15"
+                                                     Margin="0,0,7,0"
+                                                     Foreground="{StaticResource App.Accent}" />
+                            <TextBlock Text="会话记录 · 近 7 天"
+                                       FontWeight="SemiBold"
+                                       FontSize="11"
+                                       Foreground="{StaticResource App.TextSecondary}" />
+                        </StackPanel>
                     </DockPanel>
                 </Border>
                 <ListBox x:Name="Conversations"
                          SelectedItem="{Binding SelectedConversation, Mode=TwoWay}"
                          BorderThickness="0"
                          Background="Transparent">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
-                            <Setter Property="Padding" Value="10,6" />
+                <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="12,8" />
+                            <Setter Property="Margin" Value="6,2" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="FocusVisualStyle" Value="{StaticResource App.FocusVisual}" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="Row"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="1"
+                                                CornerRadius="7"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Row" Property="Background" Value="{StaticResource App.SurfaceHover}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Row" Property="Background" Value="{StaticResource App.AccentSoft}" />
+                                                <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.AccentBorder}" />
+                                            </Trigger>
+											<Trigger Property="IsKeyboardFocused" Value="True">
+												<Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Accent}" />
+												<Setter TargetName="Row" Property="BorderThickness" Value="2" />
+											</Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
                         </Style>
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
@@ -68,28 +103,34 @@
             </DockPanel>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource App.SoftCard}" Padding="0">
+        <Border Grid.Row="1" Style="{StaticResource App.SectionCard}" Padding="0">
             <DockPanel>
                 <Border DockPanel.Dock="Top"
-                        Background="{StaticResource App.Surface}"
+                        Background="Transparent"
                         BorderBrush="{StaticResource App.Border}"
                         BorderThickness="0,0,0,1"
-                        Padding="14,8">
-                    <TextBlock Text="对话转写"
-                               FontWeight="SemiBold"
-                               FontSize="11"
-                               Foreground="{StaticResource App.TextSecondary}" />
+                        Padding="14,10">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="TextBoxMultipleOutline"
+                                                 Width="15" Height="15"
+                                                 Margin="0,0,7,0"
+                                                 Foreground="{StaticResource App.Accent}" />
+                        <TextBlock Text="对话转写"
+                                   FontWeight="SemiBold"
+                                   FontSize="11"
+                                   Foreground="{StaticResource App.TextSecondary}" />
+                    </StackPanel>
                 </Border>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="Turns" Margin="10">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Background="{StaticResource App.Surface}"
-                                        BorderBrush="{StaticResource App.Border}"
+                                        BorderBrush="{StaticResource App.BorderStrong}"
                                         BorderThickness="1"
                                         Margin="0,4,0,4"
-                                        Padding="10"
-                                        CornerRadius="4">
+                                        Padding="12,10"
+                                        CornerRadius="8">
                                     <StackPanel>
                                         <DockPanel>
                                             <TextBlock DockPanel.Dock="Right"
