@@ -71,10 +71,10 @@
                     <Button x:Name="DryRun"
                             Style="{StaticResource App.GhostButton}"
                             Margin="0,0,6,0"
-                            ToolTip="仅在本地重新分析建议">
+                            ToolTip="Re-run local suggestions">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="FlaskOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                            <TextBlock Text="试运行" />
+                            <TextBlock Text="Dry run" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="ReloadAsync"
@@ -82,14 +82,14 @@
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Refresh" Width="15" Height="15" Margin="0,0,6,0" />
-                            <TextBlock Text="刷新" />
+                            <TextBlock Text="Refresh" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="Push"
                             Style="{StaticResource App.PrimaryButton}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="CloudUploadOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                            <TextBlock Text="推送更新" />
+                            <TextBlock Text="Push changes" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

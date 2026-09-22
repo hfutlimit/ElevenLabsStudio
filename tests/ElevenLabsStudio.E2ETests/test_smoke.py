@@ -71,20 +71,20 @@ def test_gear_button_opens_settings_dialog(launched_exe) -> None:
     main_window = launched_exe.main_window
 
     gear = main_window.child_window(
-        title="设置", auto_id="OpenSettings", control_type="Button")
+        title="Settings", auto_id="OpenSettings", control_type="Button")
     # pywinauto can fall back to text match if auto_id is empty.
     if not gear.exists():
-        gear = main_window.child_window(title="设置", control_type="Button")
+        gear = main_window.child_window(title="Settings", control_type="Button")
     assert gear.exists(timeout=5), "settings gear button not found in title bar"
 
     gear.invoke()
     # Owned WPF dialogs are located by native handle first; see helper.
-    settings = _owned_dialog(launched_exe, "设置.*ElevenLabs Studio")
+    settings = _owned_dialog(launched_exe, "Settings.*ElevenLabs Studio")
     settings.wait("ready", timeout=10)
     assert settings.exists(), "Settings dialog did not open after clicking the gear"
 
     # Mock mode CheckBox + ApiKey PasswordBox are present.
-    assert settings.child_window(title_re="使用离线 Mock 数据.*", control_type="CheckBox").exists()
+    assert settings.child_window(title_re="Use offline mock data.*", control_type="CheckBox").exists()
     assert settings.child_window(control_type="Edit", auto_id="ApiKey").exists() or \
            settings.child_window(control_type="Edit").exists()
 
@@ -96,12 +96,12 @@ def test_pull_button_opens_pull_agent_dialog(launched_exe) -> None:
     main_window = launched_exe.main_window
 
     pull = main_window.child_window(
-        title_re=".*拉取 Agent.*", auto_id="PullAgentById", control_type="Button")
+        title_re=".*Pull Agent.*", auto_id="PullAgentById", control_type="Button")
     if not pull.exists():
-        pull = main_window.child_window(title_re=".*拉取 Agent.*", control_type="Button")
+        pull = main_window.child_window(title_re=".*Pull Agent.*", control_type="Button")
     assert pull.exists(timeout=5), "pull Agent button not found in sidebar"
 
     pull.invoke()
-    dialog = _owned_dialog(launched_exe, "按 ID 拉取 Agent")
+    dialog = _owned_dialog(launched_exe, "Pull Agent by ID")
     dialog.wait("ready", timeout=10)
     assert dialog.exists(), "Pull Agent dialog did not open after clicking the button"

@@ -45,7 +45,7 @@ public partial class App : Application
 		if (!createdNew)
 		{
 			MessageBox.Show(
-				"ElevenLabs Studio 已经在运行。\n\n请检查任务栏 / 系统托盘后再次启动。",
+				"ElevenLabs Studio is already running.\n\nCheck the taskbar or system tray before launching it again.",
 				"Already running",
 				MessageBoxButton.OK,
 				MessageBoxImage.Information);

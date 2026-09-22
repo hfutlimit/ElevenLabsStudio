@@ -159,7 +159,7 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 
 		if (!hasPromptChange && !hasFirstMsgChange && !hasVariablesChange && !hasWorkflowChange)
 		{
-			await _dialog.ShowInfoAsync("无变更", "Prompt、First Message、Variables、Workflow 都没改动，无需推送。");
+			await _dialog.ShowInfoAsync("No changes", "Prompt, First Message, Variables, and Workflow are unchanged; there is nothing to push.");
 			return;
 		}
 
@@ -180,17 +180,17 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 			DiscardDraft();
 			await _events.PublishOnUIThreadAsync(
 				new AgentUpdatedEvent(snapshot.AgentId, snapshot));
-			await _dialog.ShowInfoAsync("推送成功", $"Agent {snapshot.Name} 已更新。");
+			await _dialog.ShowInfoAsync("Push succeeded", $"Agent {snapshot.Name} was updated.");
 		}
 		catch (ElevenLabsException ex)
 		{
 			_logger.LogError(ex, "ElevenLabs error while updating agent {Id}", Agent.AgentId);
-			await _dialog.ShowErrorAsync("推送失败", $"HTTP {ex.HttpStatus}: {ex.Message}");
+			await _dialog.ShowErrorAsync("Push failed", $"HTTP {ex.HttpStatus}: {ex.Message}");
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Unexpected error while updating agent {Id}", Agent.AgentId);
-			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+			await _dialog.ShowErrorAsync("Unexpected error", ex.Message);
 		}
 		finally
 		{
@@ -227,12 +227,12 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 		catch (ElevenLabsException ex)
 		{
 			_logger.LogError(ex, "ElevenLabs error while refreshing agent {Id}", Agent.AgentId);
-			await _dialog.ShowErrorAsync("刷新失败", $"HTTP {ex.HttpStatus}: {ex.Message}");
+			await _dialog.ShowErrorAsync("Refresh failed", $"HTTP {ex.HttpStatus}: {ex.Message}");
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Unexpected error while refreshing agent {Id}", Agent.AgentId);
-			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+			await _dialog.ShowErrorAsync("Unexpected error", ex.Message);
 		}
 		finally
 		{

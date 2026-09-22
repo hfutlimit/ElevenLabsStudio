@@ -141,7 +141,7 @@ public sealed class AgentListViewModelTests
 
 		await vm.LoadAsync();
 
-		await dialog.Received().ShowErrorAsync("鉴权失败", Arg.Any<string>(), Arg.Any<CancellationToken>());
+		await dialog.Received().ShowErrorAsync("Authentication failed", Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Fact]

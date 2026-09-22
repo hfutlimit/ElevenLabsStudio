@@ -88,7 +88,7 @@ public sealed class SettingsViewModel : Screen
         // Capture the intended new values up front so the file write
         // can happen without first mutating the live in-memory options.
         // If the write fails the live options are untouched and the
-        // user sees an honest "保存失败" message instead of a UI
+        // user sees an honest "Save failed" message instead of a UI
         // showing "saved" while the running app still uses the old
         // Mock/ApiKey (review #5).
         var snapshot = new ElevenLabsOptions
@@ -105,10 +105,10 @@ public sealed class SettingsViewModel : Screen
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to persist settings to appsettings.json");
-            StatusText = "保存失败：" + ex.Message;
+            StatusText = "Save failed: " + ex.Message;
             await _dialog.ShowErrorAsync(
-                "保存失败",
-                "无法写入 appsettings.json: " + ex.Message);
+                "Save failed",
+                "Could not write appsettings.json: " + ex.Message);
             return;
         }
 
@@ -125,12 +125,12 @@ public sealed class SettingsViewModel : Screen
             opts.Mock, oldMock, !string.IsNullOrWhiteSpace(opts.ApiKey));
 
         var note = opts.Mock != oldMock
-            ? "\n\nMock 模式切换已生效 — 下次列表加载会立即走新路径，无需重启。"
+            ? "\n\nMock mode change applied — the next agent list load will use the new data source; no restart required."
             : string.Empty;
 
         await _dialog.ShowInfoAsync(
-            "已保存",
-            $"配置已写入 appsettings.json 并热重载。{note}",
+            "Saved",
+            $"Configuration written to appsettings.json and hot-reloaded.{note}",
             default);
         await TryCloseAsync(true);
     }

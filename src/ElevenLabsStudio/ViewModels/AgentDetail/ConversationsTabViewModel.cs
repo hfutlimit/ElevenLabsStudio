@@ -88,13 +88,13 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 		{
 			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
 			_logger.LogError(ex, "ElevenLabs error loading conversation {ConversationId}", conversation.ConversationId);
-			await _dialog.ShowErrorAsync("加载失败", $"HTTP {ex.HttpStatus}: {ex.Message}", ct);
+			await _dialog.ShowErrorAsync("Load failed", $"HTTP {ex.HttpStatus}: {ex.Message}", ct);
 		}
 		catch (Exception ex)
 		{
 			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
 			_logger.LogError(ex, "Unexpected error loading conversation {ConversationId}", conversation.ConversationId);
-			await _dialog.ShowErrorAsync("未知错误", ex.Message, ct);
+			await _dialog.ShowErrorAsync("Unexpected error", ex.Message, ct);
 		}
 		finally
 		{
@@ -115,7 +115,7 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Unexpected selection failure for {ConversationId}", conversation?.ConversationId);
-			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+			await _dialog.ShowErrorAsync("Unexpected error", ex.Message);
 		}
 	}
 
@@ -140,12 +140,12 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 		catch (ElevenLabsException ex)
 		{
 			_logger.LogError(ex, "ElevenLabs error loading conversations for {AgentId}", _agent.AgentId);
-			await _dialog.ShowErrorAsync("加载失败", $"HTTP {ex.HttpStatus}: {ex.Message}");
+			await _dialog.ShowErrorAsync("Load failed", $"HTTP {ex.HttpStatus}: {ex.Message}");
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Unexpected error loading conversations for {AgentId}", _agent.AgentId);
-			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+			await _dialog.ShowErrorAsync("Unexpected error", ex.Message);
 		}
 		finally
 		{

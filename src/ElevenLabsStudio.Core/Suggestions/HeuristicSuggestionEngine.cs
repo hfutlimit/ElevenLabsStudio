@@ -31,7 +31,7 @@ public sealed class HeuristicSuggestionEngine : ISuggestionEngine
                     FieldName: nameof(Agent.Prompt),
                     CurrentValue: current.Prompt,
                     ProposedValue: proposed.Prompt,
-                    Rationale: "提示词为空会导致 Agent 行为完全未定义。",
+                    Rationale: "An empty prompt leaves the Agent's behavior undefined.",
                     Severity: SuggestionSeverity.Warning));
             }
             else if (proposed.Prompt.Length > 8000)
@@ -40,7 +40,7 @@ public sealed class HeuristicSuggestionEngine : ISuggestionEngine
                     FieldName: nameof(Agent.Prompt),
                     CurrentValue: current.Prompt,
                     ProposedValue: proposed.Prompt,
-                    Rationale: "提示词超过 8000 字符，ElevenLabs 将截断或拒绝。",
+                    Rationale: "Prompts over 8,000 characters may be truncated or rejected by ElevenLabs.",
                     Severity: SuggestionSeverity.Warning));
             }
             else if (proposed.Prompt.Equals(current.Prompt, StringComparison.Ordinal))
@@ -49,7 +49,7 @@ public sealed class HeuristicSuggestionEngine : ISuggestionEngine
                     FieldName: nameof(Agent.Prompt),
                     CurrentValue: current.Prompt,
                     ProposedValue: proposed.Prompt,
-                    Rationale: "提示词没有变化，无需推送。",
+                    Rationale: "The prompt is unchanged; there is nothing to push.",
                     Severity: SuggestionSeverity.Info));
             }
         }
@@ -61,7 +61,7 @@ public sealed class HeuristicSuggestionEngine : ISuggestionEngine
                 FieldName: nameof(Agent.FirstMessage),
                 CurrentValue: current.FirstMessage,
                 ProposedValue: proposed.FirstMessage,
-                Rationale: "首句为空，Agent 不会主动开场。",
+                Rationale: "An empty first message means the Agent will not open the conversation proactively.",
                 Severity: SuggestionSeverity.Suggestion));
         }
 
@@ -71,7 +71,7 @@ public sealed class HeuristicSuggestionEngine : ISuggestionEngine
                 FieldName: nameof(Agent.VoiceId),
                 CurrentValue: current.VoiceId ?? string.Empty,
                 ProposedValue: proposed.VoiceId,
-                Rationale: "VoiceId 为空将导致 ElevenLabs 退回默认语音。",
+                Rationale: "An empty VoiceId causes ElevenLabs to fall back to its default voice.",
                 Severity: SuggestionSeverity.Suggestion));
         }
 
@@ -85,7 +85,7 @@ public sealed class HeuristicSuggestionEngine : ISuggestionEngine
                         FieldName: $"Variable:{variable.Name}",
                         CurrentValue: variable.Value ?? string.Empty,
                         ProposedValue: variable.Value ?? string.Empty,
-                        Rationale: "变量名称不能为空。",
+                        Rationale: "Variable names cannot be empty.",
                         Severity: SuggestionSeverity.Warning));
                 }
             }

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace ElevenLabsStudio.ViewModels.Agents;
 
 /// <summary>
-/// Tiny dialog VM shown when the user clicks "📥 拉取 Agent" in the
+/// Tiny dialog VM shown when the user clicks "📥 Pull Agent" in the
 /// sidebar. Validates a non-empty AgentId, calls
 /// <see cref="IElevenLabsClient.GetAgentAsync"/>, and closes itself with
 /// a result of <c>true</c> + the pulled <see cref="Agent"/> attached
@@ -54,7 +54,7 @@ public sealed class PullAgentDialogViewModel : ScreenBase
 		_client = client;
 		_dialog = dialog;
 		_logger = logger;
-		DisplayName = "按 ID 拉取 Agent";
+		DisplayName = "Pull Agent by ID";
 	}
 
 	public async Task Confirm()
@@ -69,7 +69,7 @@ public sealed class PullAgentDialogViewModel : ScreenBase
 		catch (ElevenLabsAuthException ex)
 		{
 			_logger.LogError(ex, "Auth failed while pulling agent {AgentId}", AgentId);
-			Error = "API key 无效或缺失。请在 appsettings.json 配置 ElevenLabs.ApiKey 后重启。";
+			Error = "The API key is invalid or missing. Configure ElevenLabs.ApiKey in appsettings.json and restart the app.";
 		}
 		catch (ElevenLabsException ex)
 		{

@@ -17,7 +17,7 @@
                                          HorizontalAlignment="Center"
                                          VerticalAlignment="Center" />
             </Border>
-            <TextBlock Text="选择 Agent 开始"
+            <TextBlock Text="Select an agent to get started"
                        FontSize="18"
                        FontWeight="SemiBold"
                        Foreground="{StaticResource App.Text}"
@@ -29,9 +29,9 @@
                        FontSize="12"
                        LineHeight="20"
                        Margin="0,0,0,16">
-                <Run Text="从左侧选择一个 Agent 查看完整配置，" />
+                <Run Text="Select an agent on the left to view its full configuration," />
                 <LineBreak />
-                <Run Text="或拉取新的 ElevenLabs Agent 到本地。" />
+                <Run Text="or pull a new ElevenLabs agent into the app." />
             </TextBlock>
         </StackPanel>
     </Grid>

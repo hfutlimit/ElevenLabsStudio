@@ -82,7 +82,7 @@ public sealed class ConversationsTabViewModelTests
 		await vm.SelectConversationAsync(Conversation("c2"));
 
 		vm.Turns.Should().ContainSingle(turn => turn.Text == "kept");
-		await dialog.Received().ShowErrorAsync("加载失败", Arg.Any<string>(), Arg.Any<CancellationToken>());
+		await dialog.Received().ShowErrorAsync("Load failed", Arg.Any<string>(), Arg.Any<CancellationToken>());
 	}
 
 	[Fact]

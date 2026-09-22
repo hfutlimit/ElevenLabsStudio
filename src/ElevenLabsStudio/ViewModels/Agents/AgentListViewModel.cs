@@ -175,7 +175,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 	public async Task LoadAsync(CancellationToken ct = default)
 	{
 		IsBusy = true;
-		BusyMessage = "正在加载 Agent…";
+		BusyMessage = "Loading agents…";
 		try
 		{
 			var selectedId = _selectedAgent?.AgentId;
@@ -203,18 +203,18 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 		{
 			_logger.LogError(ex, "ElevenLabs auth failed while loading agents");
 			await _dialog.ShowErrorAsync(
-				"鉴权失败",
-				"API Key 无效或缺失。请在 appsettings.json 的 ElevenLabs.ApiKey 配置后重启。");
+				"Authentication failed",
+				"The API key is invalid or missing. Configure ElevenLabs.ApiKey in appsettings.json and restart the app.");
 		}
 		catch (ElevenLabsException ex)
 		{
 			_logger.LogError(ex, "ElevenLabs error while loading agents (status={Status})", ex.HttpStatus);
-			await _dialog.ShowErrorAsync("加载失败", $"无法加载 Agent（HTTP {ex.HttpStatus}）。");
+			await _dialog.ShowErrorAsync("Load failed", $"Could not load agents (HTTP {ex.HttpStatus}).");
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Unexpected error while loading agents");
-			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+			await _dialog.ShowErrorAsync("Unexpected error", ex.Message);
 		}
 		finally
 		{
@@ -281,13 +281,13 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 		{
 			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
 			_logger.LogError(ex, "ElevenLabs auth failed while loading agent {AgentId}", summary.AgentId);
-			await _dialog.ShowErrorAsync("鉴权失败", "API Key 无效或缺失。", ct);
+			await _dialog.ShowErrorAsync("Authentication failed", "The API key is invalid or missing.", ct);
 		}
 		catch (ElevenLabsException ex)
 		{
 			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
 			_logger.LogError(ex, "ElevenLabs error loading agent {AgentId}", summary.AgentId);
-			await _dialog.ShowErrorAsync("加载失败", $"无法加载 Agent（HTTP {ex.HttpStatus}）。", ct);
+			await _dialog.ShowErrorAsync("Load failed", $"Could not load agent (HTTP {ex.HttpStatus}).", ct);
 		}
 	}
 
@@ -300,7 +300,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "Unexpected selection failure for {AgentId}", summary?.AgentId);
-			await _dialog.ShowErrorAsync("未知错误", ex.Message);
+			await _dialog.ShowErrorAsync("Unexpected error", ex.Message);
 		}
 	}
 

@@ -83,22 +83,22 @@
                                 cal:Message.Attach="[Event Click] = [Action OpenSettingsAsync()]"
                                 Style="{StaticResource CaptionButton}"
                                 Margin="2,3"
-                                ToolTip="设置"
-                                AutomationProperties.Name="设置">
+                                ToolTip="Settings"
+                                AutomationProperties.Name="Settings">
                             <materialDesign:PackIcon Kind="CogOutline"
                                                      Width="14" Height="14" />
                         </Button>
                         <Button x:Name="Minimize"
                                 Style="{StaticResource CaptionButton}"
                                 Margin="2,3"
-                                ToolTip="最小化">
+                                ToolTip="Minimize">
                             <materialDesign:PackIcon Kind="WindowMinimize"
                                                      Width="14" Height="14" />
                         </Button>
                         <Button x:Name="MaximizeRestore"
                                 Style="{StaticResource CaptionButton}"
                                 Margin="2,3"
-                                ToolTip="最大化">
+                                ToolTip="Maximize">
                             <materialDesign:PackIcon x:Name="MaximizeIcon"
                                                      Kind="WindowMaximize"
                                                      Width="14" Height="14" />
@@ -107,7 +107,7 @@
                                 Style="{StaticResource CaptionButton}"
                                 Margin="2,3,6,3"
                                 Foreground="{StaticResource App.Danger}"
-                                ToolTip="关闭">
+                                ToolTip="Close">
                             <materialDesign:PackIcon Kind="Close"
                                                      Width="14" Height="14" />
                         </Button>

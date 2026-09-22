@@ -6,7 +6,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:cal="http://www.caliburnproject.org"
         mc:Ignorable="d"
-        Title="设置 · ElevenLabs Studio"
+        Title="Settings · ElevenLabs Studio"
         Height="540" Width="620"
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource App.Canvas}"
@@ -42,11 +42,11 @@
                                              VerticalAlignment="Center" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="设置"
+                    <TextBlock Text="Settings"
                                FontSize="20"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource App.Text}" />
-                    <TextBlock Text="连接 ElevenLabs，并配置应用的运行模式"
+                    <TextBlock Text="Connect to ElevenLabs and configure how the app runs"
                                FontSize="11"
                                Foreground="{StaticResource App.TextMuted}"
                                Margin="0,3,0,0" />
@@ -76,7 +76,7 @@
                                  BorderBrush="{StaticResource App.BorderStrong}"
                                  Background="{StaticResource App.Surface}"
                                  Foreground="{StaticResource App.Text}" />
-                    <TextBlock Text="也可以通过环境变量 ELEVENLABS_API_KEY 设置"
+                    <TextBlock Text="You can also use the ELEVENLABS_API_KEY environment variable"
                                FontSize="10"
                                Foreground="{StaticResource App.TextMuted}"
                                Margin="0,7,0,0" />
@@ -100,17 +100,17 @@
                                                      Width="16" Height="16"
                                                      Margin="0,0,7,0"
                                                      Foreground="{StaticResource App.Accent}" />
-                            <TextBlock Text="数据来源"
+                            <TextBlock Text="Data source"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource App.Text}" />
                         </StackPanel>
                     </DockPanel>
                     <CheckBox x:Name="MockMode"
-                              Content="使用离线 Mock 数据（无需 API Key）"
+                              Content="Use offline mock data (no API key required)"
                               Margin="0,12,0,0"
                               FontSize="12"
                               Foreground="{StaticResource App.Text}" />
-                    <TextBlock Text="关闭后，应用将使用上方 API Key 访问 api.elevenlabs.io。"
+                    <TextBlock Text="When disabled, the app uses the API key above to access api.elevenlabs.io."
                                FontSize="11"
                                Foreground="{StaticResource App.TextSecondary}"
                                Margin="24,5,0,0"
@@ -134,7 +134,7 @@
                 <Button x:Name="Cancel"
                         cal:Message.Attach="[Event Click] = [Action CancelAsync()]"
                         Style="{StaticResource App.SecondaryButton}"
-                        Content="取消"
+                        Content="Cancel"
                         Width="92"
                         Margin="0,0,10,0" />
                 <Button x:Name="Save"
@@ -143,7 +143,7 @@
                         Width="104">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="ContentSaveOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="保存设置" />
+                        <TextBlock Text="Save settings" />
                     </StackPanel>
                 </Button>
             </StackPanel>

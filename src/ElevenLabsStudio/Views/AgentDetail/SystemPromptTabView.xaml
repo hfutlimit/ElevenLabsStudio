@@ -57,7 +57,7 @@
                                          Width="15" Height="15"
                                          Margin="0,0,6,0"
                                          Foreground="{StaticResource App.Warning}" />
-                <TextBlock Text="本地建议"
+                <TextBlock Text="Local suggestions"
                            FontWeight="SemiBold"
                            FontSize="12"
                            Foreground="{StaticResource App.Text}" />

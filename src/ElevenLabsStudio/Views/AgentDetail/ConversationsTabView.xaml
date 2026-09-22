@@ -19,7 +19,7 @@
                         <Button x:Name="ReloadAsync"
                                 DockPanel.Dock="Right"
                                 Style="{StaticResource App.IconButton}"
-                                ToolTip="刷新会话"
+                                ToolTip="Refresh conversations"
                                 Width="30" Height="30"
                                 Foreground="{StaticResource App.TextSecondary}">
                             <materialDesign:PackIcon Kind="Refresh" Width="14" Height="14" />
@@ -29,7 +29,7 @@
                                                      Width="15" Height="15"
                                                      Margin="0,0,7,0"
                                                      Foreground="{StaticResource App.Accent}" />
-                            <TextBlock Text="会话记录 · 近 7 天"
+                            <TextBlock Text="Conversations · Last 7 days"
                                        FontWeight="SemiBold"
                                        FontSize="11"
                                        Foreground="{StaticResource App.TextSecondary}" />
@@ -115,7 +115,7 @@
                                                  Width="15" Height="15"
                                                  Margin="0,0,7,0"
                                                  Foreground="{StaticResource App.Accent}" />
-                        <TextBlock Text="对话转写"
+                        <TextBlock Text="Transcript"
                                    FontWeight="SemiBold"
                                    FontSize="11"
                                    Foreground="{StaticResource App.TextSecondary}" />

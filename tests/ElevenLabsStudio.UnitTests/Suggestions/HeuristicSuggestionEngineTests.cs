@@ -30,9 +30,10 @@ public sealed class HeuristicSuggestionEngineTests
 
         var result = engine.Analyze(current, update);
 
-        result.Should().ContainSingle(s =>
-            s.FieldName == nameof(Agent.Prompt)
-            && s.Severity == SuggestionSeverity.Warning);
+		result.Should().ContainSingle(s =>
+			s.FieldName == nameof(Agent.Prompt)
+			&& s.Severity == SuggestionSeverity.Warning
+			&& s.Rationale == "An empty prompt leaves the Agent's behavior undefined.");
     }
 
     [Fact]
@@ -45,10 +46,11 @@ public sealed class HeuristicSuggestionEngineTests
 
         var result = engine.Analyze(current, update);
 
-        result.Should().ContainSingle(s =>
-            s.FieldName == nameof(Agent.Prompt)
-            && s.Severity == SuggestionSeverity.Warning
-            && s.ProposedValue == huge);
+		result.Should().ContainSingle(s =>
+			s.FieldName == nameof(Agent.Prompt)
+			&& s.Severity == SuggestionSeverity.Warning
+			&& s.Rationale == "Prompts over 8,000 characters may be truncated or rejected by ElevenLabs."
+			&& s.ProposedValue == huge);
     }
 
     [Fact]
@@ -60,9 +62,10 @@ public sealed class HeuristicSuggestionEngineTests
 
         var result = engine.Analyze(current, update);
 
-        result.Should().ContainSingle(s =>
-            s.FieldName == nameof(Agent.Prompt)
-            && s.Severity == SuggestionSeverity.Info);
+		result.Should().ContainSingle(s =>
+			s.FieldName == nameof(Agent.Prompt)
+			&& s.Severity == SuggestionSeverity.Info
+			&& s.Rationale == "The prompt is unchanged; there is nothing to push.");
     }
 
     [Fact]
@@ -74,9 +77,10 @@ public sealed class HeuristicSuggestionEngineTests
 
         var result = engine.Analyze(current, update);
 
-        result.Should().ContainSingle(s =>
-            s.FieldName == nameof(Agent.FirstMessage)
-            && s.Severity == SuggestionSeverity.Suggestion);
+		result.Should().ContainSingle(s =>
+			s.FieldName == nameof(Agent.FirstMessage)
+			&& s.Severity == SuggestionSeverity.Suggestion
+			&& s.Rationale == "An empty first message means the Agent will not open the conversation proactively.");
     }
 
     [Fact]
