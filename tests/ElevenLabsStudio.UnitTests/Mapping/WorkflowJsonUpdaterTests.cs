@@ -46,6 +46,24 @@ public sealed class WorkflowJsonUpdaterTests
 	}
 
 	[Fact]
+	public void Apply_updates_node_position_without_dropping_unknown_position_fields()
+	{
+		var edit = new Workflow(
+			new[]
+			{
+				new WorkflowNode("start", "start", "Greeting", X: 84.5, Y: 156.25),
+				new WorkflowNode("answer", "conversation", "Answer"),
+			},
+			RawWorkflow);
+
+		var result = WorkflowJsonUpdater.Apply(edit);
+
+		result["nodes"]!["start"]!["position"]!["x"]!.GetValue<double>().Should().Be(84.5);
+		result["nodes"]!["start"]!["position"]!["y"]!.GetValue<double>().Should().Be(156.25);
+		result["nodes"]!["start"]!["future"]!.GetValue<bool>().Should().BeTrue();
+	}
+
+	[Fact]
 	public void Apply_rejects_removing_a_node_that_an_edge_references()
 	{
 		var edit = new Workflow(

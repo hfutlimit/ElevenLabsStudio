@@ -23,15 +23,51 @@ namespace ElevenLabsStudio.UnitTests.Infrastructure;
 /// </summary>
 public sealed class RuntimeClientTests
 {
-    private static IOptionsMonitor<ElevenLabsOptions> MockMonitor(bool mockMode, string? apiKey = "key")
-    {
-        return new StaticOptionsMonitor<ElevenLabsOptions>(new ElevenLabsOptions
-        {
-            Mock = mockMode,
-            ApiKey = apiKey,
-            BaseUrl = "https://example.invalid/",
-        });
-    }
+	private static IOptionsMonitor<ElevenLabsOptions> MockMonitor(bool mockMode, string? apiKey = "key")
+	{
+		return new StaticOptionsMonitor<ElevenLabsOptions>(new ElevenLabsOptions
+		{
+			Mock = mockMode,
+			ApiKey = apiKey,
+			BaseUrl = "https://example.invalid/",
+		});
+	}
+
+	[Fact]
+	public async Task When_TestAgentId_is_configured_returns_only_that_agent()
+	{
+		await using var server = new Integration.HttpTestServer();
+		server.Enqueue(200, """
+			{
+			  "agent_id": "agent_test_only",
+			  "name": "Test Agent",
+			  "conversation_config": { "agent": { "prompt": { "prompt": "hello" } }, "tts": {} },
+			  "metadata": {}
+			}
+			""");
+		var real = new ElevenLabsHttpClient(
+			new HttpClient { BaseAddress = new Uri(server.BaseUrl), Timeout = TimeSpan.FromSeconds(5) },
+			Microsoft.Extensions.Logging.Abstractions.NullLogger<ElevenLabsHttpClient>.Instance,
+			new StaticOptionsMonitor<ElevenLabsOptions>(new ElevenLabsOptions
+			{
+				BaseUrl = server.BaseUrl,
+				ApiKey = "x",
+			}));
+		var options = new StaticOptionsMonitor<ElevenLabsOptions>(new ElevenLabsOptions
+		{
+			Mock = false,
+			ApiKey = "x",
+			BaseUrl = server.BaseUrl,
+			TestAgentId = "agent_test_only",
+		});
+		var client = new RuntimeClient(new MockElevenLabsClient(), real, options);
+
+		var agents = await client.ListAgentsAsync();
+
+		agents.Should().ContainSingle(agent => agent.AgentId == "agent_test_only");
+		server.Captured.Should().ContainSingle(request =>
+			request.Path == "/v1/convai/agents/agent_test_only");
+	}
 
     [Fact]
     public async Task When_Mock_is_true_returns_mock_agents()

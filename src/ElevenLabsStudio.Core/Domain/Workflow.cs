@@ -1,24 +1,48 @@
 namespace ElevenLabsStudio.Core.Domain;
 
 /// <summary>
-/// Read-only summary of an Agent's workflow graph. v0.1 is intentionally
-/// shallow: a list of nodes plus the raw JSON the server returned so the
-/// user can inspect / diff the full shape without us committing to a
-/// complete parser. Future versions can widen this as the workflow
-/// editing surface matures.
+/// A workflow graph together with the original wire document used for
+/// lossless updates. The typed members contain only the graph data needed by
+/// the editor; unknown server fields remain in <see cref="RawJson"/>.
 /// </summary>
-public sealed record Workflow(
-    IReadOnlyList<WorkflowNode> Nodes,
-    string? RawJson);
+public sealed record Workflow
+{
+	public IReadOnlyList<WorkflowNode> Nodes { get; init; }
+	public string? RawJson { get; init; }
+	public IReadOnlyList<WorkflowEdge> Edges { get; init; }
 
+	public Workflow(
+		IReadOnlyList<WorkflowNode> Nodes,
+		string? RawJson,
+		IReadOnlyList<WorkflowEdge>? Edges = null)
+	{
+		this.Nodes = Nodes ?? Array.Empty<WorkflowNode>();
+		this.RawJson = RawJson;
+		this.Edges = Edges ?? Array.Empty<WorkflowEdge>();
+	}
+}
+
+/// <summary>
+/// A workflow node's server-provided canvas position is optional because
+/// older or partially configured workflows may not include a position.
+/// </summary>
 public sealed record WorkflowNode(
-    string Id,
-    string Type,
-    string Name);
+	string Id,
+	string Type,
+	string Name,
+	double? X = null,
+	double? Y = null);
+
+public sealed record WorkflowEdge(
+	string Id,
+	string Source,
+	string Target,
+	string? Condition = null);
 
 public static class WorkflowDefaults
 {
-    public static readonly Workflow Empty = new(
-        Nodes: Array.Empty<WorkflowNode>(),
-        RawJson: null);
+	public static readonly Workflow Empty = new(
+		Nodes: Array.Empty<WorkflowNode>(),
+		RawJson: null,
+		Edges: Array.Empty<WorkflowEdge>());
 }

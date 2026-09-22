@@ -84,8 +84,33 @@ internal static class WorkflowJsonUpdater
 			{
 				nodeObject["id"] = node.Id;
 			}
+			ApplyPosition(nodeObject, node);
 		}
 
 		return root;
+	}
+
+	private static void ApplyPosition(JsonObject nodeObject, WorkflowNode node)
+	{
+		if (node.X is null && node.Y is null)
+		{
+			return;
+		}
+
+		var position = nodeObject["position"] as JsonObject;
+		if (position is null)
+		{
+			position = new JsonObject();
+			nodeObject["position"] = position;
+		}
+
+		if (node.X is not null)
+		{
+			position["x"] = JsonValue.Create(node.X.Value);
+		}
+		if (node.Y is not null)
+		{
+			position["y"] = JsonValue.Create(node.Y.Value);
+		}
 	}
 }

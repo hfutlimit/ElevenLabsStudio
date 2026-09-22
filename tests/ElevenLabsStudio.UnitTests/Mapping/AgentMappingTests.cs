@@ -42,10 +42,12 @@ public sealed class AgentMappingTests
 			Workflow = JsonNode.Parse("""
 				{
 					"nodes": {
-					"n1": { "type": "start", "label": "Greeting" },
-					"n2": { "type": "llm", "label": "Answer" }
+					"n1": { "type": "start", "label": "Greeting", "position": { "x": 10, "y": 20 } },
+					"n2": { "type": "llm", "label": "Answer", "position": { "x": 120, "y": 20 } }
 					},
-					"edges": {}
+					"edges": {
+						"e1": { "source": "n1", "target": "n2", "forward_condition": { "type": "llm", "condition": "always" } }
+					}
 				}
 				""")!.AsObject(),
 			Metadata = new ElevenLabsMetadataDto
@@ -66,6 +68,12 @@ public sealed class AgentMappingTests
 		agent.Variables[0].Value.Should().Be("CN");
 		agent.Workflow.Nodes.Should().HaveCount(2);
 		agent.Workflow.Nodes[0].Id.Should().Be("n1");
+		agent.Workflow.Nodes[0].X.Should().Be(10);
+		agent.Workflow.Nodes[0].Y.Should().Be(20);
+		agent.Workflow.Edges.Should().ContainSingle();
+		agent.Workflow.Edges[0].Source.Should().Be("n1");
+		agent.Workflow.Edges[0].Target.Should().Be("n2");
+		agent.Workflow.Edges[0].Condition.Should().Be("always");
 		agent.Workflow.RawJson.Should().NotBeNullOrWhiteSpace();
 	}
 

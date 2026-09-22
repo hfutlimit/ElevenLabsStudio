@@ -89,26 +89,20 @@ internal static class Mapping
 				{
 					continue;
 				}
-				nodes.Add(new WorkflowNode(
-					pair.Key,
-					node["type"]?.GetValue<string>() ?? string.Empty,
-					node["label"]?.GetValue<string>()
-						?? node["name"]?.GetValue<string>()
-						?? pair.Key));
+				nodes.Add(MapToWorkflowNode(pair.Key, node));
 			}
 		}
 		else if (dto["nodes"] is JsonArray nodeArray)
 		{
 			foreach (var node in nodeArray.OfType<JsonObject>())
 			{
-				nodes.Add(new WorkflowNode(
-					node["id"]?.GetValue<string>() ?? string.Empty,
-					node["type"]?.GetValue<string>() ?? string.Empty,
-					node["label"]?.GetValue<string>()
-						?? node["name"]?.GetValue<string>()
-						?? string.Empty));
+				nodes.Add(MapToWorkflowNode(
+					GetString(node["id"]) ?? string.Empty,
+					node));
 			}
 		}
+
+		var edges = MapToWorkflowEdges(dto["edges"]);
 		string? raw = null;
 		try
 		{
@@ -119,7 +113,101 @@ internal static class Mapping
 			// Fall through with raw=null; UI surfaces "no raw JSON" gracefully.
 		}
 
-		return new Workflow(nodes, raw);
+		return new Workflow(nodes, raw, edges);
+	}
+
+	private static WorkflowNode MapToWorkflowNode(string id, JsonObject node)
+	{
+		var position = node["position"] as JsonObject;
+		return new WorkflowNode(
+			id,
+			GetString(node["type"]) ?? string.Empty,
+			GetString(node["label"])
+				?? GetString(node["name"])
+				?? id,
+			TryGetDouble(position, "x"),
+			TryGetDouble(position, "y"));
+	}
+
+	private static IReadOnlyList<WorkflowEdge> MapToWorkflowEdges(JsonNode? value)
+	{
+		if (value is not JsonObject edgeObject)
+		{
+			return Array.Empty<WorkflowEdge>();
+		}
+
+		var edges = new List<WorkflowEdge>();
+		foreach (var pair in edgeObject)
+		{
+			if (pair.Value is not JsonObject edge)
+			{
+				continue;
+			}
+
+			var source = GetString(edge["source"]);
+			var target = GetString(edge["target"]);
+			if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(target))
+			{
+				continue;
+			}
+
+			edges.Add(new WorkflowEdge(
+				pair.Key,
+				source,
+				target,
+				GetCondition(edge["forward_condition"]) ?? GetString(edge["condition"])));
+		}
+
+		return edges;
+	}
+
+	private static string? GetCondition(JsonNode? value)
+	{
+		if (value is JsonObject condition)
+		{
+			return GetString(condition["condition"])
+				?? GetString(condition["label"])
+				?? GetString(condition["type"]);
+		}
+
+		return GetString(value);
+	}
+
+	private static string? GetString(JsonNode? value)
+	{
+		try
+		{
+			return value?.GetValue<string>();
+		}
+		catch (InvalidOperationException)
+		{
+			return null;
+		}
+		catch (FormatException)
+		{
+			return null;
+		}
+	}
+
+	private static double? TryGetDouble(JsonObject? position, string name)
+	{
+		if (position is null || position[name] is null)
+		{
+			return null;
+		}
+
+		try
+		{
+			return position[name]!.GetValue<double>();
+		}
+		catch (InvalidOperationException)
+		{
+			return null;
+		}
+		catch (FormatException)
+		{
+			return null;
+		}
 	}
 
 	private static DateTimeOffset FromUnix(long? unixSecs) =>

@@ -49,8 +49,24 @@ public sealed class RuntimeClient : IElevenLabsClient
 		}
 	}
 
-	public Task<IReadOnlyList<AgentSummary>> ListAgentsAsync(CancellationToken ct = default) =>
-		Route.ListAgentsAsync(ct);
+	public async Task<IReadOnlyList<AgentSummary>> ListAgentsAsync(CancellationToken ct = default)
+	{
+		var testAgentId = _options.CurrentValue.TestAgentId;
+		if (string.IsNullOrWhiteSpace(testAgentId))
+		{
+			return await Route.ListAgentsAsync(ct);
+		}
+
+		var agent = await Route.GetAgentAsync(testAgentId, ct);
+		return new[]
+		{
+			new AgentSummary(
+				agent.AgentId,
+				agent.Name,
+				agent.VoiceId,
+				CreatedAt: agent.UpdatedAt),
+		};
+	}
 
 	public Task<Agent> GetAgentAsync(string agentId, CancellationToken ct = default) =>
 		Route.GetAgentAsync(agentId, ct);
