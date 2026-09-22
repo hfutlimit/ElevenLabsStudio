@@ -124,6 +124,9 @@ public partial class App : Application
 		services.AddElevenLabsStudioInfrastructure(config);
 
 		services.AddSingleton<IDialogService, Services.MaterialDialogService>();
+		services.AddSingleton<Services.WebViewRealtimeConversationClient>();
+		services.AddSingleton<IRealtimeConversationClient>(sp =>
+			sp.GetRequiredService<Services.WebViewRealtimeConversationClient>());
 
 		// CM5 framework singletons (only the ones App touches).
 		services.AddSingleton<IWindowManager, WindowManager>();

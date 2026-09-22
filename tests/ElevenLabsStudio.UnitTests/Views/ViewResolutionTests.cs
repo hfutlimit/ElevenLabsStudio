@@ -1,8 +1,10 @@
 using System.Windows;
 using Caliburn.Micro;
 using ElevenLabsStudio.ViewModels;
+using ElevenLabsStudio.ViewModels.AgentDetail;
 using ElevenLabsStudio.ViewModels.Agents;
 using ElevenLabsStudio.Views;
+using ElevenLabsStudio.Views.AgentDetail;
 using ElevenLabsStudio.Views.Agents;
 using FluentAssertions;
 
@@ -13,6 +15,7 @@ public sealed class ViewResolutionTests
 	[Theory]
 	[InlineData(typeof(SettingsViewModel), typeof(SettingsView))]
 	[InlineData(typeof(PullAgentDialogViewModel), typeof(PullAgentDialogView))]
+	[InlineData(typeof(LiveConversationViewModel), typeof(LiveConversationView))]
 	public void View_type_matches_default_Caliburn_mapping(
 		Type viewModelType,
 		Type expectedViewType)
@@ -28,6 +31,7 @@ public sealed class ViewResolutionTests
 	[Theory]
 	[InlineData(typeof(SettingsViewModel), typeof(SettingsView))]
 	[InlineData(typeof(PullAgentDialogViewModel), typeof(PullAgentDialogView))]
+	[InlineData(typeof(LiveConversationViewModel), typeof(LiveConversationView))]
 	public void Caliburn_locator_resolves_the_expected_View_type(
 		Type viewModelType,
 		Type expectedViewType)

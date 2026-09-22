@@ -1,0 +1,191 @@
+<UserControl x:Class="ElevenLabsStudio.Views.AgentDetail.LiveConversationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
+    <Grid Margin="22,20,22,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Style="{StaticResource App.SectionCard}"
+                Padding="16,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Live conversation"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource App.Text}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <materialDesign:PackIcon Kind="AccountVoice"
+                                                 Width="14" Height="14"
+                                                 Margin="0,0,5,0"
+                                                 Foreground="{StaticResource App.Accent}" />
+                        <TextBlock Text="{Binding AgentName}"
+                                   Foreground="{StaticResource App.TextSecondary}" />
+                        <TextBlock Text="  ·  " Foreground="{StaticResource App.TextMuted}" />
+                        <TextBlock Text="{Binding AgentId}"
+                                   FontFamily="Consolas, Cascadia Mono, monospace"
+                                   Foreground="{StaticResource App.TextMuted}" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Style="{StaticResource App.Badge}" Padding="9,4" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource App.TextMuted}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource App.Success}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource App.TextSecondary}" />
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="{Binding ModeText}" Margin="0,0,14,0" VerticalAlignment="Center" Foreground="{StaticResource App.TextSecondary}" />
+                    <TextBlock Text="{Binding ElapsedText}" Margin="0,0,14,0" VerticalAlignment="Center" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{StaticResource App.TextSecondary}" />
+                    <Button x:Name="StartAsync"
+                            Style="{StaticResource App.PrimaryButton}"
+                            IsEnabled="{Binding CanStart}"
+                            Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Microphone" Width="15" Height="15" Margin="0,0,6,0" />
+                            <TextBlock Text="Start" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="StopAsync"
+                            Style="{StaticResource App.SecondaryButton}"
+                            IsEnabled="{Binding CanStop}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="StopCircleOutline" Width="15" Height="15" Margin="0,0,6,0" />
+                            <TextBlock Text="End" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="0,14,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="300" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource App.SectionCard}" Padding="18,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <TextBlock Text="Transcript" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" />
+                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" Text="Live" Foreground="{StaticResource App.TextMuted}" />
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" Margin="0,14,0,0" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Transcript}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource App.SurfaceAlt}"
+                                            CornerRadius="10"
+                                            Padding="12,9"
+                                            Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Speaker}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource App.Accent}" />
+                                                <TextBlock Text="  ·  " Foreground="{StaticResource App.TextMuted}" />
+                                                <TextBlock Text="{Binding At, StringFormat='{}{0:HH:mm:ss}'}" Foreground="{StaticResource App.TextMuted}" />
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Text}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="{StaticResource App.Text}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" Style="{StaticResource App.SectionCard}" Padding="16" Margin="14,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Session" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" />
+                        <TextBlock Text="Conversation ID" Margin="0,14,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                        <TextBlock Text="{Binding ConversationId, TargetNullValue=—}"
+                                   TextWrapping="Wrap"
+                                   FontFamily="Consolas, Cascadia Mono, monospace"
+                                   Foreground="{StaticResource App.TextSecondary}" />
+
+                        <TextBlock Text="Branch ID" Margin="0,14,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                        <TextBox Text="{Binding BranchId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                        <TextBlock Text="Environment" Margin="0,10,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                        <TextBox Text="{Binding Environment, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+
+                        <TextBlock Text="Dynamic variables (JSON)" Margin="0,10,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                        <TextBox Text="{Binding DynamicVariablesJson, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 MinHeight="110"
+                                 FontFamily="Consolas, Cascadia Mono, monospace" />
+
+                        <TextBlock Text="Microphone" Margin="0,14,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                        <ProgressBar Value="{Binding InputVolume, Mode=OneWay}" Maximum="1" Height="6" />
+                        <TextBlock Text="Agent audio" Margin="0,10,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                        <ProgressBar Value="{Binding OutputVolume, Mode=OneWay}" Maximum="1" Height="6" />
+                        <Button x:Name="ToggleMuteAsync"
+                                Content="{Binding MuteButtonText}"
+                                Style="{StaticResource App.GhostButton}"
+                                Margin="0,16,0,0"
+                                IsEnabled="{Binding IsConnected}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource App.SectionCard}" Padding="10,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         MinHeight="34"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Send a text message without leaving the live session" />
+                <Button Grid.Column="1"
+                        x:Name="SendTextAsync"
+                        Content="Send"
+                        Style="{StaticResource App.SecondaryButton}"
+                        Margin="8,0,0,0"
+                        IsEnabled="{Binding IsConnected}" />
+            </Grid>
+        </Border>
+
+        <wv2:WebView2 x:Name="AudioHost"
+                      Grid.Row="2"
+                      Width="1"
+                      Height="1"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Bottom"
+                      IsHitTestVisible="False" />
+    </Grid>
+</UserControl>

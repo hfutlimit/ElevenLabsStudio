@@ -30,6 +30,7 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 	public VariablesTabViewModel VariablesVm { get; }
 	public WorkflowTabViewModel WorkflowVm { get; }
 	public ConversationsTabViewModel ConversationsVm { get; }
+	public LiveConversationViewModel? LiveConversationVm { get; }
 
 	private int _selectedTabIndex;
 	public int SelectedTabIndex
@@ -58,7 +59,10 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 		IDialogService dialog,
 		IEventAggregator events,
 		IDraftStore drafts,
-		ILogger<AgentDetailViewModel> logger)
+		ILogger<AgentDetailViewModel> logger,
+		IRealtimeConversationClient? realtime = null,
+		IClockService? clock = null,
+		ILogger<LiveConversationViewModel>? liveLogger = null)
 	{
 		Agent = agent;
 		_client = client;
@@ -72,6 +76,15 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 		VariablesVm = new VariablesTabViewModel(agent, NullLogger<VariablesTabViewModel>.Instance);
 		WorkflowVm = new WorkflowTabViewModel(agent, NullLogger<WorkflowTabViewModel>.Instance);
 		ConversationsVm = new ConversationsTabViewModel(agent, client, dialog, NullLogger<ConversationsTabViewModel>.Instance);
+		if (realtime is not null && clock is not null)
+		{
+			LiveConversationVm = new LiveConversationViewModel(
+				agent,
+				realtime,
+				dialog,
+				clock,
+				liveLogger ?? NullLogger<LiveConversationViewModel>.Instance);
+		}
 	}
 
 	protected override void OnViewLoaded(object view)
@@ -89,6 +102,7 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 
 	public void Dispose()
 	{
+		LiveConversationVm?.Dispose();
 		ConversationsVm.Dispose();
 		if (!_subscribed) return;
 		_events.Unsubscribe(this);

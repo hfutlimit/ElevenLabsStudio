@@ -15,7 +15,7 @@ namespace ElevenLabsStudio.ViewModels.AgentDetail;
 /// </summary>
 public interface IAgentDetailViewModelFactory
 {
-    AgentDetailViewModel Create(Agent agent);
+	AgentDetailViewModel Create(Agent agent);
 }
 
 /// <summary>
@@ -28,35 +28,47 @@ public interface IAgentDetailViewModelFactory
 /// </summary>
 public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 {
-    private readonly IElevenLabsClient _client;
-    private readonly ISuggestionEngine _suggestions;
-    private readonly IDialogService _dialog;
-    private readonly IEventAggregator _events;
-    private readonly IDraftStore _drafts;
-    private readonly ILogger<AgentDetailViewModel> _detailLogger;
+	private readonly IElevenLabsClient _client;
+	private readonly ISuggestionEngine _suggestions;
+	private readonly IDialogService _dialog;
+	private readonly IEventAggregator _events;
+	private readonly IDraftStore _drafts;
+	private readonly ILogger<AgentDetailViewModel> _detailLogger;
+	private readonly IRealtimeConversationClient? _realtime;
+	private readonly IClockService? _clock;
+	private readonly ILogger<LiveConversationViewModel>? _liveLogger;
 
-    public AgentDetailViewModelFactory(
-        IElevenLabsClient client,
-        ISuggestionEngine suggestions,
-        IDialogService dialog,
-        IEventAggregator events,
-        IDraftStore drafts,
-        ILogger<AgentDetailViewModel> detailLogger)
-    {
-        _client = client;
-        _suggestions = suggestions;
-        _dialog = dialog;
-        _events = events;
-        _drafts = drafts;
-        _detailLogger = detailLogger;
-    }
+	public AgentDetailViewModelFactory(
+		IElevenLabsClient client,
+		ISuggestionEngine suggestions,
+		IDialogService dialog,
+		IEventAggregator events,
+		IDraftStore drafts,
+		ILogger<AgentDetailViewModel> detailLogger,
+		IRealtimeConversationClient? realtime = null,
+		IClockService? clock = null,
+		ILogger<LiveConversationViewModel>? liveLogger = null)
+	{
+		_client = client;
+		_suggestions = suggestions;
+		_dialog = dialog;
+		_events = events;
+		_drafts = drafts;
+		_detailLogger = detailLogger;
+		_realtime = realtime;
+		_clock = clock;
+		_liveLogger = liveLogger;
+	}
 
-    public AgentDetailViewModel Create(Agent agent) => new(
-        agent,
-        _client,
-        _suggestions,
-        _dialog,
-        _events,
-        _drafts,
-        _detailLogger);
+	public AgentDetailViewModel Create(Agent agent) => new(
+		agent,
+		_client,
+		_suggestions,
+		_dialog,
+		_events,
+		_drafts,
+		_detailLogger,
+		_realtime,
+		_clock,
+		_liveLogger);
 }
