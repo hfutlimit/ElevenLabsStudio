@@ -168,16 +168,15 @@ public partial class App : Application
 		// use its working area (physical pixels, excluding the taskbar)
 		// as the ceiling for the design-time Width/Height so the window
 		// never opens off-screen on a smaller secondary monitor.
-		var (workX, workY, workW, workH) = GetCursorMonitorWorkArea();
-
-		double dpiX = 1.0, dpiY = 1.0;
-		var source = System.Windows.PresentationSource.FromVisual(window);
-		if (source?.CompositionTarget is { } ct)
-		{
-			var m = ct.TransformToDevice;
-			dpiX = m.M11;
-			dpiY = m.M22;
-		}
+		//
+		// Window.Left/Top are in DIPs but GetMonitorInfo returns physical
+		// pixels, so we must read the monitor's effective DPI before
+		// Show() — at that point PresentationSource.FromVisual still
+		// returns null and the dpiX/dpiY fallback stays at 1.0, which
+		// would mis-place the window on any non-100% scaled display.
+		// Asking the OS directly via GetDpiForMonitor (shcore.dll) gets
+		// the same DPI the runtime will use once the window is shown.
+		var (workX, workY, workW, workH, dpiX, dpiY) = GetCursorMonitor();
 
 		var maxW = (int)(workW * 0.8);
 		var maxH = (int)(workH * 0.8);
@@ -219,25 +218,46 @@ public partial class App : Application
 	[System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
 	private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
-	private const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+	[System.Runtime.InteropServices.DllImport("shcore.dll")]
+	private static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out uint dpiX, out uint dpiY);
 
-	private static (int X, int Y, int W, int H) GetCursorMonitorWorkArea()
+	private const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+	private const int MDT_EFFECTIVE_DPI = 0;
+
+	private static (int X, int Y, int W, int H, double DpiX, double DpiY) GetCursorMonitor()
 	{
+		var fallback = (
+			X: 0,
+			Y: 0,
+			W: (int)SystemParameters.PrimaryScreenWidth,
+			H: (int)SystemParameters.PrimaryScreenHeight,
+			DpiX: 1.0,
+			DpiY: 1.0);
+
 		if (!GetCursorPos(out var pt))
 		{
-			return (0, 0, (int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
+			return fallback;
 		}
 		var hMon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
 		if (hMon == IntPtr.Zero)
 		{
-			return (0, 0, (int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
+			return fallback;
 		}
+
 		var info = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
 		if (!GetMonitorInfo(hMon, ref info))
 		{
-			return (0, 0, (int)SystemParameters.PrimaryScreenWidth, (int)SystemParameters.PrimaryScreenHeight);
+			return fallback;
 		}
 		var rc = info.rcWork;
-		return (rc.Left, rc.Top, rc.Right - rc.Left, rc.Bottom - rc.Top);
+
+		// 96 DPI = 1.0 scale factor. shcore returns 0..N where 96 is the
+		// baseline; normalise so the maths downstream reads in the same
+		// units as PresentationSource.TransformToDevice.M11/M22.
+		var (dpiX, dpiY) = GetDpiForMonitor(hMon, MDT_EFFECTIVE_DPI, out var rawX, out var rawY) == 0
+			? ((double)rawX / 96.0, (double)rawY / 96.0)
+			: (1.0, 1.0);
+
+		return (rc.Left, rc.Top, rc.Right - rc.Left, rc.Bottom - rc.Top, dpiX, dpiY);
 	}
 }

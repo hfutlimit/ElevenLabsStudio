@@ -12,6 +12,8 @@ namespace ElevenLabsStudio.Infrastructure.Http;
 /// </summary>
 internal static class ElevenLabsExceptionFactory
 {
+    private const int MaxBodySnippetLength = 240;
+
     public static ElevenLabsException FromHttp(HttpStatusCode status, string body)
     {
         var (message, retryAfter) = ExtractError(body);
@@ -32,6 +34,16 @@ internal static class ElevenLabsExceptionFactory
             return ("ElevenLabs returned an empty error body.", null);
         }
 
+        // Body could be a multi-KB HTML proxy intercept page or a JSON
+        // envelope without a `detail.message` — either way we don't want
+        // the full thing pasted into a modal. Truncate to a head + ellipsis
+        // so the user still sees enough context to recognise the failure
+        // without flooding the dialog.
+        string Snippet(string raw) =>
+            raw.Length <= MaxBodySnippetLength
+                ? raw
+                : raw[..MaxBodySnippetLength] + "…";
+
         try
         {
             var dto = JsonSerializer.Deserialize<ElevenLabsErrorDto>(body, new JsonSerializerOptions
@@ -39,12 +51,14 @@ internal static class ElevenLabsExceptionFactory
                 PropertyNameCaseInsensitive = true,
             });
 
-            var message = dto?.Detail?.Message ?? body;
+            var message = dto?.Detail?.Message is { Length: > 0 } detail
+                ? detail
+                : Snippet(body);
             return (message, null);
         }
         catch (JsonException)
         {
-            return (body, null);
+            return (Snippet(body), null);
         }
     }
 }

@@ -57,7 +57,13 @@ public static class ServiceCollectionExtensions
 				client.BaseAddress = new Uri(opts.BaseUrl, UriKind.Absolute);
 			}
 			client.Timeout = TimeSpan.FromSeconds(15);
-		});
+		})
+		// Signed URL is a one-shot idempotent GET — add the same retry
+		// policy the main client uses, but skip the shared circuit
+		// breaker: a transient signed-url failure shouldn't trip the
+		// breaker's view of the API as a whole (and vice versa).
+		.AddPolicyHandler((sp, _) =>
+			sp.GetRequiredService<Http.ElevenLabsHttpPolicies>().Retry);
 		services.AddSingleton<IRealtimeSessionCredentialProvider>(sp =>
 			sp.GetRequiredService<ElevenLabsRealtimeCredentialProvider>());
 

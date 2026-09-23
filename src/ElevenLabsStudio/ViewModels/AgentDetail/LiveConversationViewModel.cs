@@ -299,7 +299,16 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		Unsubscribe(_session);
 		if (_session is not null)
 		{
-			_ = _session.DisposeAsync();
+			// WebViewRealtimeConversationSession.DisposeAsync already
+			// swallows the InvalidOperationException that fires when the
+			// browser is detached before stop completes — but anything
+			// else thrown would become an unobserved task exception.
+			// Route that to the log instead.
+			_ = _session.DisposeAsync().AsTask().ContinueWith(
+				t => _logger.LogError(t.Exception, "Session.DisposeAsync threw for {AgentId}", AgentId),
+				CancellationToken.None,
+				TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously,
+				TaskScheduler.Default);
 			_session = null;
 		}
 	}
@@ -391,7 +400,16 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	{
 		Status = RealtimeConversationStatus.Failed;
 		_logger.LogWarning(e.Exception, "Realtime conversation error for {AgentId}", AgentId);
-		_ = ShowFailureAsync("Realtime conversation error", e.Exception.Message, e.Exception);
+		// OnError is a synchronous event handler, so we can't await here
+		// (async void would surface unobserved exceptions on the finalizer).
+		// Attach a fault-only continuation so any throw inside the dialog
+		// service still lands in the log instead of disappearing.
+		_ = ShowFailureAsync("Realtime conversation error", e.Exception.Message, e.Exception)
+			.ContinueWith(
+				t => _logger.LogError(t.Exception, "ShowFailureAsync threw for {AgentId}", AgentId),
+				CancellationToken.None,
+				TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously,
+				TaskScheduler.Default);
 	}
 
 	private void HandleDisconnected()
