@@ -111,12 +111,12 @@ public sealed class ShellActionBindingTests
 		ViewModelBinder.Bind(agents, agentListView, null);
 		var agentListHost = new Window { Content = agentListView };
 		agentListHost.Show();
-		var pullButton = (Button)agentListView.FindName("ImportAgent");
-		pullButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-		var pullInvoked = SpinWait.SpinUntil(
+		var importButton = (Button)agentListView.FindName("ImportAgent");
+		importButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+		var importInvoked = SpinWait.SpinUntil(
 			() => windows.ReceivedCalls().Any(),
 			TimeSpan.FromSeconds(2));
-		pullInvoked.Should().BeTrue("the nested AgentListView action must reach its ViewModel");
+		importInvoked.Should().BeTrue("the nested AgentListView action must reach its ViewModel");
 		agentListHost.Close();
 
 		if (!AssemblySource.Instance.Contains(typeof(SettingsView).Assembly))

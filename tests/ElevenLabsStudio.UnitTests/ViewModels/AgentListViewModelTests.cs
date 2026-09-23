@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.Events;
@@ -116,7 +116,7 @@ public sealed class AgentListViewModelTests
 		await vm.LoadAsync();
 		await vm.SelectAgentAsync(vm.Agents.First(a => a.AgentId == "a2"));
 
-		// Re-load (e.g. user clicked refresh) 鈥?selection should stick
+		// Re-load (e.g. user clicked refresh) — selection should stick
 		// on a2 instead of snapping back to a1.
 		await vm.LoadAsync();
 		vm.SelectedAgent!.AgentId.Should().Be("a2");

@@ -1,4 +1,4 @@
-"""Diagnostic: launch the Release exe, click the PullAgentById button
+"""Diagnostic: launch the Release exe, click the ImportAgent button
 (convention-bound to an Async-suffixed VM method, same mechanism as the
 settings gear), and list top-level windows. Discriminates between
 "a11y/convention broken everywhere" vs "Settings-specific failure".
@@ -39,11 +39,11 @@ def main() -> int:
         time.sleep(3)
         dump_windows(app, "BEFORE")
 
-        pull = main_window.child_window(auto_id="PullAgentById", control_type="Button")
-        print("pull button exists:", pull.exists(timeout=5))
-        pull.click()
+        import_btn = main_window.child_window(auto_id="ImportAgent", control_type="Button")
+        print("Import button exists:", import_btn.exists(timeout=5))
+        import_btn.click()
         time.sleep(4)
-        dump_windows(app, "AFTER pull click")
+        dump_windows(app, "AFTER import click")
         return 0
     finally:
         proc.terminate()

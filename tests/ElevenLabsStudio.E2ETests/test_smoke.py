@@ -130,18 +130,18 @@ def test_gear_button_opens_settings_dialog(launched_exe) -> None:
 
 
 @pytest.mark.e2e
-def test_pull_button_opens_pull_agent_dialog(launched_exe) -> None:
-    """Click the sidebar action and assert the pull-by-ID dialog opens."""
+def test_import_button_opens_import_agent_dialog(launched_exe) -> None:
+    """Click the sidebar action and assert the import-by-ID dialog opens."""
     launched_exe.main_window.wait("ready", timeout=15)
     main_window = launched_exe.main_window
 
-    pull = main_window.child_window(
-        title_re=".*Pull Agent.*", auto_id="PullAgentById", control_type="Button")
-    if not pull.exists():
-        pull = main_window.child_window(title_re=".*Pull Agent.*", control_type="Button")
-    assert pull.exists(timeout=5), "pull Agent button not found in sidebar"
+    import_btn = main_window.child_window(
+        title_re=".*Import Agent.*", auto_id="ImportAgent", control_type="Button")
+    if not import_btn.exists():
+        import_btn = main_window.child_window(title_re=".*Import Agent.*", control_type="Button")
+    assert import_btn.exists(timeout=5), "Import Agent button not found in sidebar"
 
-    pull.invoke()
-    dialog = _owned_dialog(launched_exe, "Pull Agent by ID")
+    import_btn.invoke()
+    dialog = _owned_dialog(launched_exe, "Import Agent by ID")
     dialog.wait("ready", timeout=10)
-    assert dialog.exists(), "Pull Agent dialog did not open after clicking the button"
+    assert dialog.exists(), "Import Agent dialog did not open after clicking the button"

@@ -12,11 +12,11 @@ using Microsoft.Extensions.Logging;
 namespace ElevenLabsStudio.ViewModels.Agents;
 
 /// <summary>
-/// Left-hand agent menu. Holds the list of pulled agents, the filter
-/// text, and the currently selected <see cref="AgentDetailViewModel"/>
-/// that the right pane renders. Agents are pulled by ID one at a time
-/// via <see cref="ImportAgentAsync"/>; the user can refresh an
-/// already-pulled agent from its detail view.
+/// Left-hand agent menu. Holds the list of imported agents and the
+/// currently selected <see cref="AgentDetailViewModel"/> that the right
+/// pane renders. Agents are imported by ID one at a time via
+/// <see cref="ImportAgentAsync"/>; the user can refresh an
+/// already-imported agent from its detail view.
 /// </summary>
 public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>, IDisposable
 {
