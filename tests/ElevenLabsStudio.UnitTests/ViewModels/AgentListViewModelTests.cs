@@ -13,7 +13,7 @@ using NSubstitute;
 namespace ElevenLabsStudio.UnitTests.ViewModels;
 
 /// <summary>
-/// Pins the AgentListViewModel behaviour: LoadAsync pulls the list
+/// Pins the AgentListViewModel behaviour: LoadAsync loads the list
 /// from the injected IElevenLabsClient, auto-selects the first agent
 /// so the right pane immediately has something to show, and forwards
 /// the inner AgentDetail via PropertyChanged so the ShellViewModel can

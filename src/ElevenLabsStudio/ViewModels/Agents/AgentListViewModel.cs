@@ -110,11 +110,11 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 	{
 		var dialogVm = new ImportAgentDialogViewModel(_client, _dialog, _logger);
 		var ok = await _windowManager.ShowDialogAsync(dialogVm);
-		if (ok == true && dialogVm.Result is { } pulled)
+		if (ok == true && dialogVm.Result is { } imported)
 		{
-			var summary = ToSummary(pulled);
+			var summary = ToSummary(imported);
 			// Replace if already present (re-import).
-			var idx = Agents.IndexOf(Agents.FirstOrDefault(a => a.AgentId == pulled.AgentId)!);
+			var idx = Agents.IndexOf(Agents.FirstOrDefault(a => a.AgentId == imported.AgentId)!);
 			if (idx >= 0)
 			{
 				Agents[idx] = summary;
@@ -144,7 +144,7 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 	}
 
 	/// <summary>
-	/// Pulls the agent list from the (mock or real) client and populates
+	/// Loads the agent list from the (mock or real) client and populates
 	/// the bound collection. Already wired up to run from the ctor so
 	/// the UI never sits empty.
 	/// </summary>

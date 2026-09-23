@@ -31,7 +31,7 @@
                        Margin="0,0,0,16">
                 <Run Text="Select an agent on the left to view its full configuration," />
                 <LineBreak />
-                <Run Text="or pull a new ElevenLabs agent into the app." />
+                <Run Text="or import a new ElevenLabs agent into the app." />
             </TextBlock>
         </StackPanel>
     </Grid>
