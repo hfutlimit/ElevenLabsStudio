@@ -78,8 +78,7 @@ public sealed class RuntimeClientTests
 
         var agents = await client.ListAgentsAsync();
 
-        agents.Should().HaveCount(3);
-        agents.Should().AllSatisfy(a => a.AgentId.Should().StartWith("agent_"));
+        agents.Should().ContainSingle(a => a.AgentId == "agent_3001m2hctwtcfeqvwb5nk5bxbg89");
     }
 
     [Fact]
@@ -116,7 +115,7 @@ public sealed class RuntimeClientTests
         var client = new RuntimeClient(mock, real, monitor);
 
         // 1) Mock on -> mock answers.
-        (await client.ListAgentsAsync()).Should().HaveCount(3);
+        (await client.ListAgentsAsync()).Should().ContainSingle(a => a.AgentId == "agent_3001m2hctwtcfeqvwb5nk5bxbg89");
 
         // 2) Flip to real and the next call must NOT go to the mock.
         monitor.Set(new ElevenLabsOptions { Mock = false, BaseUrl = "https://example.invalid/", ApiKey = "x" });
@@ -142,11 +141,11 @@ public sealed class RuntimeClientTests
         var real = MakeUnreachableRealClient();
         var client = new RuntimeClient(mock, real, monitor);
 
-        var agent = await client.GetAgentAsync("agent_sales_001");
-        agent.AgentId.Should().Be("agent_sales_001");
+		var agent = await client.GetAgentAsync("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
+		agent.AgentId.Should().Be("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
 
         var updated = await client.UpdateAgentAsync(
-            "agent_sales_001",
+			"agent_3001m2hctwtcfeqvwb5nk5bxbg89",
             new AgentUpdate(FirstMessage: "Hi from runtime"));
         updated.FirstMessage.Should().Be("Hi from runtime");
 

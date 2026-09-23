@@ -7,7 +7,7 @@ namespace ElevenLabsStudio.UnitTests.Mock;
 
 /// <summary>
 /// Behavioural contract for the offline <see cref="MockElevenLabsClient"/>:
-/// three agents, three conversations per agent, voice list, and the
+/// one focused staging agent, its conversations, voice list, and the
 /// 404-shaped exception the throw site uses for unknown ids.
 /// </summary>
 public sealed class MockElevenLabsClientTests
@@ -15,17 +15,12 @@ public sealed class MockElevenLabsClientTests
 	private readonly MockElevenLabsClient _client = new();
 
 	[Fact]
-	public async Task ListAgentsAsync_returns_three_known_agents()
+	public async Task ListAgentsAsync_returns_only_the_focused_test_agent()
 	{
 		var agents = await _client.ListAgentsAsync();
 
-		agents.Should().HaveCount(3);
-		agents.Select(a => a.AgentId).Should().BeEquivalentTo(new[]
-		{
-			"agent_sales_001",
-			"agent_support_002",
-			"agent_onboarding_003",
-		});
+		agents.Should().ContainSingle();
+		agents[0].AgentId.Should().Be("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
 		agents.Should().AllSatisfy(a =>
 		{
 			a.Name.Should().NotBeNullOrWhiteSpace();
@@ -37,7 +32,7 @@ public sealed class MockElevenLabsClientTests
 	[Fact]
 	public async Task ListAgentsAsync_agents_carry_workflow_nodes()
 	{
-		var sales = await _client.GetAgentAsync("agent_sales_001");
+		var sales = await _client.GetAgentAsync("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
 
 		sales.Workflow.Nodes.Should().NotBeEmpty();
 		sales.Workflow.Nodes.Should().Contain(n => n.Type == "greeting");
@@ -48,9 +43,9 @@ public sealed class MockElevenLabsClientTests
 	[Fact]
 	public async Task GetAgentAsync_returns_known_agent()
 	{
-		var sales = await _client.GetAgentAsync("agent_sales_001");
-		sales.AgentId.Should().Be("agent_sales_001");
-		sales.Name.Should().Be("Sales Rep");
+		var sales = await _client.GetAgentAsync("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
+		sales.AgentId.Should().Be("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
+		sales.Name.Should().Be("Staging Single Case");
 	}
 
 	[Fact]
@@ -65,16 +60,12 @@ public sealed class MockElevenLabsClientTests
 	[Fact]
 	public async Task ListConversationsAsync_filters_per_agent()
 	{
-		var salesConvs = await _client.ListConversationsAsync("agent_sales_001");
-		var supportConvs = await _client.ListConversationsAsync("agent_support_002");
-		var onboardingConvs = await _client.ListConversationsAsync("agent_onboarding_003");
+		var salesConvs = await _client.ListConversationsAsync("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
 
 		salesConvs.Should().HaveCount(3);
-		supportConvs.Should().HaveCount(1);
-		onboardingConvs.Should().HaveCount(1);
 		salesConvs.Should().AllSatisfy(c =>
 		{
-			c.AgentId.Should().Be("agent_sales_001");
+			c.AgentId.Should().Be("agent_3001m2hctwtcfeqvwb5nk5bxbg89");
 			c.Turns.Should().BeEmpty();
 		});
 		var detail = await _client.GetConversationAsync(salesConvs[0].ConversationId);
@@ -93,12 +84,12 @@ public sealed class MockElevenLabsClientTests
 	public async Task UpdateAgentAsync_merges_only_nonnull_fields()
 	{
 		var snapshot = await _client.UpdateAgentAsync(
-			"agent_sales_001",
+			"agent_3001m2hctwtcfeqvwb5nk5bxbg89",
 			new Core.Domain.AgentUpdate(Prompt: null, FirstMessage: "Hi there!"));
 
 		snapshot.FirstMessage.Should().Be("Hi there!");
 		// Prompt left null -> preserved from the original mock.
-		snapshot.Prompt.Should().StartWith("You are a polite sales rep");
+		snapshot.Prompt.Should().StartWith("You are the staging single-case support agent");
 		// UpdatedAt should be bumped to "now".
 		snapshot.UpdatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
 	}
@@ -114,7 +105,7 @@ public sealed class MockElevenLabsClientTests
 		};
 
 		var snapshot = await _client.UpdateAgentAsync(
-			"agent_sales_001",
+			"agent_3001m2hctwtcfeqvwb5nk5bxbg89",
 			new Core.Domain.AgentUpdate(
 				Workflow: new Core.Domain.Workflow(newNodes, """{"nodes":{},"edges":{}}""")));
 
@@ -127,7 +118,7 @@ public sealed class MockElevenLabsClientTests
 	public async Task UpdateAgentAsync_preserves_existing_nodes_when_workflow_not_supplied()
 	{
 		var snapshot = await _client.UpdateAgentAsync(
-			"agent_sales_001",
+			"agent_3001m2hctwtcfeqvwb5nk5bxbg89",
 			new Core.Domain.AgentUpdate(FirstMessage: "kept"));
 
 		snapshot.FirstMessage.Should().Be("kept");
@@ -146,7 +137,7 @@ public sealed class MockElevenLabsClientTests
 		};
 
 		var snapshot = await _client.UpdateAgentAsync(
-			"agent_sales_001",
+			"agent_3001m2hctwtcfeqvwb5nk5bxbg89",
 			new Core.Domain.AgentUpdate(Variables: newVars));
 
 		snapshot.Variables.Should().HaveCount(2);

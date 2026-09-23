@@ -1,9 +1,8 @@
 """Real end-to-end smoke test for ElevenLabsStudio.
 
 Spins up the built ElevenLabsStudio.exe via Windows UI Automation
-(pywinauto), waits for the main window to settle, asserts the three
-mock agents are populated (mock mode is on by default), opens the
-Settings dialog via the gear button, then shuts everything down.
+(pywinauto), waits for the main window and real Agent GET to settle,
+then shuts everything down.
 
 These tests are slow (5-10s per case, mostly process startup) and
 require the Release .exe to be present at the conventional output
@@ -21,7 +20,28 @@ and skip the run when the .exe is missing.
 from __future__ import annotations
 
 import pytest
+import time
 from pywinauto import Desktop
+
+
+def _wait_for_agents(main_window, timeout: float = 30):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        agents = main_window.descendants(control_type="ListItem")
+        if agents:
+            return agents
+        time.sleep(0.25)
+    return []
+
+
+def _wait_for_tab_with_child(main_window, child_text: str, timeout: float = 30):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        for tab in main_window.descendants(control_type="TabItem"):
+            if child_text in tab.children_texts():
+                return tab
+        time.sleep(0.25)
+    return None
 
 
 def _owned_dialog(launched_exe, title_re: str):
@@ -45,22 +65,42 @@ def test_window_title_is_elevenlabs_studio(launched_exe) -> None:
     view) and the rest of the suite is irrelevant.
     """
     main_window = launched_exe.main_window
-    assert main_window.exists(timeout=15), "main window did not appear within 15s"
+    assert main_window.exists(timeout=30), "main window did not appear within 30s"
     assert "ElevenLabs Studio" in main_window.window_text()
 
 
 @pytest.mark.e2e
-def test_left_sidebar_lists_three_mock_agents(launched_exe) -> None:
-    """With Mock=true (the default in appsettings.json) the sidebar
-    shows the three seeded agents: Sales Rep, Support Bot, Onboarding
-    Guide. We match by name so a future seeded re-order doesn't
-    break the test."""
+def test_left_sidebar_lists_the_focused_real_agent(launched_exe) -> None:
+    """The sidebar contains the single Agent loaded by the real API."""
     launched_exe.main_window.wait("ready", timeout=15)
     main_window = launched_exe.main_window
-    for name in ("Sales Rep", "Support Bot", "Onboarding Guide"):
-        assert main_window.child_window(title=name, control_type="ListItem").exists(timeout=10), (
-            f"Mock agent {name!r} not found in the sidebar"
-        )
+    agents = _wait_for_agents(main_window)
+    assert len(agents) == 1, f"expected one configured Agent, found {len(agents)}"
+    assert agents[0].window_text().strip(), "real Agent was loaded without a display name"
+
+
+@pytest.mark.e2e
+def test_workflow_separates_canvas_and_raw_json_into_tabs(launched_exe) -> None:
+    """The visual workflow gets the full editor area and Raw JSON is separate."""
+    main_window = launched_exe.main_window
+    main_window.wait("ready", timeout=15)
+
+    agents = _wait_for_agents(main_window)
+    assert len(agents) == 1, f"expected one configured Agent, found {len(agents)}"
+    staging = agents[0]
+    staging.select()
+
+    outer_workflow = _wait_for_tab_with_child(main_window, "Workflow")
+    assert outer_workflow is not None, "Workflow tab was not loaded from the real Agent"
+    outer_workflow.select()
+
+    canvas_tab = main_window.child_window(title="Workflow canvas", control_type="TabItem")
+    raw_json_tab = main_window.child_window(title="Raw JSON", control_type="TabItem")
+    assert canvas_tab.exists(timeout=5), "full-size Workflow canvas tab not found"
+    assert raw_json_tab.exists(timeout=5), "separate Raw JSON tab not found"
+
+    raw_json_tab.select()
+    assert raw_json_tab.is_selected(), "Raw JSON tab did not become active"
 
 
 @pytest.mark.e2e

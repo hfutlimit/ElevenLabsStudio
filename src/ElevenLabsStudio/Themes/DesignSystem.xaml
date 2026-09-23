@@ -10,6 +10,7 @@
 	<SolidColorBrush x:Key="App.SurfaceHover" Color="#EEF1F6" />
 	<SolidColorBrush x:Key="App.SurfacePressed" Color="#E5E9F1" />
 	<SolidColorBrush x:Key="App.Border" Color="#D6DCE6" />
+	<SolidColorBrush x:Key="App.BorderEmphasis" Color="#AEB8C7" />
 	<SolidColorBrush x:Key="App.BorderStrong" Color="#7B879A" />
 	<SolidColorBrush x:Key="App.Text" Color="#182033" />
 	<SolidColorBrush x:Key="App.TextSecondary" Color="#566176" />

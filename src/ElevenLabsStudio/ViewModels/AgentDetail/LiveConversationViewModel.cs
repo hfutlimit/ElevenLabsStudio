@@ -1,15 +1,17 @@
 using System.Globalization;
-using System.Text.Json;
+using System.Collections.Specialized;
 using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.MVVM;
+using ElevenLabsStudio.Services;
 using Microsoft.Extensions.Logging;
 
 namespace ElevenLabsStudio.ViewModels.AgentDetail;
 
 public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 {
+	public const string DefaultBranchId = "agtbrch_7101m2hctwtefwtrt0jc1eaw7m9t";
 	private readonly Agent _agent;
 	private readonly IRealtimeConversationClient _client;
 	private readonly IDialogService _dialog;
@@ -24,9 +26,9 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private bool _isMuted;
 	private float _inputVolume;
 	private float _outputVolume;
-	private string _branchId = string.Empty;
+	private string _branchId = DefaultBranchId;
 	private string _environment = "production";
-	private string _dynamicVariablesJson;
+	private InitialWebhookVariableScenario _selectedVariableScenario;
 	private string _messageText = string.Empty;
 	private TimeSpan _elapsed;
 	private bool _disposed;
@@ -43,12 +45,17 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		_dialog = dialog;
 		_clock = clock;
 		_logger = logger;
-		_dynamicVariablesJson = JsonSerializer.Serialize(
-			agent.Variables.ToDictionary(variable => variable.Name, ToRuntimeValue),
-			new JsonSerializerOptions { WriteIndented = true });
+		Transcript.CollectionChanged += OnTranscriptCollectionChanged;
+		_selectedVariableScenario = VariableScenarios[0];
+		LoadScenarioVariables(_selectedVariableScenario);
 	}
 
 	public BindableCollection<RealtimeTranscriptMessage> Transcript { get; } = new();
+	public BindableCollection<DynamicVariableEntry> DynamicVariables { get; } = new();
+	public bool HasTranscript => Transcript.Count > 0;
+	public bool HasNoTranscript => !HasTranscript;
+	public IReadOnlyList<InitialWebhookVariableScenario> VariableScenarios { get; } =
+		ReferenceTesterInitialWebhookVariables.Scenarios;
 
 	public string AgentName => _agent.Name;
 	public string AgentId => _agent.AgentId;
@@ -65,10 +72,25 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		set => Set(ref _environment, string.IsNullOrWhiteSpace(value) ? "production" : value.Trim());
 	}
 
-	public string DynamicVariablesJson
+	public InitialWebhookVariableScenario SelectedVariableScenario
 	{
-		get => _dynamicVariablesJson;
-		set => Set(ref _dynamicVariablesJson, value);
+		get => _selectedVariableScenario;
+		set
+		{
+			ArgumentNullException.ThrowIfNull(value);
+			if (!Set(ref _selectedVariableScenario, value)) return;
+			LoadScenarioVariables(value);
+		}
+	}
+
+	public void AddDynamicVariable()
+	{
+		DynamicVariables.Add(new DynamicVariableEntry($"variable_{DynamicVariables.Count + 1}", string.Empty));
+	}
+
+	public void RemoveDynamicVariable(DynamicVariableEntry? variable)
+	{
+		if (variable is not null) DynamicVariables.Remove(variable);
 	}
 
 	public string MessageText
@@ -176,7 +198,7 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		{
 			options = CreateOptions();
 		}
-		catch (Exception ex) when (ex is JsonException or FormatException)
+		catch (Exception ex) when (ex is FormatException)
 		{
 			await ShowFailureAsync("Invalid session data", ex.Message, ex);
 			return;
@@ -272,6 +294,7 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	{
 		if (_disposed) return;
 		_disposed = true;
+		Transcript.CollectionChanged -= OnTranscriptCollectionChanged;
 		StopElapsed();
 		Unsubscribe(_session);
 		if (_session is not null)
@@ -283,19 +306,35 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 
 	private RealtimeConversationOptions CreateOptions()
 	{
-		using var document = JsonDocument.Parse(DynamicVariablesJson);
-		if (document.RootElement.ValueKind != JsonValueKind.Object)
+		var variables = new Dictionary<string, object?>(StringComparer.Ordinal);
+		foreach (var entry in DynamicVariables)
 		{
-			throw new JsonException("Dynamic variables must be a JSON object.");
+			var key = entry.Key.Trim();
+			if (key.Length == 0)
+			{
+				throw new FormatException("Dynamic variable keys cannot be empty.");
+			}
+
+			if (!variables.TryAdd(key, entry.Value))
+			{
+				throw new FormatException($"Dynamic variable key '{key}' is duplicated.");
+			}
 		}
 
-		var variables = document.RootElement.EnumerateObject()
-			.ToDictionary(property => property.Name, property => ConvertJsonValue(property.Value));
 		return new RealtimeConversationOptions(
 			AgentId,
 			string.IsNullOrWhiteSpace(BranchId) ? null : BranchId.Trim(),
 			Environment,
 			variables);
+	}
+
+	private void LoadScenarioVariables(InitialWebhookVariableScenario scenario)
+	{
+		DynamicVariables.Clear();
+		foreach (var variable in scenario.Variables)
+		{
+			DynamicVariables.Add(new DynamicVariableEntry(variable.Key, variable.Value?.ToString() ?? string.Empty));
+		}
 	}
 
 	private void Subscribe(IRealtimeConversationSession session)
@@ -335,6 +374,12 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private void OnModeChanged(object? sender, RealtimeConversationModeChangedEventArgs e) => Mode = e.Mode;
 
 	private void OnTranscriptReceived(object? sender, RealtimeTranscriptEventArgs e) => Transcript.Add(e.Message);
+
+	private void OnTranscriptCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+	{
+		NotifyOfPropertyChange(nameof(HasTranscript));
+		NotifyOfPropertyChange(nameof(HasNoTranscript));
+	}
 
 	private void OnVolumeChanged(object? sender, RealtimeConversationVolumeChangedEventArgs e)
 	{
@@ -389,30 +434,4 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		await _dialog.ShowErrorAsync(title, message);
 	}
 
-	private static object? ConvertJsonValue(JsonElement value) => value.ValueKind switch
-	{
-		JsonValueKind.String => value.GetString(),
-		JsonValueKind.Number when value.TryGetInt64(out var integer) => integer,
-		JsonValueKind.Number when value.TryGetDecimal(out var decimalValue) => decimalValue,
-		JsonValueKind.True => true,
-		JsonValueKind.False => false,
-		JsonValueKind.Null => null,
-		_ => value.Clone(),
-	};
-
-	private static object ToRuntimeValue(Variable variable)
-	{
-		var value = variable.Value ?? string.Empty;
-		if (string.Equals(variable.Type, "number", StringComparison.OrdinalIgnoreCase)
-			&& decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number))
-		{
-			return number;
-		}
-		if (string.Equals(variable.Type, "boolean", StringComparison.OrdinalIgnoreCase)
-			&& bool.TryParse(value, out var boolean))
-		{
-			return boolean;
-		}
-		return value;
-	}
 }

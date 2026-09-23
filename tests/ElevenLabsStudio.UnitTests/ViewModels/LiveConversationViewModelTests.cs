@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.ViewModels.AgentDetail;
@@ -24,6 +25,112 @@ public sealed class LiveConversationViewModelTests
 		UpdatedAt: DateTimeOffset.UtcNow);
 
 	[Fact]
+	public void Default_dynamic_variables_match_the_reference_tester_found_payload()
+	{
+		var vm = NewViewModel(Substitute.For<IRealtimeConversationClient>());
+
+		vm.DynamicVariables.Select(variable => variable.Key).Should().BeEquivalentTo(
+			[
+				"lookup_status",
+				"contact_name",
+				"organization_by_phone",
+				"client_id_by_phone",
+				"fallback_client_id",
+				"email_by_phone",
+				"account_id_by_phone",
+				"contact_id_by_phone",
+				"caller_id_norm",
+			]);
+		vm.DynamicVariables.Single(variable => variable.Key == "lookup_status").Value.Should().Be("found");
+		vm.DynamicVariables.Single(variable => variable.Key == "contact_name").Value.Should().Be("Clinton Smith5");
+		vm.DynamicVariables.Single(variable => variable.Key == "organization_by_phone").Value.Should().Be("ZYX Sample Client - tuplus01qa");
+		vm.DynamicVariables.Single(variable => variable.Key == "client_id_by_phone").Value.Should().Be("tuplus01qa");
+		vm.DynamicVariables.Single(variable => variable.Key == "fallback_client_id").Value.Should().Be("supportteam");
+		vm.DynamicVariables.Single(variable => variable.Key == "email_by_phone").Value.Should().Be("csmith+5@transfinder.com");
+		vm.DynamicVariables.Single(variable => variable.Key == "account_id_by_phone").Value.Should().Be("56f9282d-a970-f111-842b-0e9e16a6d2ed");
+		vm.DynamicVariables.Single(variable => variable.Key == "contact_id_by_phone").Value.Should().Be("be1f0915-a17b-f111-842b-0e9e16a6d2ed");
+		vm.DynamicVariables.Single(variable => variable.Key == "caller_id_norm").Value.Should().Be("2601234567");
+	}
+
+	[Fact]
+	public void Selecting_not_found_scenario_replaces_the_editor_with_the_reference_payload()
+	{
+		var vm = NewViewModel(Substitute.For<IRealtimeConversationClient>());
+
+		vm.VariableScenarios.Select(scenario => scenario.Key).Should().Equal("found", "not_found");
+		vm.SelectedVariableScenario = vm.VariableScenarios.Single(scenario => scenario.Key == "not_found");
+
+		vm.DynamicVariables.Single(variable => variable.Key == "lookup_status").Value.Should().Be("not_found");
+		vm.DynamicVariables.Single(variable => variable.Key == "contact_name").Value.Should().BeEmpty();
+		vm.DynamicVariables.Single(variable => variable.Key == "organization_by_phone").Value.Should().BeEmpty();
+		vm.DynamicVariables.Single(variable => variable.Key == "client_id_by_phone").Value.Should().Be("tuplus01qa");
+		vm.DynamicVariables.Single(variable => variable.Key == "fallback_client_id").Value.Should().Be("tuplus01qa");
+		vm.DynamicVariables.Single(variable => variable.Key == "email_by_phone").Value.Should().BeEmpty();
+		vm.DynamicVariables.Single(variable => variable.Key == "account_id_by_phone").Value.Should().BeEmpty();
+		vm.DynamicVariables.Single(variable => variable.Key == "contact_id_by_phone").Value.Should().BeEmpty();
+		vm.DynamicVariables.Single(variable => variable.Key == "caller_id_norm").Value.Should().Be("2601234567");
+	}
+
+	[Fact]
+	public void Defaults_to_the_reference_tester_main_branch()
+	{
+		var vm = NewViewModel(Substitute.For<IRealtimeConversationClient>());
+
+		vm.BranchId.Should().Be(LiveConversationViewModel.DefaultBranchId);
+		LiveConversationViewModel.DefaultBranchId.Should().Be("agtbrch_7101m2hctwtefwtrt0jc1eaw7m9t");
+	}
+
+	[Fact]
+	public void Dynamic_variables_are_editable_rows_and_follow_the_selected_scenario()
+	{
+		var vm = NewViewModel(Substitute.For<IRealtimeConversationClient>());
+
+		vm.DynamicVariables.Should().HaveCount(9);
+		vm.DynamicVariables.Should().ContainSingle(variable =>
+			variable.Key == "caller_id_norm" && variable.Value == "2601234567");
+
+		vm.SelectedVariableScenario = vm.VariableScenarios.Single(scenario => scenario.Key == "not_found");
+
+		vm.DynamicVariables.Should().HaveCount(9);
+		vm.DynamicVariables.Should().ContainSingle(variable =>
+			variable.Key == "lookup_status" && variable.Value == "not_found");
+		vm.DynamicVariables.Should().ContainSingle(variable =>
+			variable.Key == "fallback_client_id" && variable.Value == "tuplus01qa");
+	}
+
+	[Fact]
+	public void Dynamic_variables_can_be_added_and_removed()
+	{
+		var vm = NewViewModel(Substitute.For<IRealtimeConversationClient>());
+		var initialCount = vm.DynamicVariables.Count;
+
+		vm.AddDynamicVariable();
+
+		vm.DynamicVariables.Should().HaveCount(initialCount + 1);
+		vm.DynamicVariables[^1].Key.Should().Be("variable_10");
+
+		vm.RemoveDynamicVariable(vm.DynamicVariables[^1]);
+
+		vm.DynamicVariables.Should().HaveCount(initialCount);
+	}
+
+	[Fact]
+	public async Task Transcript_empty_state_tracks_live_messages()
+	{
+		var session = new FakeSession();
+		var client = Substitute.For<IRealtimeConversationClient>();
+		client.StartAsync(Arg.Any<RealtimeConversationOptions>(), Arg.Any<CancellationToken>())
+			.Returns(session);
+		var vm = NewViewModel(client);
+
+		vm.HasTranscript.Should().BeFalse();
+		await vm.StartAsync();
+		session.RaiseTranscript("agent", "Welcome");
+
+		vm.HasTranscript.Should().BeTrue();
+	}
+
+	[Fact]
 	public async Task StartAsync_builds_a_session_from_agent_and_editor_inputs()
 	{
 		var client = Substitute.For<IRealtimeConversationClient>();
@@ -43,7 +150,9 @@ public sealed class LiveConversationViewModelTests
 			NullLogger<LiveConversationViewModel>.Instance);
 		vm.BranchId = "branch_live";
 		vm.Environment = "staging";
-		vm.DynamicVariablesJson = "{\"caller_id_norm\":\"2601234567\",\"attempts\":3}";
+		vm.DynamicVariables.Clear();
+		vm.DynamicVariables.Add(new DynamicVariableEntry("caller_id_norm", "2601234567"));
+		vm.DynamicVariables.Add(new DynamicVariableEntry("attempts", "3"));
 
 		await vm.StartAsync();
 
@@ -52,7 +161,7 @@ public sealed class LiveConversationViewModelTests
 		options.BranchId.Should().Be("branch_live");
 		options.Environment.Should().Be("staging");
 		options.DynamicVariables["caller_id_norm"].Should().Be("2601234567");
-		options.DynamicVariables["attempts"].Should().Be(3);
+		options.DynamicVariables["attempts"].Should().Be("3");
 		vm.Status.Should().Be(RealtimeConversationStatus.Connecting);
 	}
 

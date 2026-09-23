@@ -2,9 +2,8 @@
 
 Real tests launch the built ElevenLabsStudio.exe via Windows UI
 Automation (pywinauto), wait for the main window to settle, assert
-the three mock agents are populated (mock mode is on by default),
-opens the Settings dialog via the gear button, then shuts
-everything down.
+the configured staging Agent is loaded from the ElevenLabs API, then
+shut everything down.
 
 These tests are slow (5-10s per case, mostly process startup) and
 require the Release .exe to be present at the conventional output
