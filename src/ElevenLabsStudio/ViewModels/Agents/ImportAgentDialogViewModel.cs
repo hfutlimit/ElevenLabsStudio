@@ -8,13 +8,13 @@ using Microsoft.Extensions.Logging;
 namespace ElevenLabsStudio.ViewModels.Agents;
 
 /// <summary>
-/// Tiny dialog VM shown when the user clicks "📥 Pull Agent" in the
+/// Tiny dialog VM shown when the user clicks "Import Agent" in the
 /// sidebar. Validates a non-empty AgentId, calls
 /// <see cref="IElevenLabsClient.GetAgentAsync"/>, and closes itself with
-/// a result of <c>true</c> + the pulled <see cref="Agent"/> attached
+/// a result of <c>true</c> + the imported <see cref="Agent"/> attached
 /// to <see cref="Result"/>.
 /// </summary>
-public sealed class PullAgentDialogViewModel : ScreenBase
+public sealed class ImportAgentDialogViewModel : ScreenBase
 {
 	private readonly IElevenLabsClient _client;
 	private readonly IDialogService _dialog;
@@ -46,7 +46,7 @@ public sealed class PullAgentDialogViewModel : ScreenBase
 
 	public Agent? Result { get; private set; }
 
-	public PullAgentDialogViewModel(
+	public ImportAgentDialogViewModel(
 		IElevenLabsClient client,
 		IDialogService dialog,
 		ILogger logger)
@@ -54,7 +54,7 @@ public sealed class PullAgentDialogViewModel : ScreenBase
 		_client = client;
 		_dialog = dialog;
 		_logger = logger;
-		DisplayName = "Pull Agent by ID";
+		DisplayName = "Import Agent by ID";
 	}
 
 	public async Task Confirm()
@@ -68,17 +68,17 @@ public sealed class PullAgentDialogViewModel : ScreenBase
 		}
 		catch (ElevenLabsAuthException ex)
 		{
-			_logger.LogError(ex, "Auth failed while pulling agent {AgentId}", AgentId);
+			_logger.LogError(ex, "Auth failed while importing agent {AgentId}", AgentId);
 			Error = "The API key is invalid or missing. Configure ElevenLabs.ApiKey in appsettings.json and restart the app.";
 		}
 		catch (ElevenLabsException ex)
 		{
-			_logger.LogError(ex, "ElevenLabs error while pulling agent {AgentId} (status={Status})", AgentId, ex.HttpStatus);
+			_logger.LogError(ex, "ElevenLabs error while importing agent {AgentId} (status={Status})", AgentId, ex.HttpStatus);
 			Error = $"HTTP {ex.HttpStatus}: {ex.Message}";
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "Unexpected error while pulling agent {AgentId}", AgentId);
+			_logger.LogError(ex, "Unexpected error while importing agent {AgentId}", AgentId);
 			Error = ex.Message;
 		}
 		finally

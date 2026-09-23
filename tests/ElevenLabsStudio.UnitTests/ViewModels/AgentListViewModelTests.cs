@@ -1,4 +1,4 @@
-using Caliburn.Micro;
+﻿using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.Events;
@@ -116,7 +116,7 @@ public sealed class AgentListViewModelTests
 		await vm.LoadAsync();
 		await vm.SelectAgentAsync(vm.Agents.First(a => a.AgentId == "a2"));
 
-		// Re-load (e.g. user clicked refresh) — selection should stick
+		// Re-load (e.g. user clicked refresh) 鈥?selection should stick
 		// on a2 instead of snapping back to a1.
 		await vm.LoadAsync();
 		vm.SelectedAgent!.AgentId.Should().Be("a2");
@@ -142,20 +142,6 @@ public sealed class AgentListViewModelTests
 		await vm.LoadAsync();
 
 		await dialog.Received().ShowErrorAsync("Authentication failed", Arg.Any<string>(), Arg.Any<CancellationToken>());
-	}
-
-	[Fact]
-	public async Task FilterText_filter_AgentsView_keeps_matching_only()
-	{
-		var (vm, _, _, _) = Build();
-		await vm.LoadAsync();
-
-		vm.FilterText = "support"; // matches none of the seeded names
-		// ICollectionView Filter is private; reach it via reflection.
-		var view = (System.ComponentModel.ICollectionView)vm.GetType()
-			.GetProperty("AgentsView")!.GetValue(vm)!;
-		var matches = view.Cast<AgentSummary>().ToList();
-		matches.Should().BeEmpty();
 	}
 
 	[Fact]

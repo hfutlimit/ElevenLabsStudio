@@ -111,7 +111,7 @@ public sealed class ShellActionBindingTests
 		ViewModelBinder.Bind(agents, agentListView, null);
 		var agentListHost = new Window { Content = agentListView };
 		agentListHost.Show();
-		var pullButton = (Button)agentListView.FindName("PullAgentById");
+		var pullButton = (Button)agentListView.FindName("ImportAgent");
 		pullButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 		var pullInvoked = SpinWait.SpinUntil(
 			() => windows.ReceivedCalls().Any(),

@@ -31,27 +31,19 @@
                                    Foreground="{StaticResource App.TextMuted}" />
                     </StackPanel>
                 </DockPanel>
-                <Button x:Name="PullAgentById"
-                        cal:Message.Attach="[Event Click] = [Action PullAgentByIdAsync()]"
+                <Button x:Name="ImportAgent"
+                        cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"
                         Style="{StaticResource App.PrimaryButton}"
                         Margin="0,0,0,12"
                         HorizontalAlignment="Stretch"
-                        AutomationProperties.Name="Pull Agent">
+                        AutomationProperties.Name="Import Agent">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CloudDownloadOutline"
+                        <materialDesign:PackIcon Kind="Import"
                                                  Width="16" Height="16"
                                                  Margin="0,0,7,0" />
-                        <TextBlock Text="Pull Agent" />
+                        <TextBlock Text="Import Agent" />
                     </StackPanel>
                 </Button>
-                <TextBox x:Name="FilterText"
-                         materialDesign:HintAssist.Hint="Search by name or Agent ID"
-                         materialDesign:TextFieldAssist.LeadingIcon="Magnify"
-                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         Background="{StaticResource App.SurfaceAlt}"
-                         BorderBrush="{StaticResource App.BorderStrong}"
-                         FontSize="12"
-                         MinHeight="44" />
             </StackPanel>
 
             <Border DockPanel.Dock="Bottom"
@@ -64,7 +56,7 @@
                                              Width="16" Height="16"
                                              Margin="0,0,8,0"
                                              Foreground="{StaticResource App.Accent}" />
-                    <TextBlock Text="No agents yet. Use the button above to get started."
+                    <TextBlock Text="No agents yet. Click Import Agent above to pull one by ID."
                                TextWrapping="Wrap"
                                FontSize="11"
                                Foreground="{StaticResource App.TextSecondary}" />

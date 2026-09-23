@@ -14,7 +14,7 @@ public sealed class ViewResolutionTests
 {
 	[Theory]
 	[InlineData(typeof(SettingsViewModel), typeof(SettingsView))]
-	[InlineData(typeof(PullAgentDialogViewModel), typeof(PullAgentDialogView))]
+	[InlineData(typeof(ImportAgentDialogViewModel), typeof(ImportAgentDialogView))]
 	[InlineData(typeof(LiveConversationViewModel), typeof(LiveConversationView))]
 	public void View_type_matches_default_Caliburn_mapping(
 		Type viewModelType,
@@ -30,7 +30,7 @@ public sealed class ViewResolutionTests
 
 	[Theory]
 	[InlineData(typeof(SettingsViewModel), typeof(SettingsView))]
-	[InlineData(typeof(PullAgentDialogViewModel), typeof(PullAgentDialogView))]
+	[InlineData(typeof(ImportAgentDialogViewModel), typeof(ImportAgentDialogView))]
 	[InlineData(typeof(LiveConversationViewModel), typeof(LiveConversationView))]
 	public void Caliburn_locator_resolves_the_expected_View_type(
 		Type viewModelType,

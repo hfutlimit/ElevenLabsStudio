@@ -15,7 +15,7 @@ namespace ElevenLabsStudio.ViewModels.Agents;
 /// Left-hand agent menu. Holds the list of pulled agents, the filter
 /// text, and the currently selected <see cref="AgentDetailViewModel"/>
 /// that the right pane renders. Agents are pulled by ID one at a time
-/// via <see cref="PullAgentByIdAsync"/>; the user can refresh an
+/// via <see cref="ImportAgentAsync"/>; the user can refresh an
 /// already-pulled agent from its detail view.
 /// </summary>
 public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>, IDisposable
@@ -34,22 +34,8 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 
 	public BindableCollection<AgentSummary> Agents { get; } = new();
 
-	/// <summary>Filtered / sorted view of <see cref="Agents"/> for the ListBox.</summary>
+	/// <summary>Sorted view of <see cref="Agents"/> for the ListBox.</summary>
 	public ICollectionView AgentsView { get; }
-
-	private string _filterText = string.Empty;
-	public string FilterText
-	{
-		get => _filterText;
-		set
-		{
-			if (Set(ref _filterText, value))
-			{
-				AgentsView.Refresh();
-				NotifyOfPropertyChange(nameof(HasNoAgents));
-			}
-		}
-	}
 
 	private AgentSummary? _selectedAgent;
 	public AgentSummary? SelectedAgent
@@ -90,7 +76,6 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 
 		AgentsView = CollectionViewSource.GetDefaultView(Agents);
 
-		AgentsView.Filter = FilterAgent;
 		Agents.CollectionChanged += (_, _) =>
 			NotifyOfPropertyChange(nameof(HasNoAgents));
 	}
@@ -117,27 +102,18 @@ public sealed class AgentListViewModel : ScreenBase, IHandle<AgentUpdatedEvent>,
 		_logger.LogDebug("AgentListViewModel unsubscribed from event aggregator");
 	}
 
-	private bool FilterAgent(object obj)
-	{
-		if (obj is not AgentSummary a) return false;
-		if (string.IsNullOrWhiteSpace(_filterText)) return true;
-		var f = _filterText.Trim();
-		return a.Name.Contains(f, StringComparison.OrdinalIgnoreCase)
-			|| a.AgentId.Contains(f, StringComparison.OrdinalIgnoreCase);
-	}
-
 	/// <summary>
-	/// Open the pull-by-id dialog. On success, append the agent to the
+	/// Open the import-by-id dialog. On success, append the agent to the
 	/// local list and select it so the right pane renders its detail.
 	/// </summary>
-	public async Task PullAgentByIdAsync()
+	public async Task ImportAgentAsync()
 	{
-		var dialogVm = new PullAgentDialogViewModel(_client, _dialog, _logger);
+		var dialogVm = new ImportAgentDialogViewModel(_client, _dialog, _logger);
 		var ok = await _windowManager.ShowDialogAsync(dialogVm);
 		if (ok == true && dialogVm.Result is { } pulled)
 		{
 			var summary = ToSummary(pulled);
-			// Replace if already present (re-pull).
+			// Replace if already present (re-import).
 			var idx = Agents.IndexOf(Agents.FirstOrDefault(a => a.AgentId == pulled.AgentId)!);
 			if (idx >= 0)
 			{

@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace ElevenLabsStudio.Views.Agents;
 
-public partial class PullAgentDialogView : UserControl
+public partial class ImportAgentDialogView : UserControl
 {
-	public PullAgentDialogView()
+	public ImportAgentDialogView()
 	{
 		InitializeComponent();
 	}
