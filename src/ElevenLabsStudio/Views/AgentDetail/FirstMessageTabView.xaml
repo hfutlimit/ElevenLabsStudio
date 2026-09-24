@@ -4,8 +4,8 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Grid Margin="0,12,0,0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Paper-style editor mirroring the system prompt tab. -->
@@ -37,6 +37,9 @@
                      Padding="12,14" />
         </Border>
 
+        <!-- Meta line: suggestions count on the left, char counter on the
+             right. Same Auto-row layout as the system prompt tab so the
+             meta hugs the editor instead of sliding to the bottom. -->
         <DockPanel Grid.Row="1" Margin="2,12,2,0" LastChildFill="True">
             <Border DockPanel.Dock="Right"
                     Background="{StaticResource App.Surface}"

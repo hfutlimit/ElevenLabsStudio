@@ -161,6 +161,58 @@ public sealed class WorkspaceLayoutTests
 	}
 
 	[Fact]
+	public async Task Agent_list_row_template_keeps_icon_and_text_vertically_aligned()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var stub = new AgentListStub(hasNoAgents: false, items:
+			[
+				new AgentSummary("agent_layout", "Layout agent", "voice_1", DateTimeOffset.UnixEpoch),
+			]);
+			var view = new AgentListView { DataContext = stub, Width = 310 };
+			var host = new Window { Content = view };
+			host.Show();
+
+			var item = view.FindName("AgentsView").Should().BeOfType<ListBox>().Subject
+				.ItemContainerGenerator.ContainerFromIndex(0)
+				.Should().BeOfType<ListBoxItem>().Subject;
+			var presenter = VisualDescendants(item).OfType<ContentPresenter>().Single();
+			presenter.VerticalAlignment.Should().Be(VerticalAlignment.Stretch,
+				"the row template must stretch the ContentPresenter so the icon and text align");
+			presenter.HorizontalAlignment.Should().Be(HorizontalAlignment.Stretch);
+			host.Close();
+		});
+	}
+
+	[Fact]
+	public async Task First_message_meta_row_sits_below_the_editor_not_at_the_bottom()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var view = new FirstMessageTabView();
+			var host = new Window { Content = view, Width = 900, Height = 600 };
+			host.Show();
+
+			var grid = VisualDescendants(host)
+				.OfType<Grid>()
+				.First(g => g.RowDefinitions.Count == 2
+					&& VisualDescendants(g).OfType<TextBox>().Any());
+			grid.RowDefinitions[0].Height.Should().Be(new GridLength(1, GridUnitType.Star),
+				"the editor takes the remaining space");
+			grid.RowDefinitions[1].Height.Should().Be(GridLength.Auto,
+				"the meta row must be Auto-sized so it hugs the editor instead of sliding to the bottom");
+
+			// Sanity-check the meta row actually exists: the char counter lives
+			// inside a Border docked to the right of a DockPanel in row 1.
+			var counter = view.FindName("FirstMessageLength").Should().BeOfType<TextBlock>().Subject;
+			var dock = FindAncestor<DockPanel>(counter);
+			dock.Should().NotBeNull();
+			dock!.LastChildFill.Should().BeTrue();
+			host.Close();
+		});
+	}
+
+	[Fact]
 	public async Task Empty_agent_state_text_wraps_inside_the_sidebar_card()
 	{
 		await RunOnStaAsync(() =>
@@ -323,5 +375,18 @@ public sealed class WorkspaceLayoutTests
 				yield return descendant;
 			}
 		}
+	}
+
+	private static T? FindAncestor<T>(DependencyObject? descendant) where T : DependencyObject
+	{
+		for (var current = VisualTreeHelper.GetParent(descendant ?? throw new InvalidOperationException()); current is not null; current = VisualTreeHelper.GetParent(current))
+		{
+			if (current is T match)
+			{
+				return match;
+			}
+		}
+
+		return null;
 	}
 }

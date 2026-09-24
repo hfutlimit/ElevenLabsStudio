@@ -5,23 +5,30 @@
              xmlns:cal="http://www.caliburnproject.org">
     <Border Style="{StaticResource App.ElevatedCard}">
         <DockPanel Margin="0">
-            <StackPanel DockPanel.Dock="Top" Margin="16,14,16,12">
+            <!-- Title row: agents heading on the left, a compact "+" import
+                 action on the right so the secondary button stops pushing
+                 the list down. -->
+            <Grid DockPanel.Dock="Top" Margin="16,14,16,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <TextBlock Text="Agents"
                            FontSize="12"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource App.TextSecondary}"
-                           Margin="1,0,0,10" />
-                <Button x:Name="ImportAgent"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        x:Name="ImportAgent"
                         cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"
-                        Style="{StaticResource App.SecondaryButton}"
+                        Style="{StaticResource App.IconButton}"
+                        Width="28"
                         Height="28"
-                        Padding="10,0"
-                        Margin="0,0,0,12"
-                        HorizontalAlignment="Left"
+                        ToolTip="Import agent by ID"
                         AutomationProperties.Name="Import Agent">
-                    <TextBlock Text="Import Agent" />
+                    <materialDesign:PackIcon Kind="Plus" Width="14" Height="14" />
                 </Button>
-            </StackPanel>
+            </Grid>
 
             <!-- Flat empty state: no card-in-card, muted ink only. -->
             <Border DockPanel.Dock="Bottom"
@@ -58,6 +65,7 @@
                         <Setter Property="Padding" Value="0" />
                         <Setter Property="Margin" Value="8,2" />
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="VerticalContentAlignment" Value="Stretch" />
                         <Setter Property="FocusVisualStyle" Value="{StaticResource App.FocusVisual}" />
                         <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
                         <Setter Property="Template">
@@ -70,7 +78,8 @@
                                                 BorderThickness="1"
                                                 CornerRadius="8"
                                                 Padding="10,8">
-                                            <ContentPresenter />
+                                            <ContentPresenter HorizontalAlignment="Stretch"
+                                                              VerticalAlignment="Stretch" />
                                         </Border>
                                         <Border x:Name="SelectionBar"
                                                 Width="3"
