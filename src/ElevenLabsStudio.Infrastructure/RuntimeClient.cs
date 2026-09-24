@@ -52,7 +52,13 @@ public sealed class RuntimeClient : IElevenLabsClient
 	public async Task<IReadOnlyList<AgentSummary>> ListAgentsAsync(CancellationToken ct = default)
 	{
 		var testAgentId = _options.CurrentValue.TestAgentId;
-		if (string.IsNullOrWhiteSpace(testAgentId))
+		// The offline mock owns its own fixture cast and is the source of
+		// truth in mock mode. Narrowing it through TestAgentId made the
+		// whole app unusable whenever that id didn't match the fixture
+		// (a 404 with an empty sidebar and no way out except editing
+		// appsettings.json by hand), so the filter is a real-API-only
+		// convenience.
+		if (_options.CurrentValue.Mock || string.IsNullOrWhiteSpace(testAgentId))
 		{
 			return await Route.ListAgentsAsync(ct);
 		}
@@ -64,7 +70,11 @@ public sealed class RuntimeClient : IElevenLabsClient
 				agent.AgentId,
 				agent.Name,
 				agent.VoiceId,
-				CreatedAt: agent.UpdatedAt),
+				// The GetAgent payload carries no creation timestamp.
+				// Reporting UpdatedAt here stamped "created" with the
+				// last edit time in the sidebar; null renders as blank,
+				// which is honest.
+				CreatedAt: null),
 		};
 	}
 

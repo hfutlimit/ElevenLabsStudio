@@ -150,8 +150,26 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 				to: DateTimeOffset.UtcNow,
 				pageSize: 100,
 				ct: ct);
+
+			// Remember the open conversation across the refresh. The
+			// Clear() below makes the bound ListBox push null back into
+			// SelectedConversation, which used to cascade into a
+			// transcript wipe — the user hit Reload and the whole right
+			// pane went blank even though the conversation was still
+			// right there in the new list.
+			var selectedId = _selectedConversation?.ConversationId;
+
 			Conversations.Clear();
 			Conversations.AddRange(items);
+
+			if (selectedId is not null)
+			{
+				var reopened = Conversations.FirstOrDefault(
+					c => c.ConversationId == selectedId);
+				// A null result means the conversation really is gone
+				// from the server, so clearing the transcript is correct.
+				await SelectConversationAsync(reopened, ct);
+			}
 		}
 		catch (OperationCanceledException) when (ct.IsCancellationRequested)
 		{

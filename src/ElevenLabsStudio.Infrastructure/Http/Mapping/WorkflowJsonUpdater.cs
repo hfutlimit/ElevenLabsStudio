@@ -8,6 +8,30 @@ internal static class WorkflowJsonUpdater
 {
 	public static JsonObject Apply(Workflow edit)
 	{
+		try
+		{
+			return ApplyCore(edit);
+		}
+		catch (WorkflowUpdateException)
+		{
+			throw;
+		}
+		catch (Exception ex) when (ex is System.Text.Json.JsonException
+			or InvalidOperationException
+			or FormatException
+			or KeyNotFoundException
+			or ArgumentException)
+		{
+			// The original try/catch only wrapped the initial parse, so a
+			// shape problem halfway through the mutation (wrong node type,
+			// a value that will not coerce) escaped as a raw framework
+			// exception and surfaced as an unmapped 500 upstream.
+			throw new WorkflowUpdateException("Workflow JSON could not be applied.", ex);
+		}
+	}
+
+	private static JsonObject ApplyCore(Workflow edit)
+	{
 		if (string.IsNullOrWhiteSpace(edit.RawJson))
 		{
 			throw new WorkflowUpdateException("Workflow cannot be updated without its original JSON document.");
@@ -49,8 +73,12 @@ internal static class WorkflowJsonUpdater
 				{
 					continue;
 				}
-				var source = edgeObject["source"]?.GetValue<string>();
-				var target = edgeObject["target"]?.GetValue<string>();
+				// GetValue<string>() throws InvalidOperationException on a
+				// node/array/number endpoint, which took down the whole
+				// update for one odd edge. Treat "not a string" as "not a
+				// node reference" and leave the edge alone.
+				var source = ReadNodeReference(edgeObject["source"]);
+				var target = ReadNodeReference(edgeObject["target"]);
 				if ((source is not null && removedIds.Contains(source))
 					|| (target is not null && removedIds.Contains(target)))
 				{
@@ -89,6 +117,11 @@ internal static class WorkflowJsonUpdater
 
 		return root;
 	}
+
+	private static string? ReadNodeReference(JsonNode? node) =>
+		node is JsonValue value && value.TryGetValue<string>(out var text)
+			? text
+			: null;
 
 	private static void ApplyPosition(JsonObject nodeObject, WorkflowNode node)
 	{

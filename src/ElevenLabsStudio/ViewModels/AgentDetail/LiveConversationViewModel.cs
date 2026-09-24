@@ -31,6 +31,7 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private InitialWebhookVariableScenario _selectedVariableScenario;
 	private string _messageText = string.Empty;
 	private TimeSpan _elapsed;
+	private int _dynamicVariableSequence;
 	private bool _disposed;
 
 	public LiveConversationViewModel(
@@ -85,7 +86,12 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 
 	public void AddDynamicVariable()
 	{
-		DynamicVariables.Add(new DynamicVariableEntry($"variable_{DynamicVariables.Count + 1}", string.Empty));
+		// A monotonically increasing counter, never Count + 1: removing
+		// a middle row used to hand the next Add the very same key back,
+		// and CreateOptions then refused the whole session with
+		// "Dynamic variable key 'variable_2' is duplicated."
+		var index = ++_dynamicVariableSequence;
+		DynamicVariables.Add(new DynamicVariableEntry($"variable_{index}", string.Empty));
 	}
 
 	public void RemoveDynamicVariable(DynamicVariableEntry? variable)
@@ -213,6 +219,23 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		try
 		{
 			var session = await _client.StartAsync(options, ct);
+			if (_disposed)
+			{
+				// Dispose raced the connect: the agent was switched (or
+				// the pane torn down) while this await was in flight, so
+				// Dispose already ran with a null _session and had
+				// nothing to clean up. Storing the late-arriving session
+				// on a dead view model would strand the singleton
+				// WebViewRealtimeConversationClient in "already active"
+				// forever — every later agent got a hard failure. Hand
+				// the session straight back instead.
+				_logger.LogInformation(
+					"Disposing late realtime session for {AgentId}: the view model was disposed while connecting",
+					AgentId);
+				DisposeDetachedSession(session);
+				return;
+			}
+
 			_session = session;
 			Subscribe(session);
 			ConversationId = session.ConversationId;
@@ -299,19 +322,24 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		Unsubscribe(_session);
 		if (_session is not null)
 		{
-			// WebViewRealtimeConversationSession.DisposeAsync already
-			// swallows the InvalidOperationException that fires when the
-			// browser is detached before stop completes — but anything
-			// else thrown would become an unobserved task exception.
-			// Route that to the log instead.
-			_ = _session.DisposeAsync().AsTask().ContinueWith(
-				t => _logger.LogError(t.Exception, "Session.DisposeAsync threw for {AgentId}", AgentId),
-				CancellationToken.None,
-				TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously,
-				TaskScheduler.Default);
+			DisposeDetachedSession(_session);
 			_session = null;
 		}
 	}
+
+	/// <summary>
+	/// Fire-and-forget teardown for a session nobody is holding on to.
+	/// WebViewRealtimeConversationSession.DisposeAsync already swallows
+	/// the InvalidOperationException that fires when the browser is
+	/// detached before stop completes — but anything else thrown would
+	/// become an unobserved task exception, so route it to the log.
+	/// </summary>
+	private void DisposeDetachedSession(IRealtimeConversationSession session) =>
+		_ = session.DisposeAsync().AsTask().ContinueWith(
+			t => _logger.LogError(t.Exception, "Session.DisposeAsync threw for {AgentId}", AgentId),
+			CancellationToken.None,
+			TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously,
+			TaskScheduler.Default);
 
 	private RealtimeConversationOptions CreateOptions()
 	{
@@ -340,6 +368,9 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private void LoadScenarioVariables(InitialWebhookVariableScenario scenario)
 	{
 		DynamicVariables.Clear();
+		// The collection just went back to empty, so restarting the
+		// name sequence can't collide with anything still in it.
+		_dynamicVariableSequence = 0;
 		foreach (var variable in scenario.Variables)
 		{
 			DynamicVariables.Add(new DynamicVariableEntry(variable.Key, variable.Value?.ToString() ?? string.Empty));

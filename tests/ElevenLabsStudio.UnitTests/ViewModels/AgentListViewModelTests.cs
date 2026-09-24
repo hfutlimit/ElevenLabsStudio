@@ -203,4 +203,182 @@ public sealed class AgentListViewModelTests
 		vm.AgentDetail.Should().NotBeNull();
 		vm.AgentDetail!.Agent.AgentId.Should().Be("a2");
 	}
+
+	[Fact]
+	public async Task A_failed_load_keeps_the_previous_agent_on_screen()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetAgentAsync("a1", Arg.Any<CancellationToken>()).Returns(SampleAgent("a1"));
+		client.GetAgentAsync("a2", Arg.Any<CancellationToken>())
+			.Returns<Task<Agent>>(_ => throw new ElevenLabsException("boom", httpStatus: 500));
+		var (vm, dialog, _) = BuildWith(client);
+
+		await vm.SelectAgentAsync(SampleSummary("a1"));
+		var original = vm.AgentDetail;
+
+		await vm.SelectAgentAsync(SampleSummary("a2"));
+
+		// The old behaviour disposed the detail and nulled the selection
+		// *before* the request, so any error left the right pane blank
+		// with no way back except another successful click.
+		vm.SelectedAgent!.AgentId.Should().Be("a1");
+		vm.AgentDetail.Should().BeSameAs(original);
+		vm.AgentDetail!.Agent.AgentId.Should().Be("a1");
+		await dialog.Received().ShowErrorAsync("Load failed", Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task A_failed_load_republishes_the_selection_so_the_list_snaps_back()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetAgentAsync("a1", Arg.Any<CancellationToken>()).Returns(SampleAgent("a1"));
+		client.GetAgentAsync("a2", Arg.Any<CancellationToken>())
+			.Returns<Task<Agent>>(_ => throw new ElevenLabsException("boom", httpStatus: 500));
+		var (vm, _, _) = BuildWith(client);
+		var republished = new List<string?>();
+		vm.PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(AgentListViewModel.SelectedAgent))
+			{
+				republished.Add(vm.SelectedAgent?.AgentId);
+			}
+		};
+
+		await vm.SelectAgentAsync(SampleSummary("a1"));
+		republished.Clear();
+		await vm.SelectAgentAsync(SampleSummary("a2"));
+
+		// The ListBox already moved its highlight when it pushed the
+		// click into the two-way binding; without this notification it
+		// would sit on a2 while the pane still shows a1.
+		republished.Should().ContainSingle().Which.Should().Be("a1");
+	}
+
+	[Fact]
+	public async Task Cancelling_the_unsaved_changes_prompt_keeps_the_current_agent()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetAgentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(call => SampleAgent(call.ArgAt<string>(0)));
+		var (vm, dialog, _) = BuildWith(client);
+		dialog.ResolveUnsavedChangesAsync(
+				Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(UnsavedChangesDecision.Cancel);
+
+		await vm.SelectAgentAsync(SampleSummary("a1"));
+		vm.AgentDetail!.SystemPromptVm.Prompt = "unsaved work";
+		vm.HasUnsavedChanges.Should().BeTrue();
+
+		await vm.SelectAgentAsync(SampleSummary("a2"));
+
+		vm.SelectedAgent!.AgentId.Should().Be("a1");
+		vm.AgentDetail!.Agent.AgentId.Should().Be("a1");
+		vm.AgentDetail!.SystemPromptVm.Prompt.Should().Be("unsaved work");
+	}
+
+	[Fact]
+	public async Task Saving_a_draft_lets_the_navigation_proceed()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetAgentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(call => SampleAgent(call.ArgAt<string>(0)));
+		var (vm, dialog, drafts) = BuildWith(client);
+		dialog.ResolveUnsavedChangesAsync(
+				Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(UnsavedChangesDecision.SaveDraft);
+
+		await vm.SelectAgentAsync(SampleSummary("a1"));
+		vm.AgentDetail!.SystemPromptVm.Prompt = "unsaved work";
+
+		await vm.SelectAgentAsync(SampleSummary("a2"));
+
+		vm.SelectedAgent!.AgentId.Should().Be("a2");
+		drafts.Received().Save(
+			Arg.Is<string>(key => key.Contains("a1")),
+			Arg.Any<AgentDetailDraft>());
+	}
+
+	[Fact]
+	public async Task Discarding_unsaved_changes_lets_the_navigation_proceed_without_a_draft()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetAgentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(call => SampleAgent(call.ArgAt<string>(0)));
+		var (vm, dialog, drafts) = BuildWith(client);
+		dialog.ResolveUnsavedChangesAsync(
+				Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(UnsavedChangesDecision.Discard);
+
+		await vm.SelectAgentAsync(SampleSummary("a1"));
+		vm.AgentDetail!.SystemPromptVm.Prompt = "unsaved work";
+
+		await vm.SelectAgentAsync(SampleSummary("a2"));
+
+		vm.SelectedAgent!.AgentId.Should().Be("a2");
+		drafts.DidNotReceive().Save(Arg.Any<string>(), Arg.Any<AgentDetailDraft>());
+	}
+
+	[Fact]
+	public async Task TryClose_is_a_no_op_when_nothing_is_dirty()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetAgentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(call => SampleAgent(call.ArgAt<string>(0)));
+		var (vm, dialog, _) = BuildWith(client);
+		await vm.SelectAgentAsync(SampleSummary("a1"));
+
+		var allowed = await vm.ResolveActiveUnsavedChangesAsync();
+
+		allowed.Should().BeTrue();
+		await dialog.DidNotReceive().ResolveUnsavedChangesAsync(
+			Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task TryClose_blocks_when_the_user_cancels()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetAgentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(call => SampleAgent(call.ArgAt<string>(0)));
+		var (vm, dialog, _) = BuildWith(client);
+		dialog.ResolveUnsavedChangesAsync(
+				Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(UnsavedChangesDecision.Cancel);
+		await vm.SelectAgentAsync(SampleSummary("a1"));
+		vm.AgentDetail!.SystemPromptVm.Prompt = "unsaved work";
+
+		var allowed = await vm.ResolveActiveUnsavedChangesAsync();
+
+		allowed.Should().BeFalse();
+		vm.HasUnsavedChanges.Should().BeTrue();
+	}
+
+	private static (AgentListViewModel vm, IDialogService dialog, IDraftStore drafts) BuildWith(
+		IElevenLabsClient client)
+	{
+		client.ListConversationsAsync(
+				Arg.Any<string>(),
+				Arg.Any<DateTimeOffset?>(),
+				Arg.Any<DateTimeOffset?>(),
+				Arg.Any<int>(),
+				Arg.Any<string?>(),
+				Arg.Any<CancellationToken>())
+			.Returns(Array.Empty<ConversationRecord>());
+		var dialog = Substitute.For<IDialogService>();
+		var events = Substitute.For<IEventAggregator>();
+		var drafts = Substitute.For<IDraftStore>();
+		var suggestions = Substitute.For<ISuggestionEngine>();
+		var vm = new AgentListViewModel(
+			client,
+			dialog,
+			events,
+			drafts,
+			new AgentDetailViewModelFactory(
+				client, suggestions, dialog, events, drafts,
+				NullLogger<AgentDetailViewModel>.Instance),
+			NullLogger<AgentListViewModel>.Instance,
+			suggestions,
+			Substitute.For<IWindowManager>());
+		return (vm, dialog, drafts);
+	}
 }

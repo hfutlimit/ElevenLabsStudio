@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -14,8 +15,60 @@ public partial class ShellView : Window
 		SidebarToggle.Click += (_, _) => ToggleSidebar();
 		Minimize.Click += (_, _) => WindowState = WindowState.Minimized;
 		MaximizeRestore.Click += (_, _) => ToggleMaximized();
-		CloseWindow.Click += (_, _) => Close();
+		CloseWindow.Click += (_, _) => RequestClose();
 		StateChanged += (_, _) => UpdateMaximizeIcon();
+		Closing += OnClosing;
+	}
+
+	// -- Close guard ------------------------------------------------------
+	//
+	// Edits live in view models; a draft is only written when the app
+	// explicitly asks for it. Without this guard, Alt+F4 / the X button
+	// tore the process down with dirty fields still on screen and no
+	// draft ever written. All of the decision logic lives in
+	// ShellViewModel.TryCloseAsync — code-behind only sequences the
+	// async close and swallows the first Closing event.
+	private bool _closeApproved;
+	private bool _closeCheckInFlight;
+
+	/// <summary>
+	/// Close after the guard has already approved this close (or when
+	/// there was nothing to guard).
+	/// </summary>
+	private void RequestClose()
+	{
+		_closeApproved = true;
+		Close();
+	}
+
+	private async void OnClosing(object? sender, CancelEventArgs e)
+	{
+		if (_closeApproved) return;
+
+		// First pass: always swallow. The window is re-closed through
+		// RequestClose() only after the view model says yes.
+		e.Cancel = true;
+		if (_closeCheckInFlight) return;
+		_closeCheckInFlight = true;
+		try
+		{
+			if (DataContext is not ViewModels.ShellViewModel shell) return;
+			if (await shell.TryCloseAsync())
+			{
+				RequestClose();
+			}
+		}
+		catch (Exception ex)
+		{
+			// Never let a guard failure take the app down: the safe
+			// outcome is to stay open with the user's edits intact.
+			System.Diagnostics.Debug.WriteLine(
+				$"Close guard failed; keeping the window open. {ex}");
+		}
+		finally
+		{
+			_closeCheckInFlight = false;
+		}
 	}
 
 	private bool _isSidebarCollapsed;

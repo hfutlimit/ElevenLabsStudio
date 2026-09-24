@@ -102,7 +102,8 @@ public sealed class AgentDetailViewModelTests
 		var client = Substitute.For<IElevenLabsClient>();
 		client.UpdateAgentAsync("agent_1", Arg.Any<AgentUpdate>(), Arg.Any<CancellationToken>())
 			.Returns(AgentSnapshot("server-normalized", "server-first-message"));
-		var vm = Build(AgentSnapshot("initial"), client);
+		var dialog = ConfirmedDialog();
+		var vm = Build(AgentSnapshot("initial"), client, dialog);
 		vm.SystemPromptVm.Prompt = "local-edit";
 
 		await vm.Push();
@@ -111,5 +112,54 @@ public sealed class AgentDetailViewModelTests
 		vm.SystemPromptVm.Prompt.Should().Be("server-normalized");
 		vm.FirstMessageVm.FirstMessage.Should().Be("server-first-message");
 		vm.IsDirty.Should().BeFalse();
+	}
+
+	[Fact]
+	public async Task Push_does_nothing_when_the_user_declines_the_confirmation()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		var dialog = Substitute.For<IDialogService>();
+		dialog.ConfirmAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(false);
+		var vm = Build(AgentSnapshot("initial"), client, dialog);
+		vm.SystemPromptVm.Prompt = "local-edit";
+
+		await vm.Push();
+
+		await client.DidNotReceive().UpdateAgentAsync(
+			Arg.Any<string>(),
+			Arg.Any<AgentUpdate>(),
+			Arg.Any<CancellationToken>());
+		// The edit is still on screen and still pending — declining
+		// must not silently throw the user's work away.
+		vm.Agent.Prompt.Should().Be("initial");
+		vm.SystemPromptVm.Prompt.Should().Be("local-edit");
+		vm.IsDirty.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task Push_asks_before_overwriting_the_server_copy()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.UpdateAgentAsync("agent_1", Arg.Any<AgentUpdate>(), Arg.Any<CancellationToken>())
+			.Returns(AgentSnapshot("server-normalized"));
+		var dialog = ConfirmedDialog();
+		var vm = Build(AgentSnapshot("initial"), client, dialog);
+		vm.SystemPromptVm.Prompt = "local-edit";
+
+		await vm.Push();
+
+		await dialog.Received(1).ConfirmAsync(
+			Arg.Is<string>(title => title.Contains("Push")),
+			Arg.Is<string>(message => message.Contains("Agent")),
+			Arg.Any<CancellationToken>());
+	}
+
+	private static IDialogService ConfirmedDialog()
+	{
+		var dialog = Substitute.For<IDialogService>();
+		dialog.ConfirmAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+			.Returns(true);
+		return dialog;
 	}
 }

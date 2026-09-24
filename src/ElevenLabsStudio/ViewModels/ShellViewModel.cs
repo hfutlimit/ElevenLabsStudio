@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.ViewModels.AgentDetail;
@@ -50,6 +51,41 @@ public sealed class ShellViewModel : Screen
 		?? _agents.BusyMessage
 		?? string.Empty;
 
+	/// <summary>
+	/// Re-project the aggregate busy state after either child VM changed.
+	/// Called for <see cref="AgentListViewModel"/> notifications and for
+	/// the currently-attached <see cref="AgentDetailViewModel"/>.
+	/// </summary>
+	private void NotifyBusyChanged()
+	{
+		NotifyOfPropertyChange(nameof(IsBusy));
+		NotifyOfPropertyChange(nameof(BusyMessage));
+	}
+
+	private void OnAgentDetailPropertyChanged(object? sender, PropertyChangedEventArgs e)
+	{
+		if (e.PropertyName is nameof(AgentDetailViewModel.IsDirty)
+			or nameof(AgentDetailViewModel.IsBusy)
+			or nameof(AgentDetailViewModel.BusyMessage))
+		{
+			NotifyBusyChanged();
+		}
+	}
+
+	/// <summary>
+	/// True when the agent currently open in the right pane has edits
+	/// that were never pushed. Read by the window-close guard.
+	/// </summary>
+	public bool HasUnsavedChanges => _agents.HasUnsavedChanges;
+
+	/// <summary>
+	/// Close guard. Returns true when the window may close, false when
+	/// the user cancelled (or the prompt could not be shown) and the
+	/// app must stay up with the edits intact.
+	/// </summary>
+	public Task<bool> TryCloseAsync(CancellationToken ct = default) =>
+		_agents.ResolveActiveUnsavedChangesAsync(ct);
+
 	public ShellViewModel(
 		AgentListViewModel agents,
 		SettingsViewModel settings,
@@ -65,11 +101,33 @@ public sealed class ShellViewModel : Screen
 		// so the right-pane XAML binding (DataContext="{Binding
 		// AgentDetail}") gets a fresh value and ShellView's
 		// DataContextChanged handler rebuilds the view.
+		//
+		// IsBusy / BusyMessage are computed projections over BOTH the
+		// list VM and the current detail VM, so every change on either
+		// side has to be re-projected here — otherwise the status bar
+		// (ShellView.xaml) never learns that work started or finished.
 		_agents.PropertyChanged += (_, e) =>
 		{
-			if (e.PropertyName == nameof(AgentListViewModel.AgentDetail))
+			switch (e.PropertyName)
 			{
-				AgentDetail = _agents.AgentDetail;
+				case nameof(AgentListViewModel.AgentDetail):
+					// Drop the old detail VM's notifications before
+					// swapping: IsBusy/BusyMessage no longer depend on it.
+					if (_agentDetail is not null)
+					{
+						_agentDetail.PropertyChanged -= OnAgentDetailPropertyChanged;
+					}
+					AgentDetail = _agents.AgentDetail;
+					if (_agentDetail is not null)
+					{
+						_agentDetail.PropertyChanged += OnAgentDetailPropertyChanged;
+					}
+					NotifyBusyChanged();
+					break;
+				case nameof(AgentListViewModel.IsBusy):
+				case nameof(AgentListViewModel.BusyMessage):
+					NotifyBusyChanged();
+					break;
 			}
 		};
 

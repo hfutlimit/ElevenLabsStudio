@@ -185,6 +185,14 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 				? new Workflow(workflowNodes!, Agent.Workflow.RawJson)
 				: null);
 
+		// Push overwrites the live agent configuration on the server, and
+		// there is no undo — so ask before spending the call. Anything
+		// short of an explicit Yes leaves the agent untouched.
+		var confirmed = await _dialog.ConfirmAsync(
+			"Push changes",
+			$"Apply these edits to agent '{Agent.Name}' on the server?");
+		if (!confirmed) return;
+
 		IsBusy = true;
 		try
 		{

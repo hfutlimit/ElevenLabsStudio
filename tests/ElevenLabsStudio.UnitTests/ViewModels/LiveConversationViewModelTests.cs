@@ -107,11 +107,61 @@ public sealed class LiveConversationViewModelTests
 		vm.AddDynamicVariable();
 
 		vm.DynamicVariables.Should().HaveCount(initialCount + 1);
-		vm.DynamicVariables[^1].Key.Should().Be("variable_10");
+		vm.DynamicVariables[^1].Key.Should().Be("variable_1");
 
 		vm.RemoveDynamicVariable(vm.DynamicVariables[^1]);
 
 		vm.DynamicVariables.Should().HaveCount(initialCount);
+	}
+
+	[Fact]
+	public void Added_dynamic_variable_keys_stay_unique_after_a_middle_row_is_removed()
+	{
+		var client = Substitute.For<IRealtimeConversationClient>();
+		var vm = NewViewModel(client);
+		vm.DynamicVariables.Clear();
+
+		vm.AddDynamicVariable();
+		vm.AddDynamicVariable();
+		vm.RemoveDynamicVariable(vm.DynamicVariables[0]);
+
+		// Count + 1 handed "variable_1" straight back here, and
+		// CreateOptions then refused the whole session as a duplicate.
+		vm.AddDynamicVariable();
+
+		vm.DynamicVariables.Select(variable => variable.Key)
+			.Should().OnlyHaveUniqueItems();
+	}
+
+	[Fact]
+	public async Task A_session_that_lands_after_Dispose_is_released_instead_of_stranding_the_client()
+	{
+		var session = new FakeSession();
+		var client = Substitute.For<IRealtimeConversationClient>();
+		var gate = new TaskCompletionSource<IRealtimeConversationSession>();
+		client.StartAsync(Arg.Any<RealtimeConversationOptions>(), Arg.Any<CancellationToken>())
+			.Returns(_ =>
+			{
+				// The agent is switched while the connect is still in
+				// flight — exactly the race that used to leave the
+				// singleton client permanently "already active".
+				return gate.Task;
+			});
+		var vm = NewViewModel(client);
+
+		var start = vm.StartAsync();
+		vm.Dispose();
+		gate.SetResult(session);
+		await start;
+
+		// Give the fire-and-forget DisposeAsync continuation a turn.
+		await Task.Yield();
+
+		vm.CanStart.Should().BeTrue("the dead view model must not hold a session");
+		session.DisposeCount.Should().Be(1);
+		await client.Received(1).StartAsync(
+			Arg.Any<RealtimeConversationOptions>(),
+			Arg.Any<CancellationToken>());
 	}
 
 	[Fact]
@@ -233,6 +283,7 @@ public sealed class LiveConversationViewModelTests
 		public RealtimeConversationStatus Status { get; private set; } = RealtimeConversationStatus.Connecting;
 		public List<string> SentText { get; } = new();
 		public int StopCount { get; private set; }
+		public int DisposeCount { get; private set; }
 		public event EventHandler<RealtimeConversationStatusChangedEventArgs>? StatusChanged;
 		public event EventHandler<RealtimeConversationModeChangedEventArgs>? ModeChanged;
 		public event EventHandler<RealtimeTranscriptEventArgs>? TranscriptReceived;
@@ -254,7 +305,11 @@ public sealed class LiveConversationViewModelTests
 			return Task.CompletedTask;
 		}
 
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+		public ValueTask DisposeAsync()
+		{
+			DisposeCount++;
+			return ValueTask.CompletedTask;
+		}
 
 		public void RaiseStatus(RealtimeConversationStatus status, string? conversationId)
 		{

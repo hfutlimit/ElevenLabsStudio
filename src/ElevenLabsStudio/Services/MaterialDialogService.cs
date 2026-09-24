@@ -38,4 +38,36 @@ public sealed class MaterialDialogService : IDialogService
             MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error));
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Three-way unsaved-changes prompt. Yes = keep the draft, No = throw
+    /// the edits away, Cancel = abort whatever triggered this. Any failure
+    /// to actually ask (no Application, no dispatcher) degrades to
+    /// <see cref="UnsavedChangesDecision.Cancel"/> so we never silently
+    /// discard work the user was never asked about.
+    /// </summary>
+    public Task<UnsavedChangesDecision> ResolveUnsavedChangesAsync(
+        string title,
+        string message,
+        CancellationToken ct = default)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            return Task.FromResult(UnsavedChangesDecision.Cancel);
+        }
+
+        var result = dispatcher.Invoke(() => MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Warning));
+
+        return Task.FromResult(result switch
+        {
+            MessageBoxResult.Yes => UnsavedChangesDecision.SaveDraft,
+            MessageBoxResult.No => UnsavedChangesDecision.Discard,
+            _ => UnsavedChangesDecision.Cancel,
+        });
+    }
 }
