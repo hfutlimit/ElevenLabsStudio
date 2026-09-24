@@ -63,7 +63,8 @@
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="8,2" />
+                        <Setter Property="Margin" Value="8,3" />
+                        <Setter Property="MinHeight" Value="56" />
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                         <Setter Property="VerticalContentAlignment" Value="Stretch" />
                         <Setter Property="FocusVisualStyle" Value="{StaticResource App.FocusVisual}" />
@@ -77,7 +78,7 @@
                                                 BorderBrush="Transparent"
                                                 BorderThickness="1"
                                                 CornerRadius="8"
-                                                Padding="10,8">
+                                                Padding="12,10">
                                             <ContentPresenter HorizontalAlignment="Stretch"
                                                               VerticalAlignment="Stretch" />
                                         </Border>
@@ -111,33 +112,49 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid VerticalAlignment="Center">
+                        <Grid VerticalAlignment="Center" Margin="0,6,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="28" Height="28"
+
+                            <!-- Accent stripe on the left mirrors the row's
+                                 selection state without crowding the icon. -->
+                            <Border Width="3"
+                                    CornerRadius="2"
+                                    Background="{StaticResource App.Accent}"
+                                    VerticalAlignment="Stretch"
+                                    HorizontalAlignment="Left"
+                                    Margin="-10,-2,0,-2"
+                                    Visibility="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                            <Border Width="30" Height="30"
                                     CornerRadius="6"
-                                    Background="{StaticResource App.Surface}"
-                                    BorderBrush="{StaticResource App.BorderStrong}"
+                                    Background="{StaticResource App.SurfaceAlt}"
+                                    BorderBrush="{StaticResource App.Border}"
                                     BorderThickness="1"
                                     VerticalAlignment="Center"
-                                    Margin="0,9,10,0">
+                                    HorizontalAlignment="Center"
+                                    Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="AccountVoice"
-                                                         Width="14" Height="14"
+                                                         Width="15" Height="15"
                                                          Foreground="{StaticResource App.Accent}"
                                                          HorizontalAlignment="Center"
                                                          VerticalAlignment="Center" />
                             </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,2,0,0">
+                            <StackPanel Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Stretch">
                                 <TextBlock Text="{Binding Name}"
                                            FontWeight="SemiBold"
                                            FontSize="13"
+                                           LineHeight="16"
                                            TextTrimming="CharacterEllipsis"
                                            Foreground="{StaticResource App.Text}" />
                                 <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:MM-dd HH:mm}'}"
                                            FontSize="11"
-                                           Margin="0,2,0,0"
+                                           LineHeight="14"
+                                           Margin="0,1,0,0"
                                            Foreground="{StaticResource App.TextMuted}" />
                             </StackPanel>
                         </Grid>
