@@ -63,6 +63,9 @@ public sealed class SystemPromptTabViewModel : ScreenBase
 		var found = _suggestions.Analyze(_agent, update);
 		Suggestions.Clear();
 		Suggestions.AddRange(found);
+		// The collection mutates in place, so Count-dependent bindings
+		// (header badge, empty-state collapse) need an explicit nudge.
+		NotifyOfPropertyChange(nameof(Suggestions));
 	}
 
 	/// <summary>Public entry point so the parent VM can force a

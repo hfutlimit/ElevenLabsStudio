@@ -8,16 +8,14 @@ namespace ElevenLabsStudio.ViewModels;
 
 /// <summary>
 /// Top-level shell. Wires the left agent menu and the right detail
-/// pane. Owns a 1-second clock so the status bar always shows a live
-/// timestamp. Hosts the Settings dialog action.
+/// pane. Hosts the Settings dialog action. The busy indicator lives
+/// in the title bar — there is no status bar.
 /// </summary>
 public sealed class ShellViewModel : Screen
 {
 	private readonly AgentListViewModel _agents;
 	private readonly SettingsViewModel _settings;
 	private readonly IWindowManager _windows;
-	private readonly IClockService _clock;
-	private IDisposable? _clockSubscription;
 
 	public AgentListViewModel AgentsVm => _agents;
 
@@ -34,13 +32,6 @@ public sealed class ShellViewModel : Screen
 			// event.
 			NotifyOfPropertyChange(nameof(AgentDetail));
 		}
-	}
-
-	private DateTimeOffset _currentTime;
-	public DateTimeOffset CurrentTime
-	{
-		get => _currentTime;
-		private set => Set(ref _currentTime, value);
 	}
 
 	public bool IsBusy => _agents.IsBusy
@@ -89,13 +80,11 @@ public sealed class ShellViewModel : Screen
 	public ShellViewModel(
 		AgentListViewModel agents,
 		SettingsViewModel settings,
-		IWindowManager windows,
-		IClockService clock)
+		IWindowManager windows)
 	{
 		_agents = agents;
 		_settings = settings;
 		_windows = windows;
-		_clock = clock;
 
 		// Forward AgentListViewModel.AgentDetail to our own AgentDetail
 		// so the right-pane XAML binding (DataContext="{Binding
@@ -104,8 +93,8 @@ public sealed class ShellViewModel : Screen
 		//
 		// IsBusy / BusyMessage are computed projections over BOTH the
 		// list VM and the current detail VM, so every change on either
-		// side has to be re-projected here — otherwise the status bar
-		// (ShellView.xaml) never learns that work started or finished.
+		// side has to be re-projected here — otherwise the title-bar
+		// indicator never learns that work started or finished.
 		_agents.PropertyChanged += (_, e) =>
 		{
 			switch (e.PropertyName)
@@ -130,12 +119,6 @@ public sealed class ShellViewModel : Screen
 					break;
 			}
 		};
-
-		// 1Hz tick via the IClockService boundary so the unit tests
-		// can substitute a deterministic clock.
-		_clockSubscription = _clock.Start(TimeSpan.FromSeconds(1),
-			() => CurrentTime = _clock.Now);
-		CurrentTime = _clock.Now;
 	}
 
 	public async Task OpenSettingsAsync()

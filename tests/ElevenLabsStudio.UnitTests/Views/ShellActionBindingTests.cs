@@ -64,10 +64,7 @@ public sealed class ShellActionBindingTests
 			dialog,
 			NullLogger<SettingsViewModel>.Instance,
 			configuration);
-		var clock = Substitute.For<IClockService>();
-		clock.Now.Returns(DateTime.Now);
-		clock.Start(Arg.Any<TimeSpan>(), Arg.Any<System.Action>()).Returns(new NoopDisposable());
-		var shell = new ShellViewModel(agents, settings, windows, clock);
+		var shell = new ShellViewModel(agents, settings, windows);
 		var view = new ShellView();
 		ViewModelBinder.Bind(shell, view, null);
 		view.Show();

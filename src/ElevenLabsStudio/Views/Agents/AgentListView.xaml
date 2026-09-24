@@ -5,46 +5,26 @@
              xmlns:cal="http://www.caliburnproject.org">
     <Border Style="{StaticResource App.ElevatedCard}">
         <DockPanel Margin="0">
-            <StackPanel DockPanel.Dock="Top" Margin="16,16,16,12">
-                <DockPanel Margin="0,0,0,14">
-                    <Border DockPanel.Dock="Left"
-                            Width="34" Height="34"
-                            CornerRadius="10"
-                            Background="{StaticResource App.AccentSoft}"
-                            BorderBrush="{StaticResource App.AccentBorder}"
-                            BorderThickness="1"
-                            Margin="0,0,10,0">
-                        <materialDesign:PackIcon Kind="RobotOutline"
-                                                 Width="18" Height="18"
-                                                 Foreground="{StaticResource App.Accent}"
-                                                 HorizontalAlignment="Center"
-                                                 VerticalAlignment="Center" />
-                    </Border>
-                    <TextBlock Text="Agents"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource App.Text}"
-                               VerticalAlignment="Center" />
-                </DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="16,14,16,12">
+                <TextBlock Text="Agents"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource App.TextSecondary}"
+                           Margin="1,0,0,10" />
                 <Button x:Name="ImportAgent"
                         cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"
-                        Style="{StaticResource App.PrimaryButton}"
+                        Style="{StaticResource App.SecondaryButton}"
                         Margin="0,0,0,12"
                         HorizontalAlignment="Stretch"
                         AutomationProperties.Name="Import Agent">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Import"
-                                                 Width="16" Height="16"
-                                                 Margin="0,0,7,0" />
-                        <TextBlock Text="Import Agent" />
-                    </StackPanel>
+                    <TextBlock Text="Import Agent" />
                 </Button>
             </StackPanel>
 
+            <!-- Flat empty state: no card-in-card, muted ink only. -->
             <Border DockPanel.Dock="Bottom"
-                    Style="{StaticResource App.SectionCard}"
                     Margin="16,8,16,16"
-                    Padding="12"
+                    Background="Transparent"
                     Visibility="{Binding HasNoAgents, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -55,7 +35,7 @@
                                              Width="16" Height="16"
                                              Margin="0,0,8,0"
                                              VerticalAlignment="Top"
-                                             Foreground="{StaticResource App.Accent}" />
+                                             Foreground="{StaticResource App.TextMuted}" />
                     <TextBlock Grid.Column="1"
                                Text="No agents yet. Click Import Agent above to import one by ID."
                                TextWrapping="Wrap"
@@ -86,13 +66,13 @@
                                                 Background="Transparent"
                                                 BorderBrush="Transparent"
                                                 BorderThickness="1"
-                                                CornerRadius="9"
-                                                Padding="11,10">
+                                                CornerRadius="8"
+                                                Padding="10,8">
                                             <ContentPresenter />
                                         </Border>
                                         <Border x:Name="SelectionBar"
                                                 Width="3"
-                                                Height="24"
+                                                Height="20"
                                                 CornerRadius="2"
                                                 Background="{StaticResource App.Accent}"
                                                 HorizontalAlignment="Left"
@@ -102,17 +82,16 @@
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="Row" Property="Background" Value="{StaticResource App.SurfaceHover}" />
-                                            <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Border}" />
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
                                             <Setter TargetName="Row" Property="Background" Value="{StaticResource App.AccentSoft}" />
                                             <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.AccentBorder}" />
                                             <Setter TargetName="SelectionBar" Property="Opacity" Value="1" />
                                         </Trigger>
-										<Trigger Property="IsKeyboardFocused" Value="True">
-											<Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Accent}" />
-											<Setter TargetName="Row" Property="BorderThickness" Value="2" />
-										</Trigger>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Accent}" />
+                                            <Setter TargetName="Row" Property="BorderThickness" Value="2" />
+                                        </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Setter.Value>
@@ -123,63 +102,32 @@
                     <DataTemplate>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Border Width="26" Height="26"
                                     CornerRadius="8"
-                                    Background="{StaticResource App.Surface}"
+                                    Background="{StaticResource App.SurfaceAlt}"
                                     BorderBrush="{StaticResource App.Border}"
                                     BorderThickness="1"
-                                    VerticalAlignment="Top">
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,10,0">
                                 <materialDesign:PackIcon Kind="AccountVoice"
-                                                         Width="14" Height="14"
+                                                         Width="13" Height="13"
                                                          Foreground="{StaticResource App.Accent}"
                                                          HorizontalAlignment="Center"
                                                          VerticalAlignment="Center" />
                             </Border>
-                            <StackPanel Grid.Column="1">
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Name}"
                                            FontWeight="SemiBold"
                                            FontSize="13"
+                                           TextTrimming="CharacterEllipsis"
                                            Foreground="{StaticResource App.Text}" />
-                            <TextBlock Text="{Binding AgentId}"
-                                       FontSize="11"
-                                       FontFamily="Consolas, Cascadia Mono, monospace"
-                                       Foreground="{StaticResource App.TextMuted}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Margin="0,2,0,0" />
-                            <Grid Margin="0,8,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ClockOutline"
-                                                         Width="11" Height="11"
-                                                         Margin="0,0,4,0"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{StaticResource App.TextMuted}" />
                                 <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:MM-dd HH:mm}'}"
                                            FontSize="11"
-                                           Foreground="{StaticResource App.TextSecondary}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1"
-                                            Orientation="Horizontal"
-                                            HorizontalAlignment="Right">
-                                <materialDesign:PackIcon Kind="VolumeHigh"
-                                                         Width="11" Height="11"
-                                                         Margin="8,0,4,0"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="{StaticResource App.TextMuted}" />
-                                <TextBlock Text="{Binding VoiceId}"
-                                           FontSize="11"
-                                           FontFamily="Consolas, Cascadia Mono, monospace"
-                                           MaxWidth="72"
-                                           TextTrimming="CharacterEllipsis"
-                                           Foreground="{StaticResource App.TextSecondary}" />
-                                </StackPanel>
-                            </Grid>
+                                           Margin="0,2,0,0"
+                                           Foreground="{StaticResource App.TextMuted}" />
                             </StackPanel>
                         </Grid>
                     </DataTemplate>

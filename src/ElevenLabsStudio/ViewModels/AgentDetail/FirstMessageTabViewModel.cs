@@ -55,6 +55,9 @@ public sealed class FirstMessageTabViewModel : ScreenBase
 		var found = _suggestions.Analyze(_agent, update);
 		Suggestions.Clear();
 		Suggestions.AddRange(found);
+		// The collection mutates in place, so Count-dependent bindings
+		// need an explicit nudge.
+		NotifyOfPropertyChange(nameof(Suggestions));
 	}
 
 	/// <summary>See SystemPromptTabViewModel.RecomputeSuggestionsPublic.</summary>

@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:cal="http://www.caliburnproject.org">
-    <Grid Margin="22,20,22,18">
+    <Grid Margin="20,16,20,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -11,7 +11,7 @@
 
         <Border Grid.Row="0"
                 Style="{StaticResource App.SectionCard}"
-                Padding="16,15">
+                Padding="16,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -20,30 +20,27 @@
 
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="48" />
+                        <ColumnDefinition Width="36" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="40" Height="40"
-                            CornerRadius="12"
-                            Background="{StaticResource App.Accent}"
-                            VerticalAlignment="Top">
+                    <Border Width="28" Height="28"
+                            CornerRadius="8"
+                            Background="{StaticResource App.AccentSoft}"
+                            BorderBrush="{StaticResource App.AccentBorder}"
+                            BorderThickness="1"
+                            VerticalAlignment="Center">
                         <materialDesign:PackIcon Kind="AccountVoice"
-                                                 Width="21" Height="21"
-                                                 Foreground="White"
+                                                 Width="15" Height="15"
+                                                 Foreground="{StaticResource App.Accent}"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center" />
                     </Border>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
                         <TextBlock Text="{Binding Agent.Name}"
-                                   FontSize="19"
+                                   FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource App.Text}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                            <materialDesign:PackIcon Kind="Identifier"
-                                                     Width="13" Height="13"
-                                                     Margin="0,0,5,0"
-                                                     VerticalAlignment="Center"
-                                                     Foreground="{StaticResource App.TextMuted}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                             <TextBlock Text="{Binding Agent.AgentId}"
                                        FontSize="11"
                                        FontFamily="Consolas, Cascadia Mono, monospace"
@@ -51,15 +48,9 @@
                             <Border Style="{StaticResource App.Badge}"
                                     Margin="12,0,0,0"
                                     Padding="7,2">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ClockOutline"
-                                                             Width="11" Height="11"
-                                                             Margin="0,0,4,0"
-                                                             Foreground="{StaticResource App.Accent}" />
-                                    <TextBlock Text="{Binding Agent.UpdatedAt, StringFormat='{}{0:MM-dd HH:mm}'}"
-                                               FontSize="10"
-                                               Foreground="{StaticResource App.Accent}" />
-                                </StackPanel>
+                                <TextBlock Text="{Binding Agent.UpdatedAt, StringFormat='{}{0:MM-dd HH:mm}'}"
+                                           FontSize="11"
+                                           Foreground="{StaticResource App.TextSecondary}" />
                             </Border>
                         </StackPanel>
                     </StackPanel>
@@ -70,20 +61,19 @@
                             VerticalAlignment="Center">
                     <Button x:Name="DryRun"
                             Style="{StaticResource App.GhostButton}"
-                            Margin="0,0,6,0"
-                            ToolTip="Re-run local suggestions">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="FlaskOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                            <TextBlock Text="Dry run" />
-                        </StackPanel>
+                            Margin="0,0,4,0"
+                            Width="32" Height="32"
+                            ToolTip="Re-run local suggestions"
+                            AutomationProperties.Name="Dry run">
+                        <materialDesign:PackIcon Kind="FlaskOutline" Width="16" Height="16" />
                     </Button>
                     <Button x:Name="ReloadAsync"
-                            Style="{StaticResource App.SecondaryButton}"
-                            Margin="0,0,8,0">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Refresh" Width="15" Height="15" Margin="0,0,6,0" />
-                            <TextBlock Text="Refresh" />
-                        </StackPanel>
+                            Style="{StaticResource App.GhostButton}"
+                            Margin="0,0,8,0"
+                            Width="32" Height="32"
+                            ToolTip="Refresh"
+                            AutomationProperties.Name="Reload">
+                        <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" />
                     </Button>
                     <Button x:Name="Push"
                             Style="{StaticResource App.PrimaryButton}">
@@ -101,60 +91,24 @@
                     SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
                     Background="Transparent"
                     BorderThickness="0"
-                    Margin="0,16,0,0"
+                    Margin="0,12,0,0"
                     ItemContainerStyle="{StaticResource App.TabItem}">
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="TextBoxOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="System Prompt" />
-                    </StackPanel>
-                </TabItem.Header>
+            <TabItem Header="System Prompt">
                 <ContentControl cal:View.Model="{Binding SystemPromptVm}" />
             </TabItem>
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CommentTextOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="First Message" />
-                    </StackPanel>
-                </TabItem.Header>
+            <TabItem Header="First Message">
                 <ContentControl cal:View.Model="{Binding FirstMessageVm}" />
             </TabItem>
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="GraphOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="Workflow" />
-                    </StackPanel>
-                </TabItem.Header>
+            <TabItem Header="Workflow">
                 <ContentControl cal:View.Model="{Binding WorkflowVm}" />
             </TabItem>
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="VariableBox" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="Variables" />
-                    </StackPanel>
-                </TabItem.Header>
+            <TabItem Header="Variables">
                 <ContentControl cal:View.Model="{Binding VariablesVm}" />
             </TabItem>
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="ForumOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="Conversations" />
-                    </StackPanel>
-                </TabItem.Header>
+            <TabItem Header="Conversations">
                 <ContentControl cal:View.Model="{Binding ConversationsVm}" />
             </TabItem>
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="MicrophoneMessage" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="Live conversation" />
-                    </StackPanel>
-                </TabItem.Header>
+            <TabItem Header="Live conversation">
                 <ContentControl cal:View.Model="{Binding LiveConversationVm}" />
             </TabItem>
         </TabControl>

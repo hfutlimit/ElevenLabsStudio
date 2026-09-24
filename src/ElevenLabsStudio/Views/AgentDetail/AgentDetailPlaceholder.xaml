@@ -18,7 +18,7 @@
                                          VerticalAlignment="Center" />
             </Border>
             <TextBlock Text="Select an agent to get started"
-                       FontSize="18"
+                       FontSize="16"
                        FontWeight="SemiBold"
                        Foreground="{StaticResource App.Text}"
                        HorizontalAlignment="Center"

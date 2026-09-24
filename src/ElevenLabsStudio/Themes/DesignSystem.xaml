@@ -3,7 +3,9 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework">
 
-	<!-- Layered neutral palette with a restrained indigo accent. -->
+	<!-- Layered neutral palette with a restrained indigo accent.
+	     Accent is reserved for the primary action and the current
+	     selection; everything else stays neutral. -->
 	<SolidColorBrush x:Key="App.Canvas" Color="#F2F4F8" />
 	<SolidColorBrush x:Key="App.Surface" Color="#FFFFFF" />
 	<SolidColorBrush x:Key="App.SurfaceAlt" Color="#F7F8FB" />
@@ -26,12 +28,14 @@
 	<SolidColorBrush x:Key="App.DangerHover" Color="#B93641" />
 	<SolidColorBrush x:Key="App.DangerSoft" Color="#FFF0F1" />
 
+	<!-- Radii vocabulary (only these): panel 12, control 8, badge 6,
+	     selection bar 2. The window itself uses 14. -->
 	<DropShadowEffect x:Key="App.CardShadow"
 					  Color="#667085"
-					  BlurRadius="20"
-					  ShadowDepth="4"
+					  BlurRadius="12"
+					  ShadowDepth="3"
 					  Direction="270"
-					  Opacity="0.12" />
+					  Opacity="0.08" />
 	<DropShadowEffect x:Key="App.WindowShadow"
 					  Color="#344054"
 					  BlurRadius="28"
@@ -47,22 +51,26 @@
 		<Setter Property="Effect" Value="{StaticResource App.CardShadow}" />
 	</Style>
 
+	<!-- Flat inner section: no border, background-only separation.
+	     Layers come from surface tint, not from boxes inside boxes. -->
 	<Style x:Key="App.SectionCard" TargetType="Border">
 		<Setter Property="Background" Value="{StaticResource App.SurfaceAlt}" />
-		<Setter Property="BorderBrush" Value="{StaticResource App.Border}" />
+		<Setter Property="BorderBrush" Value="Transparent" />
 		<Setter Property="BorderThickness" Value="1" />
-		<Setter Property="CornerRadius" Value="10" />
+		<Setter Property="CornerRadius" Value="8" />
 	</Style>
 
 	<Style x:Key="App.SoftCard"
 		   TargetType="Border"
 		   BasedOn="{StaticResource App.SectionCard}" />
 
+	<!-- Neutral info chip. Color it locally only for real semantics
+	     (success / warning), never as decoration. -->
 	<Style x:Key="App.Badge" TargetType="Border">
-		<Setter Property="CornerRadius" Value="10" />
+		<Setter Property="CornerRadius" Value="6" />
 		<Setter Property="Padding" Value="8,3" />
-		<Setter Property="Background" Value="{StaticResource App.AccentSoft}" />
-		<Setter Property="BorderBrush" Value="{StaticResource App.AccentBorder}" />
+		<Setter Property="Background" Value="{StaticResource App.SurfaceHover}" />
+		<Setter Property="BorderBrush" Value="Transparent" />
 		<Setter Property="BorderThickness" Value="1" />
 	</Style>
 
@@ -71,8 +79,8 @@
 			<Setter.Value>
 				<ControlTemplate>
 					<Rectangle Margin="-3"
-							   RadiusX="10"
-							   RadiusY="10"
+							   RadiusX="8"
+							   RadiusY="8"
 							   Stroke="{StaticResource App.Accent}"
 							   StrokeThickness="2"
 							   SnapsToDevicePixels="True" />
@@ -105,12 +113,6 @@
 									  RecognizesAccessKey="True" />
 					</Border>
 					<ControlTemplate.Triggers>
-						<Trigger Property="IsMouseOver" Value="True">
-							<Setter TargetName="Chrome" Property="Opacity" Value="0.9" />
-						</Trigger>
-						<Trigger Property="IsPressed" Value="True">
-							<Setter TargetName="Chrome" Property="Opacity" Value="0.78" />
-						</Trigger>
 						<Trigger Property="IsEnabled" Value="False">
 							<Setter TargetName="Chrome" Property="Opacity" Value="0.46" />
 						</Trigger>
@@ -120,20 +122,41 @@
 		</Setter>
 	</Style>
 
+	<!-- Hover/pressed feedback is color, never opacity fading. -->
 	<Style x:Key="App.PrimaryButton"
 		   TargetType="Button"
 		   BasedOn="{StaticResource App.ButtonBase}">
 		<Setter Property="Background" Value="{StaticResource App.Accent}" />
 		<Setter Property="BorderBrush" Value="{StaticResource App.Accent}" />
 		<Setter Property="Foreground" Value="White" />
+		<Style.Triggers>
+			<Trigger Property="IsMouseOver" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.AccentHover}" />
+				<Setter Property="BorderBrush" Value="{StaticResource App.AccentHover}" />
+			</Trigger>
+			<Trigger Property="IsPressed" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.AccentHover}" />
+				<Setter Property="Opacity" Value="0.9" />
+			</Trigger>
+		</Style.Triggers>
 	</Style>
 
 	<Style x:Key="App.SecondaryButton"
 		   TargetType="Button"
 		   BasedOn="{StaticResource App.ButtonBase}">
 		<Setter Property="Background" Value="{StaticResource App.Surface}" />
-		<Setter Property="BorderBrush" Value="{StaticResource App.BorderStrong}" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.BorderEmphasis}" />
 		<Setter Property="Foreground" Value="{StaticResource App.Text}" />
+		<Style.Triggers>
+			<Trigger Property="IsMouseOver" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.SurfaceHover}" />
+				<Setter Property="BorderBrush" Value="{StaticResource App.BorderStrong}" />
+			</Trigger>
+			<Trigger Property="IsPressed" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.SurfacePressed}" />
+				<Setter Property="Opacity" Value="0.9" />
+			</Trigger>
+		</Style.Triggers>
 	</Style>
 
 	<Style x:Key="App.GhostButton"
@@ -142,6 +165,15 @@
 		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="BorderBrush" Value="Transparent" />
 		<Setter Property="Foreground" Value="{StaticResource App.TextSecondary}" />
+		<Style.Triggers>
+			<Trigger Property="IsMouseOver" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.SurfaceHover}" />
+			</Trigger>
+			<Trigger Property="IsPressed" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.SurfacePressed}" />
+				<Setter Property="Opacity" Value="0.9" />
+			</Trigger>
+		</Style.Triggers>
 	</Style>
 
 	<Style x:Key="App.IconButton"
@@ -164,8 +196,8 @@
 		<Setter Property="Foreground" Value="{StaticResource App.TextSecondary}" />
 		<Setter Property="FontSize" Value="12" />
 		<Setter Property="FontWeight" Value="SemiBold" />
-		<Setter Property="Margin" Value="0,0,6,0" />
-		<Setter Property="Padding" Value="12,8" />
+		<Setter Property="Margin" Value="0,0,4,0" />
+		<Setter Property="Padding" Value="10,8" />
 		<Setter Property="FocusVisualStyle" Value="{StaticResource App.FocusVisual}" />
 		<Setter Property="Template">
 			<Setter.Value>
