@@ -122,9 +122,13 @@ internal static class Mapping
 		return new WorkflowNode(
 			id,
 			GetString(node["type"]) ?? string.Empty,
+			// Never fall back to the node id for the display name: long
+			// server ids read as garbage in the UI and would be written
+			// back as labels on push. Unlabelled nodes stay empty and
+			// the board renders a friendly type name instead.
 			GetString(node["label"])
 				?? GetString(node["name"])
-				?? id,
+				?? string.Empty,
 			TryGetDouble(position, "x"),
 			TryGetDouble(position, "y"));
 	}

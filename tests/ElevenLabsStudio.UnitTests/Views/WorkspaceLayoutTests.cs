@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Markup;
 using System.Windows.Media;
 using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
@@ -192,13 +194,101 @@ public sealed class WorkspaceLayoutTests
 			host.Show();
 			var frame = view.FindName("WorkflowCanvasFrame")
 				.Should().BeOfType<Border>().Subject;
+			var splitter = view.FindName("InspectorSplitter")
+				.Should().BeOfType<GridSplitter>().Subject;
 			var inspector = view.FindName("WorkflowInspector")
 				.Should().BeOfType<Border>().Subject;
 
 			Grid.GetColumn(frame).Should().Be(0);
-			Grid.GetColumn(inspector).Should().Be(1);
+			Grid.GetColumn(splitter).Should().Be(1);
+			Grid.GetColumn(inspector).Should().Be(2);
+			splitter.ResizeDirection.Should().Be(GridResizeDirection.Columns);
 			host.Close();
 		});
+	}
+
+	[Fact]
+	public async Task Workflow_inspector_width_follows_a_drag_on_the_splitter()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var workflow = new Workflow(
+				new[] { new WorkflowNode("tool-1", "tool", "", 10, 20) },
+				null,
+				Array.Empty<WorkflowEdge>());
+			var agent = new Agent(
+				"agent_layout", "Layout", "prompt", "hello", null,
+				Array.Empty<Variable>(), workflow, DateTimeOffset.UtcNow);
+			var vm = new WorkflowTabViewModel(agent);
+			vm.SelectNodeById("tool-1");
+
+			var view = new WorkflowTabView { DataContext = vm };
+			var host = new Window { Content = view, Width = 1240, Height = 720 };
+			host.Show();
+
+			var splitter = view.FindName("InspectorSplitter")
+				.Should().BeOfType<GridSplitter>().Subject;
+			splitter.Visibility.Should().Be(Visibility.Visible);
+			var column = ((Grid)splitter.Parent).ColumnDefinitions[2];
+			var startWidth = column.ActualWidth;
+
+			// A real pointer drag arrives as a burst of Thumb drag events;
+			// GridSplitter only re-sizes the columns on that pipeline.
+			// The test host loads the app dictionaries but not the WPF theme
+			// that normally supplies the splitter's Thumb, so install the
+			// template its control contract requires.
+			splitter.Template = (ControlTemplate)XamlReader.Parse(
+				"<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'"
+				+ " TargetType='GridSplitter'><Thumb Name='Thumb' /></ControlTemplate>");
+			splitter.ApplyTemplate();
+
+			// The shipped splitter previews the drag through an adorner.
+			// A unit-test window exposes no adorner layer, so drive the
+			// direct-resize branch instead; both branches end in the same
+			// ResizeColumns + Min/Max clamping this test asserts.
+			splitter.ShowsPreview = false;
+
+			var thumb = VisualDescendants(splitter).OfType<Thumb>().Single();
+			var canvas = ((Grid)splitter.Parent).ColumnDefinitions[0];
+			var beforeCanvas = canvas.ActualWidth;
+			var beforeInspector = column.ActualWidth;
+			Drag(thumb, +140);
+			host.UpdateLayout();
+			var afterCanvas = canvas.ActualWidth;
+			var afterInspector = column.ActualWidth;
+
+			// Dragging right shrinks the inspector and grows the canvas.
+			afterInspector.Should().BeLessThan(beforeInspector,
+				"dragging the right-hand splitter right must narrow the inspector column");
+			afterCanvas.Should().BeGreaterThan(beforeCanvas,
+				"the freed space must flow into the canvas column to its left");
+			(beforeCanvas + beforeInspector).Should().BeApproximately(afterCanvas + afterInspector, 1,
+				"the columns share the available width, so the total must stay constant");
+
+			Drag(thumb, -140);
+			host.UpdateLayout();
+
+			column.ActualWidth.Should().BeGreaterOrEqualTo(240,
+				"the inspector must not collapse below its declared minimum");
+			column.ActualWidth.Should().BeLessOrEqualTo(560,
+				"the inspector must not grow past its declared maximum");
+			host.Close();
+		});
+	}
+
+	private static void Drag(Thumb thumb, double horizontal)
+	{
+		const int steps = 7;
+		thumb.RaiseEvent(new DragStartedEventArgs(0, 0));
+		for (var step = 0; step < steps; step++)
+		{
+			// (horizontalChange, verticalChange). The splitter only consumes
+			// the axis that matches its ResizeDirection, but the contract is
+			// two doubles in this order regardless of orientation.
+			thumb.RaiseEvent(new DragDeltaEventArgs(horizontal / steps, 0));
+		}
+
+		thumb.RaiseEvent(new DragCompletedEventArgs(horizontal, 0, false));
 	}
 
 	private sealed class AgentListStub

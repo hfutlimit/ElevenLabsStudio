@@ -137,6 +137,12 @@ public sealed class WorkflowTabViewModelTests
 
 		vm.CanvasNodes.Single(node => node.Id == "tool-1").DisplayName.Should().Be("Tool");
 		vm.CanvasNodes.Single(node => node.Id == "start-1").DisplayName.Should().Be("Start");
+
+		// The inspector's name field shows the friendly fallback too,
+		// never the raw (empty) domain name or a long server id.
+		vm.SelectNodeById("tool-1");
+		vm.SelectedNodeName.Should().Be("Tool");
+		vm.SelectedNode!.Name.Should().BeEmpty();
 	}
 
 	private static Agent BuildAgent(Workflow workflow) => new(

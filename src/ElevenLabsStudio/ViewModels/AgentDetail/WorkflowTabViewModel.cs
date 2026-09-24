@@ -109,7 +109,10 @@ public sealed class WorkflowTabViewModel : ScreenBase
 
 	public string SelectedNodeName
 	{
-		get => SelectedNode?.Name ?? string.Empty;
+		// Unlabelled nodes show the friendly type fallback here too —
+		// the raw (possibly empty) domain name would read as a
+		// meaningless server id.
+		get => SelectedNode is null ? string.Empty : DisplayNameOf(SelectedNode);
 		set => RenameSelectedNode(value);
 	}
 

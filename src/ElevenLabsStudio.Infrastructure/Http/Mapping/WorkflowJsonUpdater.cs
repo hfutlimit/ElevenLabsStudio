@@ -100,13 +100,18 @@ internal static class WorkflowJsonUpdater
 				nodes[node.Id] = nodeObject;
 			}
 			nodeObject["type"] = node.Type;
-			if (nodeObject.ContainsKey("name") && !nodeObject.ContainsKey("label"))
+			// Unlabelled nodes keep whatever label the server has: an
+			// empty local name must never fabricate or clear one.
+			if (!string.IsNullOrWhiteSpace(node.Name))
 			{
-				nodeObject["name"] = node.Name;
-			}
-			else
-			{
-				nodeObject["label"] = node.Name;
+				if (nodeObject.ContainsKey("name") && !nodeObject.ContainsKey("label"))
+				{
+					nodeObject["name"] = node.Name;
+				}
+				else
+				{
+					nodeObject["label"] = node.Name;
+				}
 			}
 			if (nodeObject.ContainsKey("id"))
 			{
