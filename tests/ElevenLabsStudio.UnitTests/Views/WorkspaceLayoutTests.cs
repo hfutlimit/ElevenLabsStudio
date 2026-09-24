@@ -182,6 +182,25 @@ public sealed class WorkspaceLayoutTests
 		});
 	}
 
+	[Fact]
+	public async Task Workflow_board_has_an_inspector_panel_beside_the_canvas()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var view = new WorkflowTabView();
+			var host = new Window { Content = view };
+			host.Show();
+			var frame = view.FindName("WorkflowCanvasFrame")
+				.Should().BeOfType<Border>().Subject;
+			var inspector = view.FindName("WorkflowInspector")
+				.Should().BeOfType<Border>().Subject;
+
+			Grid.GetColumn(frame).Should().Be(0);
+			Grid.GetColumn(inspector).Should().Be(1);
+			host.Close();
+		});
+	}
+
 	private sealed class AgentListStub
 	{
 		public bool HasNoAgents { get; }

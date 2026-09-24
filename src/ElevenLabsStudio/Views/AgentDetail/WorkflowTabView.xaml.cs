@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -79,10 +80,12 @@ public partial class WorkflowTabView : UserControl
 		EdgeCanvas.Children.Clear();
 		if (_viewModel is null) return;
 
-		var lineBrush = TryFindResource("App.Accent") as Brush
-			?? TryFindResource("App.BorderStrong") as Brush
+		// Idle connections stay neutral; the selected one picks up the
+		// accent so it reads against the node cards.
+		var neutralBrush = TryFindResource("App.BorderEmphasis") as Brush
+			?? Brushes.Gray;
+		var accentBrush = TryFindResource("App.Accent") as Brush
 			?? Brushes.SlateBlue;
-		var arrowBrush = TryFindResource("App.Accent") as Brush ?? Brushes.SlateBlue;
 
 		foreach (var edge in _viewModel.Edges)
 		{
@@ -91,16 +94,35 @@ public partial class WorkflowTabView : UserControl
 			var length = Math.Sqrt((dx * dx) + (dy * dy));
 			if (length < 1) continue;
 
+			// Invisible fat line: the click/hover target for the edge.
+			var hit = new Line
+			{
+				X1 = edge.X1,
+				Y1 = edge.Y1,
+				X2 = edge.X2,
+				Y2 = edge.Y2,
+				Stroke = Brushes.Transparent,
+				StrokeThickness = 18,
+				Cursor = Cursors.Hand,
+				ToolTip = edge.ConditionKind,
+				Tag = edge.Id,
+			};
+			hit.MouseLeftButtonUp += OnEdgeClick;
+			EdgeCanvas.Children.Add(hit);
+
+			var brush = edge.IsSelected ? accentBrush : neutralBrush;
+
 			var line = new Line
 			{
 				X1 = edge.X1,
 				Y1 = edge.Y1,
 				X2 = edge.X2,
 				Y2 = edge.Y2,
-				Stroke = lineBrush,
-				StrokeThickness = 2,
-				Opacity = 1,
+				Stroke = brush,
+				StrokeThickness = edge.IsSelected ? 3 : 1.75,
+				Opacity = edge.IsSelected ? 1 : 0.9,
 				SnapsToDevicePixels = true,
+				IsHitTestVisible = false,
 			};
 			EdgeCanvas.Children.Add(line);
 
@@ -119,10 +141,20 @@ public partial class WorkflowTabView : UserControl
 					new(arrowBaseX + (px * 4), arrowBaseY + (py * 4)),
 					new(arrowBaseX - (px * 4), arrowBaseY - (py * 4)),
 				},
-				Fill = arrowBrush,
-				Opacity = 0.9,
+				Fill = brush,
+				Opacity = edge.IsSelected ? 1 : 0.85,
+				IsHitTestVisible = false,
 			};
 			EdgeCanvas.Children.Add(arrow);
+		}
+	}
+
+	private void OnEdgeClick(object sender, MouseButtonEventArgs e)
+	{
+		if (sender is Line { Tag: string edgeId }
+			&& DataContext is WorkflowTabViewModel vm)
+		{
+			vm.SelectEdgeById(edgeId);
 		}
 	}
 

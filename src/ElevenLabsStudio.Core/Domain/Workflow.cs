@@ -33,11 +33,21 @@ public sealed record WorkflowNode(
 	double? X = null,
 	double? Y = null);
 
+/// <summary>
+/// A workflow edge. <see cref="Condition"/> carries the decision text
+/// (the LLM prompt or expression body); <see cref="ConditionType"/> is
+/// the server's discriminator ("llm", "result", "unconditional",
+/// "expression") and <see cref="ConditionSuccessful"/> applies to
+/// "result" branches.
+/// </summary>
 public sealed record WorkflowEdge(
 	string Id,
 	string Source,
 	string Target,
-	string? Condition = null);
+	string? Condition = null,
+	string? ConditionType = null,
+	bool? ConditionSuccessful = null,
+	string? ConditionLabel = null);
 
 public static class WorkflowDefaults
 {

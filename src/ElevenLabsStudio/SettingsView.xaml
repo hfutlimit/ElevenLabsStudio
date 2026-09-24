@@ -111,12 +111,8 @@
                 <Button x:Name="Save"
                         cal:Message.Attach="[Event Click] = [Action SaveAsync()]"
                         Style="{StaticResource App.PrimaryButton}"
-                        Width="104">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="ContentSaveOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                        <TextBlock Text="Save settings" />
-                    </StackPanel>
-                </Button>
+                        Content="Save"
+                        Width="92" />
             </StackPanel>
         </Grid>
     </Border>

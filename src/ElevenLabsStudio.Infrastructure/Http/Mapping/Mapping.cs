@@ -155,23 +155,47 @@ internal static class Mapping
 				pair.Key,
 				source,
 				target,
-				GetCondition(edge["forward_condition"]) ?? GetString(edge["condition"])));
+				GetConditionText(edge["forward_condition"]) ?? GetString(edge["condition"]),
+				GetConditionType(edge["forward_condition"]),
+				GetConditionSuccessful(edge["forward_condition"]),
+				GetConditionLabel(edge["forward_condition"])));
 		}
 
 		return edges;
 	}
 
-	private static string? GetCondition(JsonNode? value)
+	private static string? GetConditionText(JsonNode? value) =>
+		value is JsonObject condition
+			? GetString(condition["condition"])
+			: GetString(value);
+
+	private static string? GetConditionType(JsonNode? value) =>
+		value is JsonObject condition ? GetString(condition["type"]) : null;
+
+	private static bool? GetConditionSuccessful(JsonNode? value)
 	{
-		if (value is JsonObject condition)
+		if (value is not JsonObject condition
+			|| condition["successful"] is not JsonNode flag)
 		{
-			return GetString(condition["condition"])
-				?? GetString(condition["label"])
-				?? GetString(condition["type"]);
+			return null;
 		}
 
-		return GetString(value);
+		try
+		{
+			return flag.GetValue<bool>();
+		}
+		catch (InvalidOperationException)
+		{
+			return null;
+		}
+		catch (FormatException)
+		{
+			return null;
+		}
 	}
+
+	private static string? GetConditionLabel(JsonNode? value) =>
+		value is JsonObject condition ? GetString(condition["label"]) : null;
 
 	private static string? GetString(JsonNode? value)
 	{

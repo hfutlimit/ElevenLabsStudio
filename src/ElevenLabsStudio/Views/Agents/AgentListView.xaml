@@ -14,8 +14,10 @@
                 <Button x:Name="ImportAgent"
                         cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"
                         Style="{StaticResource App.SecondaryButton}"
+                        Height="28"
+                        Padding="10,0"
                         Margin="0,0,0,12"
-                        HorizontalAlignment="Stretch"
+                        HorizontalAlignment="Left"
                         AutomationProperties.Name="Import Agent">
                     <TextBlock Text="Import Agent" />
                 </Button>

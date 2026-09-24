@@ -123,6 +123,7 @@
                                    MaxWidth="280"
                                    TextTrimming="CharacterEllipsis"
                                    VerticalAlignment="Center"
+                                   Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Foreground="{StaticResource App.TextSecondary}" />
                     </StackPanel>
 
@@ -150,7 +151,10 @@
                         Grid.Column="0"
                         Style="{StaticResource App.ElevatedCard}"
                         Visibility="Collapsed">
-                    <StackPanel Margin="0,16" HorizontalAlignment="Center">
+                    <!-- The collapse toggle overlays the top of this rail
+                         when the sidebar is compact; the identity tile
+                         sits below it. -->
+                    <StackPanel Margin="0,48,0,16" HorizontalAlignment="Center">
                         <Border Width="32" Height="32"
                                 CornerRadius="8"
                                 Background="{StaticResource App.AccentSoft}"
@@ -166,14 +170,20 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Collapse toggle, VS Code style: pinned to the top-right
+                     corner of the sidebar (and of the compact rail once
+                     collapsed). -->
                 <Button x:Name="SidebarToggle"
-                        Grid.Column="1"
+                        Grid.Column="0"
                         Panel.ZIndex="4"
                         Width="28" Height="28"
-                        Margin="0,14,0,0"
-                        HorizontalAlignment="Center"
+                        Margin="0,14,14,0"
+                        HorizontalAlignment="Right"
                         VerticalAlignment="Top"
                         Style="{StaticResource App.IconButton}"
+                        Background="{StaticResource App.Surface}"
+                        BorderBrush="{StaticResource App.Border}"
+                        BorderThickness="1"
                         ToolTip="Collapse agents sidebar"
                         AutomationProperties.Name="Collapse agents sidebar">
                     <materialDesign:PackIcon x:Name="SidebarToggleIcon"
