@@ -8,22 +8,22 @@
             <!-- Title row: agents heading on the left, a compact "+" import
                  action on the right so the secondary button stops pushing
                  the list down. -->
-            <Grid DockPanel.Dock="Top" Margin="16,14,16,8">
+            <Grid DockPanel.Dock="Top" Margin="16,12,16,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Agents"
+                <TextBlock Grid.Column="0"
+                           Text="Agents"
                            FontSize="12"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource App.TextSecondary}"
-                           VerticalAlignment="Center" />
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0" />
                 <Button Grid.Column="1"
                         x:Name="ImportAgent"
                         cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"
                         Style="{StaticResource App.IconButton}"
-                        Width="28"
-                        Height="28"
                         ToolTip="Import agent by ID"
                         AutomationProperties.Name="Import Agent">
                     <materialDesign:PackIcon Kind="Plus" Width="14" Height="14" />
@@ -111,25 +111,25 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Grid>
+                        <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="26" Height="26"
-                                    CornerRadius="8"
-                                    Background="{StaticResource App.SurfaceAlt}"
-                                    BorderBrush="{StaticResource App.Border}"
+                            <Border Width="28" Height="28"
+                                    CornerRadius="6"
+                                    Background="{StaticResource App.Surface}"
+                                    BorderBrush="{StaticResource App.BorderStrong}"
                                     BorderThickness="1"
                                     VerticalAlignment="Center"
-                                    Margin="0,0,10,0">
+                                    Margin="0,9,10,0">
                                 <materialDesign:PackIcon Kind="AccountVoice"
-                                                         Width="13" Height="13"
+                                                         Width="14" Height="14"
                                                          Foreground="{StaticResource App.Accent}"
                                                          HorizontalAlignment="Center"
                                                          VerticalAlignment="Center" />
                             </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,2,0,0">
                                 <TextBlock Text="{Binding Name}"
                                            FontWeight="SemiBold"
                                            FontSize="13"

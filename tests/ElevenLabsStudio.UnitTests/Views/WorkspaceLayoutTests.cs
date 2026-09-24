@@ -12,6 +12,7 @@ using ElevenLabsStudio.ViewModels.AgentDetail;
 using ElevenLabsStudio.Views.AgentDetail;
 using ElevenLabsStudio.Views.Agents;
 using FluentAssertions;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
@@ -156,6 +157,34 @@ public sealed class WorkspaceLayoutTests
 
 			list.ItemsSource.Should().BeSameAs(stub.Conversations,
 				"the conversations list must render the view model's collection");
+			host.Close();
+		});
+	}
+
+	[Fact]
+	public async Task Agent_list_title_row_has_a_plus_icon_button_next_to_the_heading()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var view = new AgentListView { DataContext = new AgentListStub(hasNoAgents: true, items: []), Width = 310 };
+			var host = new Window { Content = view };
+			host.Show();
+
+			var import = view.FindName("ImportAgent").Should().BeOfType<Button>().Subject;
+			import.Style.Should().Be(Application.Current.Resources["App.IconButton"] as Style,
+				"the import action must use the compact icon-button style, not a wide secondary button");
+			import.Width.Should().BeLessOrEqualTo(36,
+				"the import action must be icon-only, never a labelled secondary button");
+			import.ToolTip.Should().Be("Import agent by ID");
+			import.Height.Should().Be(28);
+			import.HorizontalAlignment.Should().Match(h => h == HorizontalAlignment.Right || h == HorizontalAlignment.Stretch,
+				"the + import button must dock to the right of the Agents heading");
+
+			var icon = VisualDescendants(import).OfType<MaterialDesignThemes.Wpf.PackIcon>().SingleOrDefault();
+			icon.Should().NotBeNull();
+			icon!.Kind.Should().Be(PackIconKind.Plus);
+			icon.Width.Should().Be(14);
+
 			host.Close();
 		});
 	}
