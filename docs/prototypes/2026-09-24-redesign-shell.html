@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>ElevenLabs Studio — 推倒重来布局原型</title>
+<style>
+  /* ============================================================
+     Tokens. 9 surface/border tones collapsed to 3.
+     Signal-indigo means exactly one thing: diverged from server.
+     ============================================================ */
+  :root {
+    --canvas:      #F4F5F7;
+    --surface:     #FFFFFF;
+    --line:        #E3E6EB;
+    --line-soft:   #EFF1F4;
+    --ink:         #151A22;
+    --ink-2:       #5C6675;
+    --ink-3:       #949DA9;
+    --signal:      #4F46D8;
+    --signal-wash: #EEEEFB;
+    --live:        #148A68;
+    --danger:      #CF4650;
+
+    --ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Mono", Consolas, "SF Mono", monospace;
+
+    --rail: 264px;
+    --bar: 46px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: #DDE0E5;
+    font-family: var(--ui);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* The window IS the surface. No outer card, no shadow — that was
+     the single biggest source of noise in the old layout. */
+  .window {
+    width: 1360px;
+    height: 840px;
+    margin: 28px auto;
+    background: var(--canvas);
+    border: 1px solid #CFD4DB;
+    border-radius: 8px;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: var(--bar) 1fr;
+  }
+
+  /* ---------------- title bar ---------------- */
+  .titlebar {
+    display: flex;
+    align-items: center;
+    padding: 0 0 0 16px;
+    background: var(--canvas);
+    border-bottom: 1px solid var(--line);
+    -webkit-app-region: drag;
+  }
+  .titlebar .name { font-size: 12.5px; font-weight: 600; letter-spacing: .01em; }
+  .titlebar .crumb {
+    font-size: 11px; color: var(--ink-3); margin-left: 10px;
+    font-family: var(--mono);
+  }
+  .spacer { flex: 1; }
+  .iconbtn {
+    width: 34px; height: 30px; border: 0; background: transparent;
+    color: var(--ink-2); cursor: pointer; border-radius: 5px;
+    display: grid; place-items: center; font-size: 13px;
+  }
+  .iconbtn:hover { background: #E7EAEF; color: var(--ink); }
+  .iconbtn.danger:hover { background: var(--danger); color: #fff; }
+
+  /* ---------------- body ---------------- */
+  .body { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 0; }
+
+  /* Sidebar is a flat panel divided by ONE hairline.
+     It is not a card and does not float. */
+  .sidebar {
+    border-right: 1px solid var(--line);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 0;
+  }
+  .side-head { padding: 18px 16px 12px; }
+  .eyebrow {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .count {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+    margin-left: 6px; font-weight: 400;
+  }
+  .import {
+    margin-top: 12px; width: 100%; height: 32px;
+    border: 1px dashed #C3C9D2; background: transparent;
+    border-radius: 6px; color: var(--ink-2);
+    font: 600 12.5px var(--ui); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .import:hover { background: #EDEFF3; color: var(--ink); border-color: #A9B1BD; }
+
+  .agentlist { overflow-y: auto; padding: 0 8px 8px; min-height: 0; }
+  .agentrow {
+    display: block; width: 100%; text-align: left;
+    border: 0; background: transparent; cursor: pointer;
+    padding: 9px 10px; border-radius: 6px;
+    /* position for the 2px selection bar */
+    position: relative;
+    font-family: var(--ui);
+  }
+  .agentrow::before {
+    content: ""; position: absolute; left: 0; top: 50%;
+    width: 2px; height: 0; margin-top: 0;
+    background: var(--signal); border-radius: 1px;
+    transition: height .14s ease, margin-top .14s ease;
+  }
+  .agentrow:hover { background: #EDEFF3; }
+  .agentrow[aria-selected="true"] { background: var(--surface); }
+  .agentrow[aria-selected="true"]::before { height: 20px; margin-top: -10px; }
+  .agentrow .r1 {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 600; color: var(--ink);
+  }
+  .agentrow .r2 {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+    margin-top: 3px; margin-left: 19px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .dot {
+    width: 12px; height: 12px; border-radius: 3px; flex: none;
+    border: 1px solid #C3C9D2; background: var(--canvas);
+  }
+  .agentrow[aria-selected="true"] .dot { background: var(--signal); border-color: var(--signal); }
+  .dirtypip {
+    margin-left: auto; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--signal); flex: none;
+  }
+
+  .side-foot {
+    padding: 10px 16px; border-top: 1px solid var(--line);
+    font-size: 11px; color: var(--ink-3);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ---------------- detail ---------------- */
+  .detail { display: grid; grid-template-rows: auto auto 1fr auto; min-height: 0; position: relative; }
+
+  /* SIGNATURE: the sync rail. A physical edge on the pane, not a label.
+     gray = matches server, indigo = diverged. */
+  .syncrail {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--line); transition: background .18s ease;
+  }
+  .detail.dirty .syncrail { background: var(--signal); }
+
+  .dhead { padding: 18px 26px 14px 29px; border-bottom: 1px solid var(--line-soft); }
+  .dtitle { display: flex; align-items: baseline; gap: 10px; }
+  .dtitle h1 { font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
+  .dtitle .id { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .dmeta { display: flex; align-items: center; gap: 12px; margin-top: 7px; font-size: 11.5px; color: var(--ink-2); }
+  .syncstate { display: inline-flex; align-items: center; gap: 6px; }
+  .syncstate .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); }
+  .detail.dirty .syncstate { color: var(--signal); font-weight: 600; }
+  .detail.dirty .syncstate .pip { background: var(--signal); }
+  .sep { color: var(--line); }
+
+  /* nav: text only, thin underline. No icons, no filled pills. */
+  .nav { display: flex; gap: 22px; padding: 0 26px 0 29px; border-bottom: 1px solid var(--line); }
+  .nav button {
+    border: 0; background: transparent; cursor: pointer;
+    font: 500 13px var(--ui); color: var(--ink-2);
+    padding: 9px 0 11px; position: relative;
+  }
+  .nav button:hover { color: var(--ink); }
+  .nav button[aria-selected="true"] { color: var(--signal); font-weight: 600; }
+  .nav button[aria-selected="true"]::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+    height: 2px; background: var(--signal);
+  }
+  .nav .badge {
+    display: inline-block; margin-left: 6px; padding: 1px 5px;
+    border-radius: 4px; background: var(--live); color: #fff;
+    font: 700 9.5px var(--ui); vertical-align: 1px;
+  }
+
+  .content { overflow-y: auto; padding: 22px 26px 26px 29px; min-height: 0; }
+  .pane { display: none; max-width: 780px; }
+  .pane.on { display: block; }
+
+  /* A field = label + count on one line, then the surface.
+     Only real inputs get a white surface and a border. */
+  .field { margin-bottom: 22px; }
+  .field > .lbl {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 7px;
+  }
+  .field .lbl b { font-size: 12.5px; font-weight: 650; }
+  .field .lbl span { font-size: 11px; color: var(--ink-3); margin-left: auto; font-family: var(--mono); }
+  .field .hint { font-size: 11px; color: var(--ink-3); margin-top: 6px; }
+  textarea {
+    width: 100%; min-height: 172px; resize: none;
+    background: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 13px 15px; font: 400 13px/1.65 var(--mono);
+    outline: none;
+  }
+  textarea:focus { border-color: var(--signal); box-shadow: 0 0 0 3px var(--signal-wash); }
+  textarea.short { min-height: 92px; }
+
+  .hintline {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; color: var(--ink-2);
+    background: var(--signal-wash); border: 1px solid #DAD8F7;
+    border-radius: 6px; padding: 9px 12px; margin-bottom: 18px;
+  }
+  .hintline b { color: var(--signal); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th {
+    text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding: 0 10px 7px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line-soft); }
+  td.mono { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+  .rowbtn {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
+    border-radius: 5px; height: 24px; padding: 0 9px; font: 500 11.5px var(--ui); cursor: pointer;
+  }
+  .rowbtn:hover { border-color: #B9C0CA; color: var(--ink); }
+
+  /* transcript */
+  .turn { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+  .turn .who {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px;
+  }
+  .turn .who.caller { color: var(--signal); }
+  .turn p { font-size: 13px; line-height: 1.6; color: var(--ink); }
+  .turn .when { font-size: 10.5px; color: var(--ink-3); font-family: var(--mono); margin-top: 5px; }
+
+  /* live */
+  .livepane { max-width: 640px; }
+  .livestrip {
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 12px 14px; background: var(--surface); margin-bottom: 16px;
+  }
+  .livestrip .pulse {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--live);
+    box-shadow: 0 0 0 3px #E4F3ED;
+  }
+  .livestrip b { font-size: 12.5px; }
+  .livestrip span { font-size: 11.5px; color: var(--ink-2); }
+  .meter { display: flex; gap: 2px; align-items: flex-end; height: 26px; margin-left: auto; }
+  .meter i { width: 3px; background: var(--live); border-radius: 1px; display: block; }
+
+  /* ---------------- sticky action footer ---------------- */
+  .dfoot {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 26px 11px 29px;
+    border-top: 1px solid var(--line);
+    background: var(--canvas);
+  }
+  .footnote { font-size: 11.5px; color: var(--ink-3); margin-right: auto; }
+  .btn {
+    height: 31px; padding: 0 14px; border-radius: 6px; cursor: pointer;
+    font: 600 12.5px var(--ui); border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn.ghost { background: transparent; color: var(--ink-2); border-color: #C3C9D2; }
+  .btn.ghost:hover { background: #EDEFF3; color: var(--ink); }
+  .btn.primary { background: var(--signal); color: #fff; }
+  .btn.primary:hover { background: #4239C5; }
+  .btn:disabled { opacity: .38; cursor: default; }
+  .detail:not(.dirty) #save, .detail:not(.dirty) #push { opacity: .4; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <!-- title bar -->
+  <div class="titlebar">
+    <span class="name">ElevenLabs Studio</span>
+    <span class="crumb">api.elevenlabs.io</span>
+    <div class="spacer"></div>
+    <button class="iconbtn" title="Settings">⚙</button>
+    <button class="iconbtn" title="Minimize">–</button>
+    <button class="iconbtn" title="Maximize">▢</button>
+    <button class="iconbtn danger" title="Close">✕</button>
+  </div>
+
+  <div class="body">
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <div class="side-head">
+        <div class="eyebrow">Agents <span class="count">4</span></div>
+        <button class="import">+&nbsp; Import agent</button>
+      </div>
+
+      <div class="agentlist" id="agentlist">
+        <button class="agentrow" aria-selected="true" data-name="Phone Agent — Reservation" data-id="agent_3001m2hctwtcfeqvwb5nk5bxbg89">
+          <div class="r1"><span class="dot"></span>Phone Agent — Reservation<span class="dirtypip"></span></div>
+          <div class="r2">agent_3001m2hctwtcf…</div>
+        </button>
+        <button class="agentrow" aria-selected="false" data-name="Claims Triage" data-id="agent_4f2a9k1mqwe2x8v7c3pt0lz">
+          <div class="r1"><span class="dot"></span>Claims Triage</div>
+          <div class="r2">agent_4f2a9k1mqwe2x8v7c…</div>
+        </button>
+        <button class="agentrow" aria-selected="false" data-name="Order Status" data-id="agent_7b3d0r5tyu1i9o2as4gh">
+          <div class="r1"><span class="dot"></span>Order Status</div>
+          <div class="r2">agent_7b3d0r5tyu1i9o2as…</div>
+        </button>
+        <button class="agentrow" aria-selected="false" data-name="After-hours IVR" data-id="agent_9c8e2v6bnm4j0w7ze1k">
+          <div class="r1"><span class="dot"></span>After-hours IVR</div>
+          <div class="r2">agent_9c8e2v6bnm4j0w7ze1…</div>
+        </button>
+      </div>
+
+      <div class="side-foot"><span class="dot" style="background:#148A68;border-color:#148A68"></span> Connected · synced 2m ago</div>
+    </aside>
+
+    <!-- detail -->
+    <main class="detail dirty" id="detail">
+      <div class="syncrail"></div>
+
+      <header class="dhead">
+        <div class="dtitle">
+          <h1 id="dname">Phone Agent — Reservation</h1>
+          <span class="id" id="did">agent_3001m2hctwtcfeqvwb5nk5bxbg89</span>
+        </div>
+        <div class="dmeta">
+          <span class="syncstate"><span class="pip"></span><span id="syncText">Unsaved changes</span></span>
+          <span class="sep">/</span>
+          <span>Server version 2m ago</span>
+          <span class="sep">/</span>
+          <span class="mono">voice: 9P6z…</span>
+        </div>
+      </header>
+
+      <nav class="nav" id="nav">
+        <button data-pane="prompt" aria-selected="true">Prompt</button>
+        <button data-pane="variables" aria-selected="false">Variables</button>
+        <button data-pane="workflow" aria-selected="false">Workflow</button>
+        <button data-pane="transcripts" aria-selected="false">Transcripts</button>
+        <button data-pane="live" aria-selected="false">Live <span class="badge">NEW</span></button>
+      </nav>
+
+      <div class="content">
+        <!-- PROMPT: two distinct fields, not one giant box -->
+        <section class="pane on" id="pane-prompt">
+          <div class="hintline">
+            <b>Editing diverges from the server.</b>
+            <span>Save a draft to keep working without pushing, or push when you are ready.</span>
+          </div>
+
+          <div class="field">
+            <div class="lbl"><b>System prompt</b><span id="c1">1,204 / 4,000</span></div>
+            <textarea spellcheck="false">You are a phone agent for Transfinder's reservation line.
+
+Confirm the caller's name, then ask for the booking reference — it is six
+characters, letters and digits. If the caller does not know it, offer to
+look it up by name and date of arrival instead.
+
+Never quote a price. If asked, say the rate is confirmed at the desk and
+transfer them if they want it confirmed.</textarea>
+            <div class="hint">The runtime prepends the company knowledge base automatically.</div>
+          </div>
+
+          <div class="field">
+            <div class="lbl"><b>First message</b><span id="c2">78 / 200</span></div>
+            <textarea class="short" spellcheck="false">Thanks for calling Transfinder reservations — who am I speaking with today?</textarea>
+            <div class="hint">Spoken before the caller says anything. Keep it under one breath.</div>
+          </div>
+        </section>
+
+        <!-- VARIABLES -->
+        <section class="pane" id="pane-variables">
+          <table>
+            <thead><tr><th style="width:38%">Name</th><th style="width:30%">Type</th><th>Default</th><th style="width:92px"></th></tr></thead>
+            <tbody>
+              <tr><td class="mono">caller_name</td><td>String</td><td class="mono">—</td><td><button class="rowbtn">Edit</button></td></tr>
+              <tr><td class="mono">booking_ref</td><td>String</td><td class="mono">—</td><td><button class="rowbtn">Edit</button></td></tr>
+              <tr><td class="mono">arrival_date</td><td>String</td><td class="mono">—</td><td><button class="rowbtn">Edit</button></td></tr>
+              <tr><td class="mono">party_size</td><td>Number</td><td class="mono">2</td><td><button class="rowbtn">Edit</button></td></tr>
+            </tbody>
+          </table>
+          <div class="field" style="margin-top:18px"><button class="rowbtn" style="height:30px;padding:0 12px">+ Add variable</button></div>
+        </section>
+
+        <!-- WORKFLOW -->
+        <section class="pane" id="pane-workflow">
+          <table>
+            <thead><tr><th style="width:26%">Node</th><th style="width:22%">Next</th><th>Condition</th></tr></thead>
+            <tbody>
+              <tr><td>Greeting</td><td class="mono">collect_ref</td><td>—</td></tr>
+              <tr><td>collect_ref</td><td class="mono">lookup</td><td class="mono">booking_ref != null</td></tr>
+              <tr><td>lookup</td><td class="mono">confirm</td><td class="mono">found == true</td></tr>
+              <tr><td>confirm</td><td class="mono">transfer</td><td class="mono">wants_price == true</td></tr>
+            </tbody>
+          </table>
+          <div class="field" style="margin-top:18px"><button class="rowbtn" style="height:30px;padding:0 12px">+ Add node</button></div>
+        </section>
+
+        <!-- TRANSCRIPTS -->
+        <section class="pane" id="pane-transcripts">
+          <div class="turn">
+            <div class="who">Caller</div>
+            <p>Hi, I need to move my booking to next Friday. Reference is A7K2M9.</p>
+            <div class="when">Today 09:14 · 2m 41s</div>
+          </div>
+          <div class="turn">
+            <div class="who caller">Agent</div>
+            <p>Let me pull that up. Friday the 19th, party of two — is that right?</p>
+            <div class="when">Today 09:14</div>
+          </div>
+          <div class="turn">
+            <div class="who">Caller</div>
+            <p>That's right, and can you tell me the rate?</p>
+            <div class="when">Today 09:15</div>
+          </div>
+        </section>
+
+        <!-- LIVE -->
+        <section class="pane livepane" id="pane-live">
+          <div class="livestrip">
+            <span class="pulse"></span>
+            <b>Ready to connect</b>
+            <span>WebView2 session idle</span>
+            <div class="meter">
+              <i style="height:8px"></i><i style="height:16px"></i><i style="height:24px"></i>
+              <i style="height:12px"></i><i style="height:20px"></i><i style="height:7px"></i>
+              <i style="height:15px"></i><i style="height:22px"></i><i style="height:10px"></i>
+              <i style="height:18px"></i><i style="height:6px"></i><i style="height:13px"></i>
+            </div>
+          </div>
+          <div class="field">
+            <div class="lbl"><b>Test variables</b><span>2 added</span></div>
+            <table>
+              <thead><tr><th style="width:40%">Key</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">variable_1</td><td class="mono">A7K2M9</td></tr>
+                <tr><td class="mono">variable_2</td><td class="mono">Friday</td></tr>
+              </tbody>
+            </table>
+            <div class="field" style="margin-top:14px"><button class="rowbtn" style="height:28px;padding:0 11px">+ Add variable</button></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- sticky actions: only the two that matter, always in the same place -->
+      <footer class="dfoot">
+        <span class="footnote" id="foot">Draft saved locally · not on the server</span>
+        <button class="btn ghost" id="save">Save draft</button>
+        <button class="btn primary" id="push">↑&nbsp; Push to server</button>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+  // nav switching
+  const nav = document.getElementById('nav');
+  nav.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    nav.querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b));
+    document.querySelectorAll('.pane').forEach(p =>
+      p.classList.toggle('on', p.id === 'pane-' + b.dataset.pane));
+  });
+
+  // agent selection
+  const list = document.getElementById('agentlist');
+  list.addEventListener('click', e => {
+    const r = e.target.closest('.agentrow'); if (!r) return;
+    list.querySelectorAll('.agentrow').forEach(x => x.setAttribute('aria-selected', x === r));
+    document.getElementById('dname').textContent = r.dataset.name;
+    document.getElementById('did').textContent = r.dataset.id;
+  });
+
+  // typing = diverged; toggling the rail back shows the "in sync" state
+  const detail = document.getElementById('detail');
+  document.querySelectorAll('textarea').forEach(t => {
+    t.addEventListener('input', () => {
+      detail.classList.add('dirty');
+      document.getElementById('syncText').textContent = 'Unsaved changes';
+      document.getElementById('foot').textContent = 'Draft saved locally · not on the server';
+    });
+  });
+  document.getElementById('push').addEventListener('click', () => {
+    detail.classList.remove('dirty');
+    document.getElementById('syncText').textContent = 'In sync with server';
+    document.getElementById('foot').textContent = 'Pushed just now';
+  });
+  document.getElementById('save').addEventListener('click', () => {
+    document.getElementById('foot').textContent = 'Draft saved locally · not on the server';
+  });
+
+  // live character counts
+  const areas = document.querySelectorAll('#pane-prompt textarea');
+  const outs  = [document.getElementById('c1'), document.getElementById('c2')];
+  areas.forEach((a, i) => {
+    const max = i === 0 ? 4000 : 200;
+    const tick = () => outs[i].textContent = a.value.length.toLocaleString() + ' / ' + max.toLocaleString();
+    a.addEventListener('input', tick); tick();
+  });
+</script>
+</body>
+</html>
