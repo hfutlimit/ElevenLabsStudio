@@ -20,9 +20,29 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 	private readonly ILogger _logger;
 	private CancellationTokenSource? _selectionCts;
 	private long _selectionGeneration;
+	private bool _isConversationListLoading;
+	private bool _isTranscriptLoading;
 
 	public BindableCollection<ConversationRecord> Conversations { get; } = new();
 	public BindableCollection<TranscriptTurn> Turns { get; } = new();
+
+	public bool IsConversationListLoading
+	{
+		get => _isConversationListLoading;
+		private set
+		{
+			if (Set(ref _isConversationListLoading, value)) UpdateBusyState();
+		}
+	}
+
+	public bool IsTranscriptLoading
+	{
+		get => _isTranscriptLoading;
+		private set
+		{
+			if (Set(ref _isTranscriptLoading, value)) UpdateBusyState();
+		}
+	}
 
 	private ConversationRecord? _selectedConversation;
 	public ConversationRecord? SelectedConversation
@@ -60,11 +80,12 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 
 		if (conversation is null)
 		{
+			IsTranscriptLoading = false;
 			Turns.Clear();
 			return;
 		}
 
-		IsBusy = true;
+		IsTranscriptLoading = true;
 		try
 		{
 			var detail = await _client.GetConversationAsync(
@@ -100,8 +121,7 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 		{
 			if (generation == _selectionGeneration)
 			{
-				IsBusy = false;
-				NotifyOfPropertyChange(nameof(BusyMessage));
+				IsTranscriptLoading = false;
 			}
 		}
 	}
@@ -121,7 +141,7 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 
 	public async Task ReloadAsync(CancellationToken ct = default)
 	{
-		IsBusy = true;
+		IsConversationListLoading = true;
 		try
 		{
 			var items = await _client.ListConversationsAsync(
@@ -149,9 +169,18 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 		}
 		finally
 		{
-			IsBusy = false;
-			NotifyOfPropertyChange(nameof(BusyMessage));
+			IsConversationListLoading = false;
 		}
+	}
+
+	private void UpdateBusyState()
+	{
+		IsBusy = _isConversationListLoading || _isTranscriptLoading;
+		BusyMessage = _isTranscriptLoading
+			? "Loading transcript…"
+			: _isConversationListLoading
+				? "Loading conversations…"
+				: null;
 	}
 
 	public void Dispose()

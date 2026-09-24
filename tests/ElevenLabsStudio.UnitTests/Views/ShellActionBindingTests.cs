@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -24,35 +23,11 @@ public sealed class ShellActionBindingTests
 	[Fact]
 	public async Task Settings_button_invokes_bound_ViewModel_action()
 	{
-		var errors = new ConcurrentQueue<Exception>();
-		var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-		var thread = new Thread(() =>
-		{
-			try
-			{
-				RunSettingsActionProbe();
-			}
-			catch (Exception ex)
-			{
-				errors.Enqueue(ex);
-			}
-			finally
-			{
-				completed.SetResult();
-			}
-		});
-		thread.SetApartmentState(ApartmentState.STA);
-		thread.Start();
-
-		await completed.Task.WaitAsync(TimeSpan.FromSeconds(10));
-		errors.Should().BeEmpty();
+		await WpfTestHost.RunAsync(RunSettingsActionProbe);
 	}
 
 	private static void RunSettingsActionProbe()
 	{
-		var application = Application.Current as App ?? new App();
-		application.InitializeComponent();
-		PlatformProvider.Current = new XamlPlatformProvider();
 		IoC.BuildUp = _ => { };
 		IoC.GetAllInstances = _ => Array.Empty<object>();
 

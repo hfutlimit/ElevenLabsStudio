@@ -5,11 +5,10 @@
     <Grid Margin="0,14,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,12">
+        <Grid Grid.Row="0">
             <TextBox x:Name="FirstMessage"
                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
                      materialDesign:HintAssist.Hint="First message — agent greeting"
@@ -17,10 +16,14 @@
                      BorderBrush="{StaticResource App.BorderStrong}"
                      Foreground="{StaticResource App.Text}"
                      FontSize="13"
-                     MinHeight="44" />
+                     MinHeight="104"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalContentAlignment="Top"
+                     Padding="12,14,12,30" />
             <Border HorizontalAlignment="Right"
-                    VerticalAlignment="Top"
-                    Margin="0,8,12,0"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,12,8"
                     Background="{StaticResource App.Surface}"
                     Padding="8,2"
                     BorderBrush="{StaticResource App.Border}"
@@ -41,26 +44,7 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="1" Style="{StaticResource App.SectionCard}" Padding="16">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <materialDesign:PackIcon Kind="MessageTextOutline"
-                                             Width="14" Height="14"
-                                             Margin="0,0,6,0"
-                                             Foreground="{StaticResource App.Accent}" />
-                    <TextBlock Text="Message preview"
-                               FontWeight="SemiBold"
-                               FontSize="11"
-                               Foreground="{StaticResource App.TextSecondary}" />
-                </StackPanel>
-                <TextBlock Text="{Binding FirstMessage, Mode=OneWay}"
-                           TextWrapping="Wrap"
-                           FontSize="14"
-                           Foreground="{StaticResource App.Text}" />
-            </StackPanel>
-        </Border>
-
-        <DockPanel Grid.Row="2" Margin="2,14,2,4">
+        <DockPanel Grid.Row="1" Margin="2,14,2,4" VerticalAlignment="Top">
             <Border DockPanel.Dock="Right" Style="{StaticResource App.Badge}" Padding="7,2">
                 <TextBlock Text="{Binding Suggestions.Count, Mode=OneWay}"
                            FontSize="10"

@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using Caliburn.Micro;
 
@@ -10,10 +11,28 @@ public partial class ShellView : Window
 	{
 		InitializeComponent();
 
+		SidebarToggle.Click += (_, _) => ToggleSidebar();
 		Minimize.Click += (_, _) => WindowState = WindowState.Minimized;
 		MaximizeRestore.Click += (_, _) => ToggleMaximized();
 		CloseWindow.Click += (_, _) => Close();
 		StateChanged += (_, _) => UpdateMaximizeIcon();
+	}
+
+	private bool _isSidebarCollapsed;
+
+	private void ToggleSidebar()
+	{
+		_isSidebarCollapsed = !_isSidebarCollapsed;
+		SidebarColumn.Width = new GridLength(_isSidebarCollapsed ? 48 : 310);
+		SidebarHost.Visibility = _isSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
+		CollapsedSidebarRail.Visibility = _isSidebarCollapsed ? Visibility.Visible : Visibility.Collapsed;
+		SidebarToggleIcon.Kind = _isSidebarCollapsed
+			? MaterialDesignThemes.Wpf.PackIconKind.ChevronRight
+			: MaterialDesignThemes.Wpf.PackIconKind.ChevronLeft;
+
+		var action = _isSidebarCollapsed ? "Expand agents sidebar" : "Collapse agents sidebar";
+		SidebarToggle.ToolTip = action;
+		AutomationProperties.SetName(SidebarToggle, action);
 	}
 
 	private void ToggleMaximized()

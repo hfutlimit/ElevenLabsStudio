@@ -20,16 +20,11 @@
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center" />
                     </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Agents"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource App.Text}" />
-                        <TextBlock Text="Manage and edit conversational agents"
-                                   FontSize="10"
-                                   Margin="0,2,0,0"
-                                   Foreground="{StaticResource App.TextMuted}" />
-                    </StackPanel>
+                    <TextBlock Text="Agents"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource App.Text}"
+                               VerticalAlignment="Center" />
                 </DockPanel>
                 <Button x:Name="ImportAgent"
                         cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"

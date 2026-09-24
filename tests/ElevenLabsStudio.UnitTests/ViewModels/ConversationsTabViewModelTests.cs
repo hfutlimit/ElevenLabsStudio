@@ -48,6 +48,49 @@ public sealed class ConversationsTabViewModelTests
 	}
 
 	[Fact]
+	public async Task ReloadAsync_exposes_only_the_conversation_list_loading_state()
+	{
+		var pending = new TaskCompletionSource<IReadOnlyList<ConversationRecord>>(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		var client = Substitute.For<IElevenLabsClient>();
+		client.ListConversationsAsync(
+			Arg.Any<string>(),
+			Arg.Any<DateTimeOffset?>(),
+			Arg.Any<DateTimeOffset?>(),
+			Arg.Any<int>(),
+			Arg.Any<string?>(),
+			Arg.Any<CancellationToken>())
+			.Returns(pending.Task);
+		var vm = Build(client);
+
+		var reload = vm.ReloadAsync();
+		vm.IsConversationListLoading.Should().BeTrue();
+		vm.IsTranscriptLoading.Should().BeFalse();
+
+		pending.SetResult(new[] { Conversation("c1") });
+		await reload;
+		vm.IsConversationListLoading.Should().BeFalse();
+	}
+
+	[Fact]
+	public async Task SelectConversationAsync_exposes_only_the_transcript_loading_state()
+	{
+		var pending = new TaskCompletionSource<ConversationRecord>(
+			TaskCreationOptions.RunContinuationsAsynchronously);
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetConversationAsync("c1", Arg.Any<CancellationToken>()).Returns(pending.Task);
+		var vm = Build(client);
+
+		var selection = vm.SelectConversationAsync(Conversation("c1"));
+		vm.IsConversationListLoading.Should().BeFalse();
+		vm.IsTranscriptLoading.Should().BeTrue();
+
+		pending.SetResult(Conversation("c1", new TranscriptTurn("agent", "hello", DateTimeOffset.UtcNow)));
+		await selection;
+		vm.IsTranscriptLoading.Should().BeFalse();
+	}
+
+	[Fact]
 	public async Task SelectConversationAsync_ignores_a_stale_detail_response()
 	{
 		var first = new TaskCompletionSource<ConversationRecord>(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -123,14 +123,53 @@
             <!-- 2. Main split -->
             <Grid Grid.Row="1" Margin="20,18,20,14">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="310" />
+                    <ColumnDefinition x:Name="SidebarColumn" Width="310" />
+                    <ColumnDefinition Width="12" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: agent menu (borderless card) -->
-                <ContentControl Grid.Column="0"
-                                cal:View.Model="{Binding AgentsVm}"
-                                Margin="0,0,16,0" />
+                <!-- Left: agent menu and compact rail share one column. -->
+                <ContentControl x:Name="SidebarHost"
+                                Grid.Column="0"
+                                cal:View.Model="{Binding AgentsVm}" />
+
+                <Border x:Name="CollapsedSidebarRail"
+                        Grid.Column="0"
+                        Style="{StaticResource App.ElevatedCard}"
+                        Visibility="Collapsed">
+                    <StackPanel Margin="0,16" HorizontalAlignment="Center">
+                        <Border Width="32" Height="32"
+                                CornerRadius="10"
+                                Background="{StaticResource App.AccentSoft}"
+                                BorderBrush="{StaticResource App.AccentBorder}"
+                                BorderThickness="1"
+                                ToolTip="Agents">
+                            <materialDesign:PackIcon Kind="RobotOutline"
+                                                     Width="17" Height="17"
+                                                     Foreground="{StaticResource App.Accent}"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <Button x:Name="SidebarToggle"
+                        Grid.Column="1"
+                        Panel.ZIndex="4"
+                        Width="28" Height="28"
+                        Margin="0,14,0,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource App.IconButton}"
+                        Background="{StaticResource App.Surface}"
+                        BorderBrush="{StaticResource App.BorderStrong}"
+                        BorderThickness="1"
+                        ToolTip="Collapse agents sidebar"
+                        AutomationProperties.Name="Collapse agents sidebar">
+                    <materialDesign:PackIcon x:Name="SidebarToggleIcon"
+                                             Kind="ChevronLeft"
+                                             Width="16" Height="16" />
+                </Button>
 
                 <!-- Right: detail panel. The DataContextChanged code-behind
                      handler resolves the right view for whatever VM
@@ -139,7 +178,7 @@
                      route — cal:View.Model nested in a Border
                      never re-rendered the view. -->
                 <Border x:Name="DetailBorder"
-                        Grid.Column="1"
+                        Grid.Column="2"
                         Style="{StaticResource App.ElevatedCard}">
                     <ContentControl x:Name="DetailHost"
                                     DataContext="{Binding AgentDetail}"
