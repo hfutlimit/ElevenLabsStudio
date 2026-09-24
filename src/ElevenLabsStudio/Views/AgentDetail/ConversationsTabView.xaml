@@ -11,7 +11,10 @@
 
         <Border x:Name="ConversationListPanel"
                 Grid.Column="0"
-                Style="{StaticResource App.SectionCard}"
+                Background="{StaticResource App.Tint}"
+                BorderBrush="{StaticResource App.Line}"
+                BorderThickness="1"
+                CornerRadius="8"
                 Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
@@ -75,8 +78,8 @@
                                                     <Setter TargetName="Row" Property="Background" Value="{StaticResource App.SurfaceHover}" />
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Row" Property="Background" Value="{StaticResource App.AccentSoft}" />
-                                                    <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.AccentBorder}" />
+                                                    <Setter TargetName="Row" Property="Background" Value="{StaticResource App.Surface}" />
+                                                    <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Line}" />
                                                 </Trigger>
                                                 <Trigger Property="IsKeyboardFocused" Value="True">
                                                     <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource App.Accent}" />
@@ -149,7 +152,10 @@
 
         <Border x:Name="TranscriptPanel"
                 Grid.Column="2"
-                Style="{StaticResource App.SectionCard}"
+                Background="{StaticResource App.Surface}"
+                BorderBrush="{StaticResource App.Line}"
+                BorderThickness="1"
+                CornerRadius="8"
                 Padding="0">
             <Grid>
                 <Grid.RowDefinitions>

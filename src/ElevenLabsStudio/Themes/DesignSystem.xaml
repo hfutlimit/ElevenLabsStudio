@@ -3,74 +3,123 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
                     xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework">
 
-	<!-- Layered neutral palette with a restrained indigo accent.
-	     Accent is reserved for the primary action and the current
-	     selection; everything else stays neutral. -->
-	<SolidColorBrush x:Key="App.Canvas" Color="#F2F4F8" />
+	<!-- ============================================================
+	     Palette — studio-harmony (docs/prototypes/studio-harmony).
+	     Warm white paper + a single gray-green signal, layered with
+	     1px hairlines instead of tinted card stacks. Every key below
+	     is shared by the whole app, so re-skinning means editing these
+	     values, not the views.
+
+	     Legacy keys (App.Accent / App.Border / App.TextSecondary /
+	     App.TextMuted / App.SurfaceAlt / App.AccentSoft /
+	     App.AccentBorder) are kept as aliases pointed at the new
+	     palette so older views and VisualPolishTests still resolve
+	     them — but they now carry the warm/green tones.
+
+	     Source tokens (CSS custom properties in the prototype):
+	     bg #ffffff, side #f5f6f2, tint #fafbf8, ink #29322e,
+	     secondary #6f7973, muted #89938c, line #e5e9e2, green #3d654d,
+	     green-soft #e8eee3, amber #ad803e.
+	     ============================================================ -->
+
+	<!-- Neutrals. Canvas == Surface == paper white; the sidebar and
+	     tinted toolbars carry their own warmer tones. -->
+	<SolidColorBrush x:Key="App.Canvas" Color="#FFFFFF" />
 	<SolidColorBrush x:Key="App.Surface" Color="#FFFFFF" />
-	<SolidColorBrush x:Key="App.SurfaceAlt" Color="#F7F8FB" />
-	<SolidColorBrush x:Key="App.SurfaceHover" Color="#EEF1F6" />
-	<SolidColorBrush x:Key="App.SurfacePressed" Color="#E5E9F1" />
-	<SolidColorBrush x:Key="App.Border" Color="#D6DCE6" />
-	<SolidColorBrush x:Key="App.BorderEmphasis" Color="#AEB8C7" />
-	<SolidColorBrush x:Key="App.BorderStrong" Color="#7B879A" />
-	<SolidColorBrush x:Key="App.Text" Color="#182033" />
-	<SolidColorBrush x:Key="App.TextSecondary" Color="#566176" />
-	<SolidColorBrush x:Key="App.TextMuted" Color="#667085" />
-	<SolidColorBrush x:Key="App.Accent" Color="#4F46D8" />
-	<SolidColorBrush x:Key="App.AccentHover" Color="#4239C5" />
-	<SolidColorBrush x:Key="App.AccentSoft" Color="#EEEDFF" />
-	<SolidColorBrush x:Key="App.AccentBorder" Color="#C9C6FF" />
-	<SolidColorBrush x:Key="App.Success" Color="#148A68" />
-	<SolidColorBrush x:Key="App.SuccessSoft" Color="#E8F7F1" />
-	<SolidColorBrush x:Key="App.Warning" Color="#B86A12" />
-	<SolidColorBrush x:Key="App.Danger" Color="#CF4650" />
-	<SolidColorBrush x:Key="App.DangerHover" Color="#B93641" />
-	<SolidColorBrush x:Key="App.DangerSoft" Color="#FFF0F1" />
+	<SolidColorBrush x:Key="App.Side" Color="#F5F6F2" />
+	<SolidColorBrush x:Key="App.Tint" Color="#FAFBF8" />
+	<SolidColorBrush x:Key="App.SurfaceAlt" Color="#FAFBF8" />
+	<SolidColorBrush x:Key="App.SurfaceHover" Color="#ECEFE7" />
+	<SolidColorBrush x:Key="App.SurfacePressed" Color="#E3E7DD" />
 
-	<!-- Radii vocabulary (only these): panel 12, control 8, badge 6,
-	     selection bar 2. The window itself uses 14. -->
-	<DropShadowEffect x:Key="App.CardShadow"
-					  Color="#667085"
-					  BlurRadius="12"
-					  ShadowDepth="3"
-					  Direction="270"
-					  Opacity="0.08" />
-	<DropShadowEffect x:Key="App.WindowShadow"
-					  Color="#344054"
-					  BlurRadius="28"
-					  ShadowDepth="6"
-					  Direction="270"
-					  Opacity="0.18" />
+	<!-- Hairlines. Non-interactive separation is a light rule; the
+	     slightly stronger Frame/BorderStrong carry input outlines. -->
+	<SolidColorBrush x:Key="App.Line" Color="#E5E9E2" />
+	<SolidColorBrush x:Key="App.LineSoft" Color="#EEF0EA" />
+	<SolidColorBrush x:Key="App.Frame" Color="#DFE5DA" />
+	<SolidColorBrush x:Key="App.Border" Color="#E5E9E2" />
+	<SolidColorBrush x:Key="App.BorderEmphasis" Color="#DFE5DA" />
+	<SolidColorBrush x:Key="App.BorderStrong" Color="#AEBBA6" />
 
-	<Style x:Key="App.ElevatedCard" TargetType="Border">
-		<Setter Property="Background" Value="{StaticResource App.Surface}" />
-		<Setter Property="BorderBrush" Value="{StaticResource App.Border}" />
-		<Setter Property="BorderThickness" Value="1" />
-		<Setter Property="CornerRadius" Value="12" />
-		<Setter Property="Effect" Value="{StaticResource App.CardShadow}" />
+	<!-- Ink ramp. TextMuted/Ink3 sit at the prototype's secondary tone so
+	     small metadata still clears AA on white; ultra-muted mono IDs
+	     reuse App.Ink4. -->
+	<SolidColorBrush x:Key="App.Ink" Color="#29322E" />
+	<SolidColorBrush x:Key="App.Text" Color="#29322E" />
+	<SolidColorBrush x:Key="App.Ink2" Color="#5F6B64" />
+	<SolidColorBrush x:Key="App.TextSecondary" Color="#5F6B64" />
+	<SolidColorBrush x:Key="App.Ink3" Color="#6B746C" />
+	<SolidColorBrush x:Key="App.TextMuted" Color="#6B746C" />
+	<SolidColorBrush x:Key="App.Ink4" Color="#89938C" />
+
+	<!-- Signal — the single gray-green accent. -->
+	<SolidColorBrush x:Key="App.Signal" Color="#3D654D" />
+	<SolidColorBrush x:Key="App.SignalHover" Color="#2C503B" />
+	<SolidColorBrush x:Key="App.SignalWash" Color="#E8EEE3" />
+	<SolidColorBrush x:Key="App.Accent" Color="#3D654D" />
+	<SolidColorBrush x:Key="App.AccentHover" Color="#2C503B" />
+	<SolidColorBrush x:Key="App.AccentSoft" Color="#E8EEE3" />
+	<SolidColorBrush x:Key="App.AccentBorder" Color="#DEE5D9" />
+
+	<!-- Status. Success is a leaf green; Warning is the prototype's
+	     amber "dirty" cue; Danger is a warm brick that reads against
+	     the green without colliding with it. -->
+	<SolidColorBrush x:Key="App.Success" Color="#4A7355" />
+	<SolidColorBrush x:Key="App.SuccessSoft" Color="#E8EEE3" />
+	<SolidColorBrush x:Key="App.Warning" Color="#AD803E" />
+	<SolidColorBrush x:Key="App.Danger" Color="#A8453B" />
+	<SolidColorBrush x:Key="App.DangerHover" Color="#8E382F" />
+	<SolidColorBrush x:Key="App.DangerSoft" Color="#F6ECEA" />
+
+	<!-- Radii vocabulary: rail/window 8, control 6, badge 4,
+	     selection bar 1. Card-in-card radii (12) are gone. -->
+
+	<!-- Typography. studio-harmony pairs a humanist UI face with a
+	     coding mono; both are exposed as tokens so views stop hardcoding
+	     the family string. -->
+	<FontFamily x:Key="App.UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+	<FontFamily x:Key="App.MonoFont">Cascadia Code, Consolas, monospace</FontFamily>
+
+	<Style x:Key="App.Eyebrow" TargetType="TextBlock">
+		<Setter Property="FontSize" Value="10.5" />
+		<Setter Property="FontWeight" Value="Bold" />
+		<Setter Property="Foreground" Value="{StaticResource App.Ink3}" />
+		<Setter Property="TextBlock.TextDecorations" Value="{x:Null}" />
 	</Style>
 
-	<!-- Flat inner section: no border, background-only separation.
-	     Layers come from surface tint, not from boxes inside boxes. -->
-	<Style x:Key="App.SectionCard" TargetType="Border">
-		<Setter Property="Background" Value="{StaticResource App.SurfaceAlt}" />
-		<Setter Property="BorderBrush" Value="Transparent" />
+	<Style x:Key="App.Mono" TargetType="TextBlock">
+		<Setter Property="FontFamily" Value="Consolas, Cascadia Mono, monospace" />
+		<Setter Property="FontSize" Value="11" />
+		<Setter Property="Foreground" Value="{StaticResource App.Ink3}" />
+	</Style>
+
+	<!-- A pane that used to be a shadowed "card". Now it is just a
+	     hairline frame; the shadow lives only on true overlays. -->
+	<Style x:Key="App.ElevatedCard" TargetType="Border">
+		<Setter Property="Background" Value="{StaticResource App.Surface}" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.Line}" />
 		<Setter Property="BorderThickness" Value="1" />
 		<Setter Property="CornerRadius" Value="8" />
+	</Style>
+
+	<!-- Kept as a marker for old views; new code should draw a hairline
+	     directly. Zero visual weight. -->
+	<Style x:Key="App.SectionCard" TargetType="Border">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="6" />
 	</Style>
 
 	<Style x:Key="App.SoftCard"
 		   TargetType="Border"
 		   BasedOn="{StaticResource App.SectionCard}" />
 
-	<!-- Neutral info chip. Color it locally only for real semantics
-	     (success / warning), never as decoration. -->
 	<Style x:Key="App.Badge" TargetType="Border">
-		<Setter Property="CornerRadius" Value="6" />
-		<Setter Property="Padding" Value="8,3" />
+		<Setter Property="CornerRadius" Value="4" />
+		<Setter Property="Padding" Value="7,2" />
 		<Setter Property="Background" Value="{StaticResource App.SurfaceHover}" />
-		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.Line}" />
 		<Setter Property="BorderThickness" Value="1" />
 	</Style>
 
@@ -79,9 +128,9 @@
 			<Setter.Value>
 				<ControlTemplate>
 					<Rectangle Margin="-3"
-							   RadiusX="8"
-							   RadiusY="8"
-							   Stroke="{StaticResource App.Accent}"
+							   RadiusX="6"
+							   RadiusY="6"
+							   Stroke="{StaticResource App.Signal}"
 							   StrokeThickness="2"
 							   SnapsToDevicePixels="True" />
 				</ControlTemplate>
@@ -90,10 +139,10 @@
 	</Style>
 
 	<Style x:Key="App.ButtonBase" TargetType="Button">
-		<Setter Property="Height" Value="36" />
-		<Setter Property="MinWidth" Value="36" />
+		<Setter Property="Height" Value="31" />
+		<Setter Property="MinWidth" Value="31" />
 		<Setter Property="Padding" Value="14,0" />
-		<Setter Property="FontSize" Value="12" />
+		<Setter Property="FontSize" Value="12.5" />
 		<Setter Property="FontWeight" Value="SemiBold" />
 		<Setter Property="Cursor" Value="Hand" />
 		<Setter Property="BorderThickness" Value="1" />
@@ -105,16 +154,16 @@
 							Background="{TemplateBinding Background}"
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="{TemplateBinding BorderThickness}"
-							CornerRadius="8"
+							CornerRadius="6"
 							SnapsToDevicePixels="True">
 						<ContentPresenter HorizontalAlignment="Center"
-									  VerticalAlignment="Center"
-									  Margin="{TemplateBinding Padding}"
-									  RecognizesAccessKey="True" />
+										  VerticalAlignment="Center"
+										  Margin="{TemplateBinding Padding}"
+										  RecognizesAccessKey="True" />
 					</Border>
 					<ControlTemplate.Triggers>
 						<Trigger Property="IsEnabled" Value="False">
-							<Setter TargetName="Chrome" Property="Opacity" Value="0.46" />
+							<Setter TargetName="Chrome" Property="Opacity" Value="0.42" />
 						</Trigger>
 					</ControlTemplate.Triggers>
 				</ControlTemplate>
@@ -122,20 +171,19 @@
 		</Setter>
 	</Style>
 
-	<!-- Hover/pressed feedback is color, never opacity fading. -->
 	<Style x:Key="App.PrimaryButton"
 		   TargetType="Button"
 		   BasedOn="{StaticResource App.ButtonBase}">
-		<Setter Property="Background" Value="{StaticResource App.Accent}" />
-		<Setter Property="BorderBrush" Value="{StaticResource App.Accent}" />
+		<Setter Property="Background" Value="{StaticResource App.Signal}" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.Signal}" />
 		<Setter Property="Foreground" Value="White" />
 		<Style.Triggers>
 			<Trigger Property="IsMouseOver" Value="True">
-				<Setter Property="Background" Value="{StaticResource App.AccentHover}" />
-				<Setter Property="BorderBrush" Value="{StaticResource App.AccentHover}" />
+				<Setter Property="Background" Value="{StaticResource App.SignalHover}" />
+				<Setter Property="BorderBrush" Value="{StaticResource App.SignalHover}" />
 			</Trigger>
 			<Trigger Property="IsPressed" Value="True">
-				<Setter Property="Background" Value="{StaticResource App.AccentHover}" />
+				<Setter Property="Background" Value="{StaticResource App.SignalHover}" />
 				<Setter Property="Opacity" Value="0.9" />
 			</Trigger>
 		</Style.Triggers>
@@ -164,10 +212,11 @@
 		   BasedOn="{StaticResource App.ButtonBase}">
 		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="BorderBrush" Value="Transparent" />
-		<Setter Property="Foreground" Value="{StaticResource App.TextSecondary}" />
+		<Setter Property="Foreground" Value="{StaticResource App.Ink2}" />
 		<Style.Triggers>
 			<Trigger Property="IsMouseOver" Value="True">
 				<Setter Property="Background" Value="{StaticResource App.SurfaceHover}" />
+				<Setter Property="Foreground" Value="{StaticResource App.Text}" />
 			</Trigger>
 			<Trigger Property="IsPressed" Value="True">
 				<Setter Property="Background" Value="{StaticResource App.SurfacePressed}" />
@@ -176,15 +225,33 @@
 		</Style.Triggers>
 	</Style>
 
+	<!-- Icon-only action button. It MUST read as a button: a solid
+	     surface body + hairline border is the minimum affordance for a
+	     glyph floating on the canvas. Inheriting GhostButton (fully
+	     transparent) made the sidebar collapse + and import + look like
+	     decorative marks nobody would click. -->
 	<Style x:Key="App.IconButton"
 		   TargetType="Button"
-		   BasedOn="{StaticResource App.GhostButton}">
+		   BasedOn="{StaticResource App.ButtonBase}">
 		<Setter Property="Width" Value="28" />
 		<Setter Property="Height" Value="28" />
+		<Setter Property="MinWidth" Value="28" />
 		<Setter Property="Padding" Value="0" />
-		<Setter Property="BorderBrush" Value="{StaticResource App.BorderStrong}" />
-		<Setter Property="BorderThickness" Value="1" />
 		<Setter Property="Background" Value="{StaticResource App.Surface}" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.BorderEmphasis}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="Foreground" Value="{StaticResource App.Ink2}" />
+		<Style.Triggers>
+			<Trigger Property="IsMouseOver" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.SignalWash}" />
+				<Setter Property="BorderBrush" Value="{StaticResource App.Signal}" />
+				<Setter Property="Foreground" Value="{StaticResource App.Signal}" />
+			</Trigger>
+			<Trigger Property="IsPressed" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.SurfacePressed}" />
+				<Setter Property="BorderBrush" Value="{StaticResource App.SignalHover}" />
+			</Trigger>
+		</Style.Triggers>
 	</Style>
 
 	<Style x:Key="CaptionButton"
@@ -192,38 +259,62 @@
 		   BasedOn="{StaticResource App.GhostButton}">
 		<Setter Property="Width" Value="46" />
 		<Setter Property="Height" Value="46" />
+		<Setter Property="Padding" Value="0" />
 		<Setter Property="Cursor" Value="Arrow" />
 		<Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
 	</Style>
 
+	<!-- Close: neutral until hovered, then a solid danger block with a
+	     white glyph — the Windows convention. A permanently-red X just
+	     reads as noise next to the other three. -->
+	<Style x:Key="CloseCaptionButton"
+		   TargetType="Button"
+		   BasedOn="{StaticResource CaptionButton}">
+		<Style.Triggers>
+			<Trigger Property="IsMouseOver" Value="True">
+				<Setter Property="Background" Value="{StaticResource App.Danger}" />
+				<Setter Property="BorderBrush" Value="{StaticResource App.Danger}" />
+				<Setter Property="Foreground" Value="White" />
+			</Trigger>
+		</Style.Triggers>
+	</Style>
+
+	<!-- Underline tab. Text only; the selection cue is a 2px signal
+	     rule on the bottom edge, so the TabControl's own bottom hairline
+	     can act as the full-width baseline. -->
 	<Style x:Key="App.TabItem" TargetType="TabItem">
-		<Setter Property="Foreground" Value="{StaticResource App.TextSecondary}" />
-		<Setter Property="FontSize" Value="12" />
-		<Setter Property="FontWeight" Value="SemiBold" />
-		<Setter Property="Margin" Value="0,0,4,0" />
-		<Setter Property="Padding" Value="10,8" />
+		<Setter Property="Foreground" Value="{StaticResource App.Ink2}" />
+		<Setter Property="FontSize" Value="13" />
+		<Setter Property="FontWeight" Value="Medium" />
+		<Setter Property="Padding" Value="0,9,0,11" />
+		<Setter Property="Margin" Value="0,0,22,0" />
 		<Setter Property="FocusVisualStyle" Value="{StaticResource App.FocusVisual}" />
 		<Setter Property="Template">
 			<Setter.Value>
 				<ControlTemplate TargetType="TabItem">
-					<Border x:Name="Chrome"
-							Background="Transparent"
-							BorderBrush="Transparent"
-							BorderThickness="1"
-							CornerRadius="8"
-							Padding="{TemplateBinding Padding}">
-						<ContentPresenter ContentSource="Header"
-									  HorizontalAlignment="Center"
-									  VerticalAlignment="Center" />
-					</Border>
+					<Grid Background="Transparent">
+						<Grid.RowDefinitions>
+							<RowDefinition Height="*" />
+							<RowDefinition Height="2" />
+						</Grid.RowDefinitions>
+						<ContentPresenter Grid.Row="0"
+										  ContentSource="Header"
+										  HorizontalAlignment="Center"
+										  VerticalAlignment="Center" />
+						<Border x:Name="Indicator"
+								Grid.Row="1"
+								Background="Transparent"
+								CornerRadius="1"
+								SnapsToDevicePixels="True" />
+					</Grid>
 					<ControlTemplate.Triggers>
 						<Trigger Property="IsMouseOver" Value="True">
-							<Setter TargetName="Chrome" Property="Background" Value="{StaticResource App.SurfaceHover}" />
+							<Setter Property="Foreground" Value="{StaticResource App.Text}" />
 						</Trigger>
 						<Trigger Property="IsSelected" Value="True">
-							<Setter TargetName="Chrome" Property="Background" Value="{StaticResource App.AccentSoft}" />
-							<Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource App.AccentBorder}" />
-							<Setter Property="Foreground" Value="{StaticResource App.Accent}" />
+							<Setter Property="Foreground" Value="{StaticResource App.Signal}" />
+							<Setter Property="FontWeight" Value="SemiBold" />
+							<Setter TargetName="Indicator" Property="Background" Value="{StaticResource App.Signal}" />
 						</Trigger>
 					</ControlTemplate.Triggers>
 				</ControlTemplate>
@@ -231,12 +322,36 @@
 		</Setter>
 	</Style>
 
+	<!-- The "paper" editor: white surface, 1px hairline, focus ring in
+	     the signal tone. Replaces the old invisible-until-focus box. -->
+	<Style x:Key="App.InsetEditor" TargetType="Border">
+		<Setter Property="Background" Value="{StaticResource App.Surface}" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.BorderEmphasis}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="8" />
+		<Setter Property="SnapsToDevicePixels" Value="True" />
+		<Style.Triggers>
+			<Trigger Property="IsKeyboardFocusWithin" Value="True">
+				<Setter Property="BorderBrush" Value="{StaticResource App.Signal}" />
+			</Trigger>
+		</Style.Triggers>
+	</Style>
+
+	<!-- Sidebar agent row shell: no shadow, hairline bottom between
+	     rows when needed. Kept as a Border style so old callers still
+	     resolve. -->
+	<Style x:Key="App.HairlineRow" TargetType="Border">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.LineSoft}" />
+		<Setter Property="BorderThickness" Value="0,0,0,1" />
+	</Style>
+
 	<Style x:Key="App.DataGrid" TargetType="DataGrid">
 		<Setter Property="Background" Value="{StaticResource App.Surface}" />
-		<Setter Property="BorderBrush" Value="{StaticResource App.Border}" />
+		<Setter Property="BorderBrush" Value="{StaticResource App.Line}" />
 		<Setter Property="BorderThickness" Value="0" />
 		<Setter Property="GridLinesVisibility" Value="Horizontal" />
-		<Setter Property="HorizontalGridLinesBrush" Value="{StaticResource App.Border}" />
+		<Setter Property="HorizontalGridLinesBrush" Value="{StaticResource App.Line}" />
 		<Setter Property="RowBackground" Value="{StaticResource App.Surface}" />
 		<Setter Property="AlternatingRowBackground" Value="{StaticResource App.SurfaceAlt}" />
 		<Setter Property="RowHeaderWidth" Value="0" />

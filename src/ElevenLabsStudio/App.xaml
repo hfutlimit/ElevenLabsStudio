@@ -7,8 +7,11 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Light, clean palette: white surface + Indigo accent. -->
-                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Indigo" SecondaryColor="Teal" />
+                <!-- studio-harmony: warm white paper + gray-green signal.
+                     MaterialDesign primary is steered to Green so the
+                     framework-owned affordances (DataGrid selection,
+                     outlined-field underline, focus) match App.Signal. -->
+                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Green" SecondaryColor="Teal" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
 				<ResourceDictionary Source="Themes/DesignSystem.xaml" />
             </ResourceDictionary.MergedDictionaries>

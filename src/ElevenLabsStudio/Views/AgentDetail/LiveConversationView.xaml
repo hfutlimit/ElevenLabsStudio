@@ -82,7 +82,12 @@
                 <ColumnDefinition Width="*" MinWidth="420" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="2" Style="{StaticResource App.SectionCard}" Padding="16,14">
+            <Border Grid.Column="2"
+                    Background="{StaticResource App.Surface}"
+                    BorderBrush="{StaticResource App.Line}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16,14">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -159,7 +164,13 @@
                           ShowsPreview="False"
                           ToolTip="Drag to resize the session panel" />
 
-            <Border Grid.Column="0" Style="{StaticResource App.SectionCard}" Padding="16" Margin="0,0,12,0">
+            <Border Grid.Column="0"
+                    Background="{StaticResource App.Tint}"
+                    BorderBrush="{StaticResource App.Line}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="0,0,12,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <TextBlock Text="Session" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" Margin="0,0,0,10" />

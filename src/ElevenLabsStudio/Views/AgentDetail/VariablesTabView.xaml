@@ -32,7 +32,12 @@
             </StackPanel>
         </DockPanel>
 
-        <Border Grid.Row="1" Style="{StaticResource App.SectionCard}" Padding="1">
+        <Border Grid.Row="1"
+                Background="{StaticResource App.Surface}"
+                BorderBrush="{StaticResource App.Line}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="1">
         <DataGrid
                   x:Name="VariablesGrid"
                   ItemsSource="{Binding Variables}"

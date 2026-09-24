@@ -80,7 +80,7 @@ public sealed class WorkspaceLayoutTests
 
 			toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
-			column.Width.Value.Should().Be(310);
+			column.Width.Value.Should().Be(260);
 			expandedHost.Visibility.Should().Be(Visibility.Visible);
 			compactRail.Visibility.Should().Be(Visibility.Collapsed);
 			view.Close();
@@ -214,29 +214,38 @@ public sealed class WorkspaceLayoutTests
 	}
 
 	[Fact]
-	public async Task First_message_meta_row_sits_below_the_editor_not_at_the_bottom()
+	public async Task First_message_counter_shares_a_row_with_the_field_label()
 	{
+		// Route B follow-up. Before this rebuild the counter was docked
+		// to the far edge of a "meta row" that sat below a star-sized
+		// editor, so at 1080p "363 chars" ended up ~1200px away from
+		// "Local suggestions" (review §3,
+		// docs/prototypes/2026-09-24-redesign-review.md). The counter
+		// is now a peer of the field label inside the same header row
+		// above the editor, and the whole suggestions section collapses
+		// when the list is empty (review §11). This test replaced the
+		// old assertion that pinned the pre-fix layout.
 		await RunOnStaAsync(() =>
 		{
-			var view = new FirstMessageTabView();
+			var view = new FirstMessageTabView { Width = 900 };
 			var host = new Window { Content = view, Width = 900, Height = 600 };
 			host.Show();
 
-			var grid = VisualDescendants(host)
-				.OfType<Grid>()
-				.First(g => g.RowDefinitions.Count == 2
-					&& VisualDescendants(g).OfType<TextBox>().Any());
-			grid.RowDefinitions[0].Height.Should().Be(new GridLength(1, GridUnitType.Star),
-				"the editor takes the remaining space");
-			grid.RowDefinitions[1].Height.Should().Be(GridLength.Auto,
-				"the meta row must be Auto-sized so it hugs the editor instead of sliding to the bottom");
-
-			// Sanity-check the meta row actually exists: the char counter lives
-			// inside a Border docked to the right of a DockPanel in row 1.
 			var counter = view.FindName("FirstMessageLength").Should().BeOfType<TextBlock>().Subject;
-			var dock = FindAncestor<DockPanel>(counter);
-			dock.Should().NotBeNull();
-			dock!.LastChildFill.Should().BeTrue();
+			var labelRow = counter.Parent.Should().BeAssignableTo<Panel>().Subject;
+			var siblings = labelRow.Children.OfType<TextBlock>().ToList();
+			siblings.Should().Contain(other => !ReferenceEquals(other, counter)
+				&& other.Text.StartsWith("First message", StringComparison.Ordinal),
+				"the field label and the character counter must share one row above the editor");
+
+			// The counter must be visually ABOVE the editor. Grid.GetRow
+			// of the label row < Grid.GetRow of the editor's Border.
+			var editor = view.FindName("FirstMessage").Should().BeOfType<TextBox>().Subject;
+			var labelRowInGrid = FindAncestor<Grid>(labelRow).Should().BeAssignableTo<Grid>().Subject;
+			var editorBorder = FindAncestor<Border>(editor).Should().BeAssignableTo<Border>().Subject;
+			Grid.GetRow(labelRowInGrid).Should().BeLessThan(Grid.GetRow(editorBorder),
+				"the editor cannot stretch to fill vertical space if the meta row already sits below it");
+
 			host.Close();
 		});
 	}

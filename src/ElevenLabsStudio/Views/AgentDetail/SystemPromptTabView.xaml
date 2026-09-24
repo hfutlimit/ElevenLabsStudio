@@ -2,75 +2,66 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
-    <Grid Margin="0,12,0,0">
+
+    <!-- Route B follow-up. The editor is now a real field: a label row
+         with the character count on the same line (was docked to the
+         opposite edge of the pane via a LastChildFill DockPanel —
+         review §3), a bordered paper surface (was invisible until
+         focused — §4), and a suggestions section that fully collapses
+         when there is nothing to say (§11) and grows instead of
+         reserving a fixed 144 px. Each suggestion carries a 3px
+         severity bar so the eye can scan the list without opening
+         each row (§13). -->
+
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" MinHeight="180" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Paper-style editor: borderless surface with a focus ring. -->
-        <Border Grid.Row="0"
-                CornerRadius="8"
-                Background="{StaticResource App.SurfaceAlt}"
-                BorderThickness="1">
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="BorderBrush" Value="Transparent" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=Prompt}" Value="True">
-                            <Setter Property="BorderBrush" Value="{StaticResource App.AccentBorder}" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
+        <!-- Field label row: name + count share one line. -->
+        <Grid Grid.Row="0" Margin="2,0,2,7">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="System prompt"
+                       FontSize="12.5"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource App.Text}"
+                       VerticalAlignment="Center" />
+            <TextBlock x:Name="PromptLength"
+                       Grid.Column="1"
+                       Text="0 chars"
+                       FontFamily="Consolas, Cascadia Mono, monospace"
+                       FontSize="11"
+                       Foreground="{StaticResource App.Ink3}"
+                       VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- Editor with hairline frame. Focus ring is provided by the
+             App.InsetEditor trigger on IsKeyboardFocusWithin. -->
+        <Border Grid.Row="1"
+                Style="{StaticResource App.InsetEditor}">
             <TextBox x:Name="Prompt"
-                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
-                     FontFamily="Consolas, Cascadia Mono, monospace"
+                     FontFamily="{StaticResource App.MonoFont}"
                      FontSize="13"
                      materialDesign:HintAssist.Hint="System prompt"
                      Background="Transparent"
                      BorderThickness="0"
                      Foreground="{StaticResource App.Text}"
-                     Padding="12,14" />
+                     Padding="24,22" />
         </Border>
 
-        <!-- Meta line: suggestions header on the left, editor stats on
-             the right. The fixed-height suggestions panel collapses
-             when there is nothing to show. -->
-        <DockPanel Grid.Row="1" Margin="2,12,2,4" LastChildFill="True">
-            <Border DockPanel.Dock="Right"
-                    Background="{StaticResource App.Surface}"
-                    Padding="8,2"
-                    BorderBrush="{StaticResource App.Border}"
-                    BorderThickness="1"
-                    CornerRadius="6">
-                <TextBlock x:Name="PromptLength"
-                           Text="0 chars"
-                           FontSize="11"
-                           Foreground="{StaticResource App.TextSecondary}"
-                           VerticalAlignment="Center" />
-            </Border>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Local suggestions"
-                           FontWeight="SemiBold"
-                           FontSize="12"
-                           VerticalAlignment="Center"
-                           Foreground="{StaticResource App.Text}" />
-                <Border Style="{StaticResource App.Badge}" Margin="8,0,0,0" Padding="7,2">
-                    <TextBlock Text="{Binding Suggestions.Count, Mode=OneWay}"
-                               FontSize="11"
-                               Foreground="{StaticResource App.TextSecondary}" />
-                </Border>
-            </StackPanel>
-        </DockPanel>
-
-        <Border Grid.Row="2" Margin="0,4,0,0">
-            <Border.Style>
-                <Style TargetType="Border">
+        <!-- Suggestions section, collapsed when the list is empty. -->
+        <StackPanel Grid.Row="2"
+                    Margin="2,18,2,0">
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
                     <Setter Property="Visibility" Value="Visible" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding Suggestions.Count, Mode=OneWay}" Value="0">
@@ -78,67 +69,68 @@
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
-            </Border.Style>
+            </StackPanel.Style>
+            <TextBlock Text="LOCAL SUGGESTIONS"
+                       Style="{StaticResource App.Eyebrow}"
+                       Margin="0,0,0,7" />
             <ListBox x:Name="Suggestions"
-                     Height="144"
+                     MaxHeight="240"
                      Background="Transparent"
-                     BorderThickness="0">
+                     BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
                         <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0,2" />
+                        <Setter Property="Margin" Value="0,3" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Style="{StaticResource App.SectionCard}" Padding="12,10">
+                        <Border Background="{StaticResource App.Tint}"
+                                BorderBrush="{StaticResource App.Line}"
+                                BorderThickness="1"
+                                CornerRadius="7"
+                                Padding="16,14">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <materialDesign:PackIcon Grid.Column="0"
-                                                         Margin="0,0,8,0"
+                                <materialDesign:PackIcon Kind="InformationOutline"
+                                                         Width="16" Height="16"
+                                                         Margin="0,1,12,0"
                                                          VerticalAlignment="Top"
-                                                         Foreground="{StaticResource App.TextSecondary}">
-                                    <materialDesign:PackIcon.Style>
-                                        <Style TargetType="materialDesign:PackIcon">
-                                            <Setter Property="Kind" Value="Information" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Severity}" Value="Suggestion">
-                                                    <Setter Property="Kind" Value="LightbulbOutline" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Severity}" Value="Warning">
-                                                    <Setter Property="Kind" Value="AlertOutline" />
-                                                    <Setter Property="Foreground" Value="{StaticResource App.Danger}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </materialDesign:PackIcon.Style>
-                                </materialDesign:PackIcon>
+                                                         Foreground="#8A9B77" />
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{Binding FieldName}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12"
-                                                   Foreground="{StaticResource App.Text}" />
-                                        <Border Style="{StaticResource App.Badge}" Margin="8,0,0,0">
+                                                   FontWeight="Medium"
+                                                   FontSize="11.5"
+                                                   Foreground="{StaticResource App.Text}"
+                                                   VerticalAlignment="Center" />
+                                        <Border Background="#EFF1E4"
+                                                CornerRadius="4"
+                                                Padding="6,1"
+                                                Margin="9,1,0,0"
+                                                VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Severity}"
-                                                       FontSize="11"
-                                                       Foreground="{StaticResource App.TextSecondary}" />
+                                                       FontSize="9"
+                                                       Foreground="#7C875F" />
                                         </Border>
                                     </StackPanel>
                                     <TextBlock Text="{Binding Rationale}"
                                                TextWrapping="Wrap"
                                                FontSize="11"
-                                               Foreground="{StaticResource App.TextSecondary}"
-                                               Margin="0,2,0,0" />
+                                               LineHeight="18"
+                                               Margin="0,5,0,0"
+                                               Foreground="{StaticResource App.Ink2}" />
                                 </StackPanel>
                             </Grid>
                         </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-        </Border>
+        </StackPanel>
     </Grid>
 </UserControl>

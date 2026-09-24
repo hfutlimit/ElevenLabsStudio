@@ -7,9 +7,9 @@
     <Border Margin="0,12,0,0"
             Padding="10"
             Background="{StaticResource App.Surface}"
-            BorderBrush="{StaticResource App.Border}"
+            BorderBrush="{StaticResource App.Line}"
             BorderThickness="1"
-            CornerRadius="12">
+            CornerRadius="9">
         <TabControl Background="Transparent"
                     BorderThickness="0"
                     ItemContainerStyle="{StaticResource App.TabItem}">
@@ -54,9 +54,30 @@
 
                         <ScrollViewer Grid.Row="1"
                                       Padding="8"
-                                      Background="{StaticResource App.Canvas}"
                                       HorizontalScrollBarVisibility="Auto"
                                       VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer.Background>
+                                <!-- studio-harmony dotted grid: a warm tint
+                                     field with a 1px dot every 18px. -->
+                                <DrawingBrush TileMode="Tile"
+                                              Viewport="0,0,18,18"
+                                              ViewportUnits="Absolute">
+                                    <DrawingBrush.Drawing>
+                                        <DrawingGroup>
+                                            <GeometryDrawing Brush="{StaticResource App.Tint}">
+                                                <GeometryDrawing.Geometry>
+                                                    <RectangleGeometry Rect="0,0,18,18" />
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                            <GeometryDrawing Brush="#DFE5D9">
+                                                <GeometryDrawing.Geometry>
+                                                    <EllipseGeometry Center="9,9" RadiusX="1" RadiusY="1" />
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                        </DrawingGroup>
+                                    </DrawingBrush.Drawing>
+                                </DrawingBrush>
+                            </ScrollViewer.Background>
                             <Grid Width="{Binding CanvasWidth}"
                                   Height="{Binding CanvasHeight}">
                                 <Canvas x:Name="EdgeCanvas"

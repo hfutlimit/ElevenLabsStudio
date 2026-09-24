@@ -76,7 +76,9 @@ public partial class ShellView : Window
 	private void ToggleSidebar()
 	{
 		_isSidebarCollapsed = !_isSidebarCollapsed;
-		SidebarColumn.Width = new GridLength(_isSidebarCollapsed ? 48 : 310);
+		SidebarColumn.Width = new GridLength(_isSidebarCollapsed ? 48 : 260);
+		// Force-collapse the host content too — Visibility alone lets the
+		// ContentControl keep rendering its content into a 48-px column.
 		SidebarHost.Visibility = _isSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
 		CollapsedSidebarRail.Visibility = _isSidebarCollapsed ? Visibility.Visible : Visibility.Collapsed;
 		SidebarToggleIcon.Kind = _isSidebarCollapsed

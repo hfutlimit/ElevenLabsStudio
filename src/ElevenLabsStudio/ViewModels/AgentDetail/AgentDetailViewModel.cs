@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+using System.ComponentModel;
 using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
@@ -85,7 +87,28 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 				clock,
 				liveLogger ?? NullLogger<LiveConversationViewModel>.Instance);
 		}
+
+		// IsDirty is a computed aggregate over the four editable tabs, but
+		// the child VMs only notify their own property. Without this
+		// forward, the sync rail in AgentDetailView would stay grey
+		// while the user types and only flip after a server snapshot
+		// lands. Hook every child's PropertyChanged + the two editable
+		// collections' CollectionChanged and re-publish IsDirty on any
+		// of them. Cheap: IsDirty is a pure comparison, no network.
+		foreach (var child in new INotifyPropertyChanged[]
+				 { SystemPromptVm, FirstMessageVm, VariablesVm, WorkflowVm })
+		{
+			child.PropertyChanged += OnTabPropertyChanged;
+		}
+		VariablesVm.Variables.CollectionChanged += OnEditCollectionChanged;
+		WorkflowVm.Nodes.CollectionChanged += OnEditCollectionChanged;
 	}
+
+	private void OnTabPropertyChanged(object? sender, PropertyChangedEventArgs e) =>
+		NotifyOfPropertyChange(nameof(IsDirty));
+
+	private void OnEditCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+		NotifyOfPropertyChange(nameof(IsDirty));
 
 	protected override void OnViewLoaded(object view)
 	{
@@ -102,6 +125,13 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 
 	public void Dispose()
 	{
+		foreach (var child in new INotifyPropertyChanged[]
+				 { SystemPromptVm, FirstMessageVm, VariablesVm, WorkflowVm })
+		{
+			child.PropertyChanged -= OnTabPropertyChanged;
+		}
+		VariablesVm.Variables.CollectionChanged -= OnEditCollectionChanged;
+		WorkflowVm.Nodes.CollectionChanged -= OnEditCollectionChanged;
 		LiveConversationVm?.Dispose();
 		ConversationsVm.Dispose();
 		if (!_subscribed) return;

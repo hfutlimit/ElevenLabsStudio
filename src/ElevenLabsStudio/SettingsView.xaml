@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterOwner"
         Background="{StaticResource App.Canvas}"
         TextElement.Foreground="{StaticResource App.Text}"
-        FontFamily="{DynamicResource MaterialDesign.Font}">
+        FontFamily="{StaticResource App.UiFont}">
     <Border Style="{StaticResource App.ElevatedCard}"
             Margin="18">
         <Grid Margin="24,20">
