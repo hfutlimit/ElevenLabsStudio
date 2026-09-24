@@ -1,10 +1,14 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
+using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.ViewModels.AgentDetail;
 using ElevenLabsStudio.Views.AgentDetail;
+using ElevenLabsStudio.Views.Agents;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -112,6 +116,89 @@ public sealed class WorkspaceLayoutTests
 				"the greeting should not be repeated in a separate preview");
 			host.Close();
 		});
+	}
+
+	[Fact]
+	public async Task Agent_list_is_bound_to_the_view_model_collection()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var stub = new AgentListStub(hasNoAgents: false, items:
+			[
+				new AgentSummary("agent_layout", "Layout agent", "voice_1", DateTimeOffset.UnixEpoch),
+			]);
+			var view = new AgentListView { DataContext = stub, Width = 310 };
+			var host = new Window { Content = view };
+			host.Show();
+
+			var list = view.FindName("AgentsView").Should().BeOfType<ListBox>().Subject;
+
+			list.ItemsSource.Should().BeSameAs(stub.AgentsView,
+				"the sidebar list must render the view model's collection");
+			list.Items.Count.Should().Be(1);
+			host.Close();
+		});
+	}
+
+	[Fact]
+	public async Task Conversations_list_is_bound_to_the_view_model_collection()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var stub = new ConversationsStub();
+			var view = new ConversationsTabView { DataContext = stub, Width = 700 };
+			var host = new Window { Content = view };
+			host.Show();
+
+			var list = view.FindName("Conversations").Should().BeOfType<ListBox>().Subject;
+
+			list.ItemsSource.Should().BeSameAs(stub.Conversations,
+				"the conversations list must render the view model's collection");
+			host.Close();
+		});
+	}
+
+	[Fact]
+	public async Task Empty_agent_state_text_wraps_inside_the_sidebar_card()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var view = new AgentListView
+			{
+				DataContext = new AgentListStub(hasNoAgents: true, items: []),
+				Width = 310,
+			};
+			var host = new Window { Content = view };
+			host.Show();
+
+			var message = VisualDescendants(view)
+				.OfType<TextBlock>()
+				.Single(text => text.Text.StartsWith("No agents yet", StringComparison.Ordinal));
+
+			// The message sits inside a card with 16px side padding, so it
+			// must wrap instead of running past the sidebar column.
+			message.ActualWidth.Should().BeLessOrEqualTo(310 - 32 - 24);
+			host.Close();
+		});
+	}
+
+	private sealed class AgentListStub
+	{
+		public bool HasNoAgents { get; }
+		public ICollectionView AgentsView { get; }
+		public AgentSummary? SelectedAgent { get; set; }
+
+		public AgentListStub(bool hasNoAgents, IEnumerable<AgentSummary> items)
+		{
+			HasNoAgents = hasNoAgents;
+			AgentsView = CollectionViewSource.GetDefaultView(items.ToList());
+		}
+	}
+
+	private sealed class ConversationsStub
+	{
+		public BindableCollection<object> Conversations { get; } = new();
+		public object? SelectedConversation { get; set; }
 	}
 
 	private static Task RunOnStaAsync(System.Action action) => WpfTestHost.RunAsync(action);

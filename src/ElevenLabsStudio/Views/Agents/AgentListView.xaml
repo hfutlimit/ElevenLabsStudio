@@ -46,20 +46,27 @@
                     Margin="16,8,16,16"
                     Padding="12"
                     Visibility="{Binding HasNoAgents, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <StackPanel Orientation="Horizontal">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
                     <materialDesign:PackIcon Kind="InformationOutline"
                                              Width="16" Height="16"
                                              Margin="0,0,8,0"
+                                             VerticalAlignment="Top"
                                              Foreground="{StaticResource App.Accent}" />
-                    <TextBlock Text="No agents yet. Click Import Agent above to import one by ID."
+                    <TextBlock Grid.Column="1"
+                               Text="No agents yet. Click Import Agent above to import one by ID."
                                TextWrapping="Wrap"
                                FontSize="11"
                                Foreground="{StaticResource App.TextSecondary}" />
-                </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Middle: list -->
             <ListBox x:Name="AgentsView"
+                     ItemsSource="{Binding AgentsView}"
                      SelectedItem="{Binding SelectedAgent, Mode=TwoWay}"
                      Background="Transparent"
                      BorderThickness="0"
