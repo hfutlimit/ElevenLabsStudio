@@ -60,20 +60,26 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
                     <Button x:Name="DryRun"
-                            Style="{StaticResource App.GhostButton}"
+                            Style="{StaticResource App.IconButton}"
                             Margin="0,0,4,0"
-                            Width="32" Height="32"
-                            ToolTip="Re-run local suggestions"
+                            Width="28" Height="28"
+                            Background="{StaticResource App.Surface}"
+                            BorderBrush="{StaticResource App.Border}"
+                            BorderThickness="1"
+                            ToolTip="Dry run — re-run local suggestions"
                             AutomationProperties.Name="Dry run">
-                        <materialDesign:PackIcon Kind="FlaskOutline" Width="16" Height="16" />
+                        <materialDesign:PackIcon Kind="PlayCircleOutline" Width="15" Height="15" />
                     </Button>
                     <Button x:Name="ReloadAsync"
-                            Style="{StaticResource App.GhostButton}"
+                            Style="{StaticResource App.IconButton}"
                             Margin="0,0,8,0"
-                            Width="32" Height="32"
-                            ToolTip="Refresh"
+                            Width="28" Height="28"
+                            Background="{StaticResource App.Surface}"
+                            BorderBrush="{StaticResource App.Border}"
+                            BorderThickness="1"
+                            ToolTip="Reload agent from server"
                             AutomationProperties.Name="Reload">
-                        <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" />
+                        <materialDesign:PackIcon Kind="Refresh" Width="15" Height="15" />
                     </Button>
                     <Button x:Name="Push"
                             Style="{StaticResource App.PrimaryButton}">
