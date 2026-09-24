@@ -5,30 +5,30 @@
              xmlns:cal="http://www.caliburnproject.org">
     <Border Style="{StaticResource App.ElevatedCard}">
         <DockPanel Margin="0">
-            <!-- Title row: agents heading on the left, a compact "+" import
-                 action on the right so the secondary button stops pushing
-                 the list down. -->
-            <Grid DockPanel.Dock="Top" Margin="16,12,16,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           Text="Agents"
-                           FontSize="12"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource App.TextSecondary}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,8,0" />
-                <Button Grid.Column="1"
-                        x:Name="ImportAgent"
-                        cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"
-                        Style="{StaticResource App.IconButton}"
-                        ToolTip="Import agent by ID"
-                        AutomationProperties.Name="Import Agent">
-                    <materialDesign:PackIcon Kind="Plus" Width="14" Height="14" />
-                </Button>
-            </Grid>
+            <!-- Title row: agents heading pinned to the left. The
+                 shell-level sidebar toggle already owns the top-right
+                 corner, so we keep this row single-column to avoid
+                 stacking two buttons on top of each other. -->
+            <TextBlock DockPanel.Dock="Top"
+                       Text="Agents"
+                       FontSize="12"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource App.TextSecondary}"
+                       Margin="16,12,16,4" />
+
+            <!-- + import action sits on its own line directly under the
+                 heading so it never overlaps the shell's collapse
+                 toggle. -->
+            <Button DockPanel.Dock="Top"
+                    x:Name="ImportAgent"
+                    cal:Message.Attach="[Event Click] = [Action ImportAgentAsync()]"
+                    Style="{StaticResource App.IconButton}"
+                    Margin="16,0,16,8"
+                    HorizontalAlignment="Left"
+                    ToolTip="Import agent by ID"
+                    AutomationProperties.Name="Import Agent">
+                <materialDesign:PackIcon Kind="Plus" Width="14" Height="14" />
+            </Button>
 
             <!-- Flat empty state: no card-in-card, muted ink only. -->
             <Border DockPanel.Dock="Bottom"
