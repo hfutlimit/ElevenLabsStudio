@@ -58,6 +58,7 @@ public sealed class WorkflowTabViewModel : ScreenBase
 	private const double OverlapNudge = 32;
 
 	private readonly ILogger<WorkflowTabViewModel> _logger;
+	private Agent _server;
 	private IReadOnlyList<WorkflowEdge> _workflowEdges = Array.Empty<WorkflowEdge>();
 	private bool _suppressNodeProjection;
 	private string? _selectedNodeId;
@@ -138,12 +139,21 @@ public sealed class WorkflowTabViewModel : ScreenBase
 
 	public WorkflowTabViewModel(Agent agent, ILogger<WorkflowTabViewModel> logger)
 	{
+		_server = agent;
 		_logger = logger;
 		Nodes.CollectionChanged += OnNodesChanged;
 		Apply(agent);
 	}
 
-	public void RefreshFrom(Agent updated) => Apply(updated);
+	public void RefreshFrom(Agent updated)
+	{
+		_server = updated;
+		Apply(updated);
+	}
+
+	/// <summary>Discard local node edits and restore the last server
+	/// value. Backs the tab-level Reset button.</summary>
+	public void ResetToServer() => Apply(_server);
 
 	public void AddNode()
 	{

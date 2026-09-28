@@ -39,6 +39,18 @@
                                 BorderThickness="0,0,0,1"
                                 Padding="14,9">
                             <DockPanel>
+                                <Button DockPanel.Dock="Right"
+                                        Content="Reset"
+                                        Style="{StaticResource App.GhostButton}"
+                                        FontSize="11"
+                                        Height="22"
+                                        Padding="9,0"
+                                        Margin="10,0,0,0"
+                                        VerticalAlignment="Center"
+                                        cal:Message.Attach="[Event Click] = [Action ResetToServer()]"
+                                        Visibility="{Binding IsDirty, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        ToolTip="Discard local node edits and restore the server workflow"
+                                        AutomationProperties.Name="Reset workflow" />
                                 <TextBlock DockPanel.Dock="Right"
                                            Text="CONNECTIONS READ-ONLY"
                                            FontSize="11"

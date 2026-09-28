@@ -1,7 +1,8 @@
 <UserControl x:Class="ElevenLabsStudio.Views.AgentDetail.SystemPromptTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:cal="http://www.caliburnproject.org">
 
     <!-- Route B follow-up. The editor is now a real field: a label row
          with the character count on the same line (was docked to the
@@ -20,10 +21,13 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Field label row: name + count share one line. -->
+        <!-- Field label row: name + count share one line, with a Reset
+             action that only appears once the field diverges from the
+             server snapshot. -->
         <Grid Grid.Row="0" Margin="2,0,2,7">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock Text="System prompt"
@@ -37,7 +41,19 @@
                        FontFamily="Consolas, Cascadia Mono, monospace"
                        FontSize="11"
                        Foreground="{StaticResource App.Ink3}"
-                       VerticalAlignment="Center" />
+                       VerticalAlignment="Center"
+                       Margin="0,0,12,0" />
+            <Button Grid.Column="2"
+                    Content="Reset"
+                    Style="{StaticResource App.GhostButton}"
+                    FontSize="11.5"
+                    Height="24"
+                    Padding="10,0"
+                    VerticalAlignment="Center"
+                    cal:Message.Attach="[Event Click] = [Action ResetToServer()]"
+                    Visibility="{Binding HasLocalEdits, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    ToolTip="Discard local edits and restore the server value"
+                    AutomationProperties.Name="Reset system prompt" />
         </Grid>
 
         <!-- Editor with hairline frame. Focus ring is provided by the

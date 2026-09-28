@@ -54,6 +54,30 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 		|| (VariablesVm?.Variables is { } vv && !vv.SequenceEqual(Agent?.Variables ?? Array.Empty<Variable>()))
 		|| (WorkflowVm?.Nodes is { } wn && !wn.SequenceEqual(Agent?.Workflow.Nodes ?? Array.Empty<WorkflowNode>()));
 
+	/// <summary>Per-tab dirty flags. They back each editable tab's
+	/// Reset button, so it only lights up when that tab actually has
+	/// local edits to roll back.</summary>
+	public bool IsPromptDirty => (SystemPromptVm?.Prompt ?? string.Empty) != (Agent?.Prompt ?? string.Empty);
+
+	public bool IsFirstMessageDirty => (FirstMessageVm?.FirstMessage ?? string.Empty) != (Agent?.FirstMessage ?? string.Empty);
+
+	public bool IsVariablesDirty => VariablesVm?.Variables is { } vv
+		&& !vv.SequenceEqual(Agent?.Variables ?? Array.Empty<Variable>());
+
+	public bool IsWorkflowDirty => WorkflowVm?.Nodes is { } wn
+		&& !wn.SequenceEqual(Agent?.Workflow.Nodes ?? Array.Empty<WorkflowNode>());
+
+	/// <summary>Roll one editable tab back to the last server value.
+	/// Read-only tabs (Conversations, Live conversation) have no
+	/// counterpart by design.</summary>
+	public void ResetPrompt() => SystemPromptVm.ResetToServer();
+
+	public void ResetFirstMessage() => FirstMessageVm.ResetToServer();
+
+	public void ResetVariables() => VariablesVm.ResetToServer();
+
+	public void ResetWorkflow() => WorkflowVm.ResetToServer();
+
 	public AgentDetailViewModel(
 		Agent agent,
 		IElevenLabsClient client,
@@ -105,10 +129,22 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 	}
 
 	private void OnTabPropertyChanged(object? sender, PropertyChangedEventArgs e) =>
-		NotifyOfPropertyChange(nameof(IsDirty));
+		NotifyDirtyFlags();
 
 	private void OnEditCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+		NotifyDirtyFlags();
+
+	/// <summary>Re-publish every computed dirty flag. The child tab VMs
+	/// only raise their own property, so the aggregate flags (and each
+	/// tab's Reset button) need an explicit nudge on every edit.</summary>
+	private void NotifyDirtyFlags()
+	{
 		NotifyOfPropertyChange(nameof(IsDirty));
+		NotifyOfPropertyChange(nameof(IsPromptDirty));
+		NotifyOfPropertyChange(nameof(IsFirstMessageDirty));
+		NotifyOfPropertyChange(nameof(IsVariablesDirty));
+		NotifyOfPropertyChange(nameof(IsWorkflowDirty));
+	}
 
 	protected override void OnViewLoaded(object view)
 	{
@@ -335,7 +371,7 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 			WorkflowVm.RefreshFrom(snapshot);
 		}
 		NotifyOfPropertyChange(nameof(Agent));
-		NotifyOfPropertyChange(nameof(IsDirty));
+		NotifyDirtyFlags();
 	}
 }
 

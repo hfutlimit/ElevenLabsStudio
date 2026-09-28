@@ -29,11 +29,16 @@ public sealed class SystemPromptTabViewModel : ScreenBase
 			if (Set(ref _prompt, value))
 			{
 				RecomputeSuggestions();
+				NotifyOfPropertyChange(nameof(HasLocalEdits));
 			}
 		}
 	}
 
 	public Agent Agent => _agent;
+
+	/// <summary>True when the editor holds a value that differs from
+	/// the server snapshot. Drives the Reset button's visibility.</summary>
+	public bool HasLocalEdits => !string.Equals(_prompt, _agent.Prompt, StringComparison.Ordinal);
 
 	public SystemPromptTabViewModel(
 		Agent agent,
@@ -56,6 +61,10 @@ public sealed class SystemPromptTabViewModel : ScreenBase
 		}
 		RecomputeSuggestions();
 	}
+
+	/// <summary>Discard local edits and restore the last server value.
+	/// Backs the tab-level Reset button.</summary>
+	public void ResetToServer() => Prompt = _agent.Prompt;
 
 	private void RecomputeSuggestions()
 	{

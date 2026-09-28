@@ -23,9 +23,14 @@ public sealed class FirstMessageTabViewModel : ScreenBase
 			if (Set(ref _firstMessage, value))
 			{
 				RecomputeSuggestions();
+				NotifyOfPropertyChange(nameof(HasLocalEdits));
 			}
 		}
 	}
+
+	/// <summary>See SystemPromptTabViewModel.HasLocalEdits.</summary>
+	public bool HasLocalEdits =>
+		!string.Equals(_firstMessage, _agent.FirstMessage, StringComparison.Ordinal);
 
 	public FirstMessageTabViewModel(
 		Agent agent,
@@ -48,6 +53,9 @@ public sealed class FirstMessageTabViewModel : ScreenBase
 		}
 		RecomputeSuggestions();
 	}
+
+	/// <summary>See SystemPromptTabViewModel.ResetToServer.</summary>
+	public void ResetToServer() => FirstMessage = _agent.FirstMessage;
 
 	private void RecomputeSuggestions()
 	{

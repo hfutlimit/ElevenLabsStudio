@@ -145,6 +145,70 @@ public sealed class WorkflowTabViewModelTests
 		vm.SelectedNode!.Name.Should().BeEmpty();
 	}
 
+	[Fact]
+	public void Reset_restores_the_server_node_list_and_clears_the_dirty_flag()
+	{
+		var workflow = new Workflow(
+			new[]
+			{
+				new WorkflowNode("start", "start", "Greeting", 10, 20),
+				new WorkflowNode("answer", "override_agent", "Answer", 180, 20),
+			},
+			null,
+			Array.Empty<WorkflowEdge>());
+
+		var vm = new WorkflowTabViewModel(BuildAgent(workflow));
+		vm.IsDirty.Should().BeFalse();
+
+		vm.AddNode();
+		var target = vm.Nodes[1];
+		vm.SelectNodeById(target.Id);
+		vm.SelectedNodeName = "Renamed";
+
+		vm.IsDirty.Should().BeTrue("local node edits must mark the tab dirty");
+		vm.Nodes.Should().HaveCount(3);
+
+		vm.ResetToServer();
+
+		vm.Nodes.Should().HaveCount(2, "Reset must drop locally added nodes");
+		vm.Nodes.Select(n => n.Id).Should().BeEquivalentTo(new[] { "start", "answer" });
+		vm.Nodes.Should().NotContain(n => n.Name == "Renamed",
+			"Reset must also roll back renames");
+		vm.IsDirty.Should().BeFalse("Reset must clear the dirty flag");
+	}
+
+	[Fact]
+	public void Reset_tracks_the_latest_server_snapshot_not_the_construction_time_value()
+	{
+		var original = new Workflow(
+			new[] { new WorkflowNode("start", "start", "Greeting", 10, 20) },
+			null,
+			Array.Empty<WorkflowEdge>());
+		var vm = new WorkflowTabViewModel(BuildAgent(original));
+
+		// A later server push brings a second node; Reset must restore
+		// THAT value, not the snapshot the tab was constructed with.
+		var updated = new Workflow(
+			new[]
+			{
+				new WorkflowNode("start", "start", "Greeting", 10, 20),
+				new WorkflowNode("new", "custom", "Added upstream", 180, 20),
+			},
+			null,
+			Array.Empty<WorkflowEdge>());
+		vm.RefreshFrom(BuildAgent(updated));
+
+		vm.AddNode();
+		vm.IsDirty.Should().BeTrue();
+
+		vm.ResetToServer();
+
+		vm.Nodes.Should().HaveCount(2);
+		vm.Nodes.Should().Contain(n => n.Id == "new",
+			"Reset restores the latest server snapshot, not the original one");
+		vm.IsDirty.Should().BeFalse();
+	}
+
 	private static Agent BuildAgent(Workflow workflow) => new(
 		"agent_test",
 		"Test",

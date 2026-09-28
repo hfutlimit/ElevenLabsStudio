@@ -17,6 +17,7 @@ namespace ElevenLabsStudio.ViewModels.AgentDetail;
 public sealed class VariablesTabViewModel : ScreenBase
 {
     private readonly ILogger<VariablesTabViewModel> _logger;
+    private Agent _server;
 
     public BindableCollection<Variable> Variables { get; } = new();
 
@@ -32,11 +33,20 @@ public sealed class VariablesTabViewModel : ScreenBase
 
     public VariablesTabViewModel(Agent agent, ILogger<VariablesTabViewModel> logger)
     {
+        _server = agent;
         _logger = logger;
         Apply(agent);
     }
 
-    public void RefreshFrom(Agent updated) => Apply(updated);
+    public void RefreshFrom(Agent updated)
+    {
+        _server = updated;
+        Apply(updated);
+    }
+
+    /// <summary>Discard local edits and restore the last server value.
+    /// Backs the tab-level Reset button.</summary>
+    public void ResetToServer() => Apply(_server);
 
     public void AddVariable()
     {
