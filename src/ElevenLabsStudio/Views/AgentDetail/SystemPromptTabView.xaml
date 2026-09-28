@@ -14,7 +14,11 @@
          severity bar so the eye can scan the list without opening
          each row (§13). -->
 
-    <Grid>
+    <!-- Measure cap: the editor, the label row and the suggestions
+         column all share one MaxWidth so their left/right edges line up
+         and the leftover space splits evenly instead of piling up on
+         the right of a stretched editor. -->
+    <Grid MaxWidth="980" HorizontalAlignment="Center">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" MinHeight="180" />
@@ -23,8 +27,9 @@
 
         <!-- Field label row: name + count share one line, with a Reset
              action that only appears once the field diverges from the
-             server snapshot. -->
-        <Grid Grid.Row="0" Margin="2,0,2,7">
+             server snapshot. The extra bottom margin is the breathing
+             room between the header band and the editor surface. -->
+        <Grid Grid.Row="0" Margin="2,0,2,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -60,17 +65,24 @@
              App.InsetEditor trigger on IsKeyboardFocusWithin. -->
         <Border Grid.Row="1"
                 Style="{StaticResource App.InsetEditor}">
+            <!-- LineHeight lives on TextBlock, but it is an attached
+                 property, so setting it here flows into the TextBlock the
+                 control template creates inside PART_ContentHost. 22px on
+                 a 13px prompt is ~1.7x — enough air for long instruction
+                 blocks without the 1.95x look of the reference. -->
             <TextBox x:Name="Prompt"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
                      FontFamily="{StaticResource App.MonoFont}"
                      FontSize="13"
+                     TextBlock.LineHeight="22"
+                     TextBlock.LineStackingStrategy="BlockLineHeight"
                      materialDesign:HintAssist.Hint="System prompt"
                      Background="Transparent"
                      BorderThickness="0"
                      Foreground="{StaticResource App.Text}"
-                     Padding="24,22" />
+                     Padding="28,26" />
         </Border>
 
         <!-- Suggestions section, collapsed when the list is empty. -->
@@ -123,15 +135,19 @@
                                         <TextBlock Text="{Binding FieldName}"
                                                    FontWeight="Medium"
                                                    FontSize="11.5"
+                                                   LineHeight="18"
                                                    Foreground="{StaticResource App.Text}"
                                                    VerticalAlignment="Center" />
+                                        <!-- Vertical padding 1px was too tight for
+                                             9px caps and read as a smudge. -->
                                         <Border Background="#EFF1E4"
                                                 CornerRadius="4"
-                                                Padding="6,1"
-                                                Margin="9,1,0,0"
+                                                Padding="7,3"
+                                                Margin="9,0,0,0"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Severity}"
                                                        FontSize="9"
+                                                       LineHeight="12"
                                                        Foreground="#7C875F" />
                                         </Border>
                                     </StackPanel>

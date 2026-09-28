@@ -18,7 +18,13 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="300" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="300" MinWidth="240" MaxWidth="560" />
+                    <!-- Auto, not a fixed 300: with nothing selected the
+                         inspector collapses to 0 so the canvas keeps the
+                         whole row. Opening it seeds the width (the card
+                         itself declares MinWidth=300), and the
+                         GridSplitter then lets the user drag it anywhere
+                         inside the Min/Max band. -->
+                    <ColumnDefinition Width="Auto" MinWidth="0" MaxWidth="560" />
                 </Grid.ColumnDefinitions>
 
                 <Border x:Name="WorkflowCanvasFrame"
@@ -204,9 +210,13 @@
                               ShowsPreview="True"
                               Visibility="{Binding HasInspector, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                <!-- Inspector: shows the selected node or connection. -->
+                <!-- Inspector: shows the selected node or connection.
+                     MinWidth seeds the Auto column so opening it lands on a
+                     readable measure; collapsing (Visibility) then frees the
+                     whole column back to the canvas. -->
                 <Border x:Name="WorkflowInspector"
                         Grid.Column="2"
+                        MinWidth="300"
                         Margin="8,0,0,0"
                         Style="{StaticResource App.SectionCard}"
                         Padding="16"

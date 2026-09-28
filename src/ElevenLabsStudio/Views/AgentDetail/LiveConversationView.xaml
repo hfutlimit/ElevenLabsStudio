@@ -3,7 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
-    <Grid Margin="20,16,20,16">
+    <!-- VerticalAlignment=Stretch is load-bearing: Caliburn injects this
+         view into a host that does not always stretch its child, which
+         left Row 1 (the *) short and parked the slack under the
+         composer instead of feeding it to the transcript. -->
+    <Grid Margin="20,16,20,16" VerticalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -34,8 +38,12 @@
                                    Foreground="{StaticResource App.TextMuted}" />
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Style="{StaticResource App.Badge}" Margin="0,0,12,0">
+                <WrapPanel Grid.Column="1"
+                           Orientation="Horizontal"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           MaxWidth="640">
+                    <Border Style="{StaticResource App.Badge}" Margin="0,0,12,6">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
                                 <Ellipse.Style>
@@ -52,12 +60,12 @@
                             <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
                         </StackPanel>
                     </Border>
-                    <TextBlock Text="{Binding ModeText}" Margin="0,0,14,0" VerticalAlignment="Center" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
-                    <TextBlock Text="{Binding ElapsedText}" Margin="0,0,14,0" VerticalAlignment="Center" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
+                    <TextBlock Text="{Binding ModeText}" Margin="0,0,14,6" VerticalAlignment="Center" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
+                    <TextBlock Text="{Binding ElapsedText}" Margin="0,0,14,6" VerticalAlignment="Center" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
                     <Button x:Name="StartAsync"
                             Style="{StaticResource App.PrimaryButton}"
                             IsEnabled="{Binding CanStart}"
-                            Margin="0,0,6,0">
+                            Margin="0,0,6,6">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Microphone" Width="15" Height="15" Margin="0,0,6,0" />
                             <TextBlock Text="Start" />
@@ -65,21 +73,22 @@
                     </Button>
                     <Button x:Name="StopAsync"
                             Style="{StaticResource App.SecondaryButton}"
-                            IsEnabled="{Binding CanStop}">
+                            IsEnabled="{Binding CanStop}"
+                            Margin="0,0,0,6">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="StopCircleOutline" Width="15" Height="15" Margin="0,0,6,0" />
                             <TextBlock Text="End" />
                         </StackPanel>
                     </Button>
-                </StackPanel>
+                </WrapPanel>
             </Grid>
         </Border>
 
         <Grid Grid.Row="1" Margin="0,12,0,12">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="390" MinWidth="340" MaxWidth="560" />
+                <ColumnDefinition Width="390" MinWidth="300" MaxWidth="560" />
                 <ColumnDefinition Width="6" />
-                <ColumnDefinition Width="*" MinWidth="420" />
+                <ColumnDefinition Width="*" MinWidth="260" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="2"
@@ -87,15 +96,29 @@
                     BorderBrush="{StaticResource App.Line}"
                     BorderThickness="1"
                     CornerRadius="8"
-                    Padding="16,14">
+                    Padding="16,14"
+                    VerticalAlignment="Stretch"
+                    MinWidth="0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="Transcript" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" />
-                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" Text="Live" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                        <Border Grid.Column="1"
+                                Style="{StaticResource App.Badge}"
+                                Padding="7,2"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="Live"
+                                       Foreground="{StaticResource App.TextSecondary}"
+                                       FontSize="10.5"
+                                       FontWeight="SemiBold" />
+                        </Border>
                     </Grid>
                     <Grid Grid.Row="1" Margin="0,12,0,0">
                         <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -103,26 +126,29 @@
                             <ItemsControl ItemsSource="{Binding Transcript}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="{StaticResource App.SurfaceAlt}"
-                                                CornerRadius="8"
-                                                Padding="12,9"
-                                                Margin="0,0,0,8">
-                                            <StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding Speaker}"
-                                                               FontWeight="SemiBold"
-                                                               FontSize="12"
-                                                               Foreground="{StaticResource App.Text}" />
-                                                    <TextBlock Text="  ·  " Foreground="{StaticResource App.TextMuted}" FontSize="12" />
-                                                    <TextBlock Text="{Binding At, StringFormat='{}{0:HH:mm:ss}'}" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
-                                                </StackPanel>
-                                                <TextBlock Text="{Binding Text}"
-                                                           TextWrapping="Wrap"
-                                                           Margin="0,4,0,0"
+                                        <!-- Turn separation comes from rhythm,
+                                             not from a box per line: a flat
+                                             stack with generous leading reads
+                                             as one continuous conversation
+                                             instead of a pile of cards. -->
+                                        <StackPanel Margin="0,0,0,18">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Speaker}"
+                                                           FontWeight="SemiBold"
                                                            FontSize="12"
                                                            Foreground="{StaticResource App.Text}" />
+                                                <TextBlock Text="  ·  " Foreground="{StaticResource App.TextMuted}" FontSize="12" />
+                                                <TextBlock Text="{Binding At, StringFormat='{}{0:HH:mm:ss}'}"
+                                                           Foreground="{StaticResource App.TextMuted}"
+                                                           FontSize="11" />
                                             </StackPanel>
-                                        </Border>
+                                            <TextBlock Text="{Binding Text}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,3,0,0"
+                                                       FontSize="12.5"
+                                                       LineHeight="20"
+                                                       Foreground="{StaticResource App.Text}" />
+                                        </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -170,9 +196,13 @@
                     BorderThickness="1"
                     CornerRadius="8"
                     Padding="16"
-                    Margin="0,0,12,0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Stretch"
+                    MinWidth="0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0,0,4,0">
+                    <StackPanel Margin="0,0,0,8">
                         <TextBlock Text="Session" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" Margin="0,0,0,10" />
                         <Border Background="{StaticResource App.Surface}"
                                 BorderBrush="{StaticResource App.Border}"
@@ -333,6 +363,9 @@
             </Grid>
         </Border>
 
+        <!-- Audio sink for the realtime WebRTC pump. Stays 1x1 in the
+             composer row; it must keep x:Name="AudioHost" because the
+             live view model resolves it through the visual tree. -->
         <wv2:WebView2 x:Name="AudioHost"
                       Grid.Row="2"
                       Width="1"
