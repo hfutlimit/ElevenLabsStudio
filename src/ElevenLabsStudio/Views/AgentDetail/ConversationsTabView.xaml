@@ -189,13 +189,7 @@
                         <ItemsControl x:Name="Turns" Margin="10">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{StaticResource App.Surface}"
-                                            BorderBrush="{StaticResource App.Border}"
-                                            BorderThickness="1"
-                                            Margin="0,4"
-                                            Padding="12,10"
-                                            CornerRadius="8">
-                                        <StackPanel>
+                                    <StackPanel Margin="0,0,0,18">
                                             <DockPanel>
                                                 <TextBlock DockPanel.Dock="Right"
                                                            Text="{Binding At, StringFormat='{}{0:HH:mm:ss}'}"
@@ -208,12 +202,11 @@
                                             </DockPanel>
                                             <TextBlock Text="{Binding Text}"
                                                        TextWrapping="Wrap"
-                                                       FontSize="12"
-                                                       LineHeight="19"
+                                                           FontSize="12.5"
+                                                           LineHeight="20"
                                                        Foreground="{StaticResource App.Text}"
-                                                       Margin="0,5,0,0" />
-                                        </StackPanel>
-                                    </Border>
+                                                           Margin="0,3,0,0" />
+                                    </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

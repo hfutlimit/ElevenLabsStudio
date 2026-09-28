@@ -203,15 +203,15 @@
                 </TabControl.Template>
                 <TabItem Header="System Prompt">
                     <ContentControl cal:View.Model="{Binding SystemPromptVm}"
-                                    MaxWidth="900"
-                                    HorizontalAlignment="Left"
+                                    MaxWidth="980"
+                                    HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Stretch"
                                     VerticalContentAlignment="Stretch" />
                 </TabItem>
                 <TabItem Header="First Message">
                     <ContentControl cal:View.Model="{Binding FirstMessageVm}"
-                                    MaxWidth="900"
-                                    HorizontalAlignment="Left"
+                                    MaxWidth="980"
+                                    HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Stretch"
                                     VerticalContentAlignment="Stretch" />
                 </TabItem>

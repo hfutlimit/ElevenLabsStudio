@@ -18,13 +18,23 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="300" />
                     <ColumnDefinition Width="Auto" />
-                    <!-- Auto, not a fixed 300: with nothing selected the
-                         inspector collapses to 0 so the canvas keeps the
-                         whole row. Opening it seeds the width (the card
-                         itself declares MinWidth=300), and the
-                         GridSplitter then lets the user drag it anywhere
-                         inside the Min/Max band. -->
-                    <ColumnDefinition Width="Auto" MinWidth="0" MaxWidth="560" />
+                    <!-- GridSplitter writes a local Width when dragged.
+                         Collapse via constraints so that width is both
+                         hidden on close and retained for reopening. -->
+                    <ColumnDefinition Width="300">
+                        <ColumnDefinition.Style>
+                            <Style TargetType="ColumnDefinition">
+                                <Setter Property="MinWidth" Value="240" />
+                                <Setter Property="MaxWidth" Value="560" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasInspector}" Value="False">
+                                        <Setter Property="MinWidth" Value="0" />
+                                        <Setter Property="MaxWidth" Value="0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ColumnDefinition.Style>
+                    </ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
                 <Border x:Name="WorkflowCanvasFrame"
@@ -210,13 +220,9 @@
                               ShowsPreview="True"
                               Visibility="{Binding HasInspector, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-                <!-- Inspector: shows the selected node or connection.
-                     MinWidth seeds the Auto column so opening it lands on a
-                     readable measure; collapsing (Visibility) then frees the
-                     whole column back to the canvas. -->
+                <!-- The column owns size constraints and collapse behavior. -->
                 <Border x:Name="WorkflowInspector"
                         Grid.Column="2"
-                        MinWidth="300"
                         Margin="8,0,0,0"
                         Style="{StaticResource App.SectionCard}"
                         Padding="16"

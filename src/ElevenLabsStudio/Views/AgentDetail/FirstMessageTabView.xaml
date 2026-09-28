@@ -10,10 +10,9 @@
          header + count and never actually rendered the collection;
          review §3 + §11 close that gap here too. -->
 
-    <!-- Shares the 980px measure cap with SystemPromptTabView so the
-         header, the editor and the suggestions line up on both edges
-         and the slack splits evenly instead of hanging off the right. -->
-    <Grid MaxWidth="980" HorizontalAlignment="Center">
+    <!-- The parent owns the measure cap; the field fills that column
+         even when the greeting is short or empty. -->
+    <Grid HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" MinHeight="120" />

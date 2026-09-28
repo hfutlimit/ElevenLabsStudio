@@ -14,11 +14,9 @@
          severity bar so the eye can scan the list without opening
          each row (§13). -->
 
-    <!-- Measure cap: the editor, the label row and the suggestions
-         column all share one MaxWidth so their left/right edges line up
-         and the leftover space splits evenly instead of piling up on
-         the right of a stretched editor. -->
-    <Grid MaxWidth="980" HorizontalAlignment="Center">
+    <!-- AgentDetailView owns the centered measure cap. Stretch this
+         entire column so the editor width does not depend on its text. -->
+    <Grid HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" MinHeight="180" />
@@ -65,11 +63,8 @@
              App.InsetEditor trigger on IsKeyboardFocusWithin. -->
         <Border Grid.Row="1"
                 Style="{StaticResource App.InsetEditor}">
-            <!-- LineHeight lives on TextBlock, but it is an attached
-                 property, so setting it here flows into the TextBlock the
-                 control template creates inside PART_ContentHost. 22px on
-                 a 13px prompt is ~1.7x — enough air for long instruction
-                 blocks without the 1.95x look of the reference. -->
+            <!-- Inherited text-layout properties set a 22px line height
+                 for the 13px prompt, keeping long instructions readable. -->
             <TextBox x:Name="Prompt"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"

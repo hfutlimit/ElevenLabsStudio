@@ -20,29 +20,22 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="1.35*" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="Live conversation"
                                FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource App.Text}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <TextBlock Text="{Binding AgentName}"
-                                   FontSize="12"
-                                   Foreground="{StaticResource App.TextSecondary}" />
-                        <TextBlock Text="  ·  " Foreground="{StaticResource App.TextMuted}" FontSize="12" />
-                        <TextBlock Text="{Binding AgentId}"
-                                   FontSize="12"
-                                   FontFamily="Consolas, Cascadia Mono, monospace"
-                                   Foreground="{StaticResource App.TextMuted}" />
-                    </StackPanel>
+                    <TextBlock Margin="0,4,12,0"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource App.TextSecondary}"><Run Text="{Binding AgentName}" /><Run Text=" · " /><Run Text="{Binding AgentId}" FontFamily="{StaticResource App.MonoFont}" /></TextBlock>
                 </StackPanel>
                 <WrapPanel Grid.Column="1"
                            Orientation="Horizontal"
                            VerticalAlignment="Center"
-                           HorizontalAlignment="Right"
-                           MaxWidth="640">
+                           HorizontalAlignment="Stretch">
                     <Border Style="{StaticResource App.Badge}" Margin="0,0,12,6">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
@@ -86,7 +79,10 @@
 
         <Grid Grid.Row="1" Margin="0,12,0,12">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="390" MinWidth="300" MaxWidth="560" />
+                <!-- Star widths continue to adapt after splitter dragging,
+                     unlike a fixed pixel column. Together the minima fit
+                     the expanded sidebar at the shell's minimum width. -->
+                <ColumnDefinition Width="0.8*" MinWidth="260" MaxWidth="390" />
                 <ColumnDefinition Width="6" />
                 <ColumnDefinition Width="*" MinWidth="260" />
             </Grid.ColumnDefinitions>
@@ -172,6 +168,8 @@
                                 <TextBlock Text="Start a conversation to see live messages here."
                                            Margin="0,4,0,0"
                                            HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
                                            FontSize="11"
                                            Foreground="{StaticResource App.TextMuted}" />
                             </StackPanel>
