@@ -2,15 +2,18 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Shell;
 using Caliburn.Micro;
 
-namespace ElevenLabsStudio;
+namespace ElevenLabsStudio.Views;
 
 public partial class ShellView : Window
 {
 	public ShellView()
 	{
 		InitializeComponent();
+		WindowWorkArea.FitToCursorMonitor(this);
+		ApplyFrameShadow();
 
 		SidebarToggle.Click += (_, _) => ToggleSidebar();
 		Minimize.Click += (_, _) => WindowState = WindowState.Minimized;
@@ -20,6 +23,7 @@ public partial class ShellView : Window
 		{
 			UpdateMaximizeIcon();
 			KeepMaximizedContentInsideWorkArea();
+			ApplyFrameShadow();
 		};
 		Closing += OnClosing;
 	}
@@ -107,6 +111,33 @@ public partial class ShellView : Window
 		MaximizeIcon.Kind = WindowState == WindowState.Maximized
 			? MaterialDesignThemes.Wpf.PackIconKind.WindowRestore
 			: MaterialDesignThemes.Wpf.PackIconKind.WindowMaximize;
+	}
+
+	/// <summary>
+	/// A 1px glass frame is what makes DWM paint the system drop shadow
+	/// around this borderless window. Zero while maximized, so the shadow
+	/// and that glass edge do not sit inside the work area.
+	/// </summary>
+	internal static Thickness FrameShadowThickness(WindowState state) =>
+		state == WindowState.Maximized ? new Thickness(0) : new Thickness(1);
+
+	private void ApplyFrameShadow()
+	{
+		var thickness = FrameShadowThickness(WindowState);
+		var chrome = WindowChrome.GetWindowChrome(this);
+		if (chrome is not null && !chrome.IsFrozen && chrome.GlassFrameThickness == thickness)
+		{
+			return;
+		}
+
+		WindowChrome.SetWindowChrome(this, new WindowChrome
+		{
+			CaptionHeight = 56,
+			ResizeBorderThickness = new Thickness(6),
+			CornerRadius = new CornerRadius(0),
+			GlassFrameThickness = thickness,
+			UseAeroCaptionButtons = false,
+		});
 	}
 
 	/// <summary>

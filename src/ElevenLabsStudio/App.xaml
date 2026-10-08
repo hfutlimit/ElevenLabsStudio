@@ -16,7 +16,7 @@
 				<ResourceDictionary Source="Themes/DesignSystem.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- App-level converters used by Views. -->
+            <local:AppBootstrapper x:Key="bootstrapper" />
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
         </ResourceDictionary>

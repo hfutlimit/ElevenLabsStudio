@@ -1,4 +1,5 @@
 using System.Windows;
+using ElevenLabsStudio.Views;
 using ElevenLabsStudio.Views.AgentDetail;
 using ElevenLabsStudio.Views.Agents;
 using FluentAssertions;

@@ -18,6 +18,18 @@ namespace ElevenLabsStudio.UnitTests.Views;
 public sealed class HarmonyLayoutRegressionTests
 {
 	[Theory]
+	[InlineData(1080, 600, 400, 80, true)]
+	[InlineData(1080, 200, 400, 80, false)]
+	[InlineData(500, 0, 500, 0, false)]
+	[InlineData(1000, 560, 400, 20, true)]
+	public void Transcript_follows_new_messages_only_while_the_reader_is_at_the_bottom(
+		double extent, double offset, double viewport, double growth, bool follow)
+	{
+		LiveConversationView.ShouldFollowTranscript(extent, offset, viewport, growth)
+			.Should().Be(follow);
+	}
+
+	[Theory]
 	[InlineData(698, 544)]
 	[InlineData(1056, 720)]
 	public Task Switching_tabs_keeps_the_tab_strip_and_content_bounds_stable(int width, int height) => WpfTestHost.RunAsync(() =>

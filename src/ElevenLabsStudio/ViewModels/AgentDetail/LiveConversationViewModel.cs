@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using System.Collections.Specialized;
 using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
@@ -18,6 +19,7 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private readonly IClockService _clock;
 	private readonly ILogger<LiveConversationViewModel> _logger;
 	private readonly IWindowManager? _windows;
+	private readonly IDynamicVariableStore? _variableStore;
 	private readonly Dictionary<string, DynamicVariableEntry[]> _scenarioValues = new(StringComparer.Ordinal);
 	private IRealtimeConversationSession? _session;
 	private IDisposable? _elapsedTimer;
@@ -40,7 +42,8 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		IDialogService dialog,
 		IClockService clock,
 		ILogger<LiveConversationViewModel> logger,
-		IWindowManager? windows = null)
+		IWindowManager? windows = null,
+		IDynamicVariableStore? variableStore = null)
 	{
 		_agent = agent;
 		_client = client;
@@ -48,6 +51,7 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		_clock = clock;
 		_logger = logger;
 		_windows = windows;
+		_variableStore = variableStore;
 		Transcript.CollectionChanged += OnTranscriptCollectionChanged;
 		_selectedVariableScenario = VariableScenarios[0];
 		LoadScenarioVariables(_selectedVariableScenario);
@@ -93,17 +97,21 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	{
 		if (!CanStart || _windows is null) return;
 		var scenario = SelectedVariableScenario;
-		var editor = new DynamicVariablesDialogViewModel(scenario.DisplayName, DynamicVariables)
-		{
-			BranchId = BranchId,
-			Environment = Environment,
-		};
+		var editor = new DynamicVariablesDialogViewModel(scenario.DisplayName, DynamicVariables);
 		if (await _windows.ShowDialogAsync(editor) != true || editor.Result is null
 			|| _disposed || !CanStart || SelectedVariableScenario != scenario) return;
 		DynamicVariables.Clear();
 		DynamicVariables.AddRange(editor.Result.Select(v => new DynamicVariableEntry(v.Key, v.Value)));
-		BranchId = editor.BranchId;
-		Environment = editor.Environment;
+		_scenarioValues[scenario.Key] = DynamicVariables
+			.Select(v => new DynamicVariableEntry(v.Key, v.Value)).ToArray();
+		try
+		{
+			_variableStore?.Save(scenario.Key, _scenarioValues[scenario.Key]);
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			_logger.LogWarning(ex, "Could not save dynamic variables for scenario {Scenario}", scenario.Key);
+		}
 	}
 
 	public RealtimeConversationStatus Status
@@ -114,6 +122,7 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 			if (!Set(ref _status, value)) return;
 			NotifyOfPropertyChange(nameof(StatusText));
 			NotifyOfPropertyChange(nameof(IsConnected));
+			NotifyOfPropertyChange(nameof(ShowConnectionStatus));
 			NotifyOfPropertyChange(nameof(CanStart));
 			NotifyOfPropertyChange(nameof(CanStop));
 		}
@@ -123,11 +132,18 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	{
 		RealtimeConversationStatus.Disconnected => "Disconnected",
 		RealtimeConversationStatus.Connecting => "Connecting",
-		RealtimeConversationStatus.Connected => "Connected",
+		RealtimeConversationStatus.Connected => "In call",
 		RealtimeConversationStatus.Disconnecting => "Disconnecting",
 		RealtimeConversationStatus.Failed => "Failed",
 		_ => "Unknown",
 	};
+
+	/// <summary>
+	/// Idle is not a connection failure. "Disconnected" after a normal
+	/// goodbye reads as a dropped call, so the badge stays hidden until
+	/// a session is actually starting, live, ending, or failed.
+	/// </summary>
+	public bool ShowConnectionStatus => Status != RealtimeConversationStatus.Disconnected;
 
 	public RealtimeConversationMode Mode
 	{
@@ -136,8 +152,12 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		{
 			if (!Set(ref _mode, value)) return;
 			NotifyOfPropertyChange(nameof(ModeText));
+			NotifyOfPropertyChange(nameof(ShowMode));
 		}
 	}
+
+	public bool ShowMode =>
+		Mode is RealtimeConversationMode.Listening or RealtimeConversationMode.Speaking;
 
 	public string ModeText => Mode switch
 	{
@@ -358,10 +378,25 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 			DynamicVariables.AddRange(saved.Select(v => new DynamicVariableEntry(v.Key, v.Value)));
 			return;
 		}
+
+		IReadOnlyList<DynamicVariableEntry>? persisted = null;
+		if (_variableStore?.TryLoad(scenario.Key, out var loaded) == true)
+			persisted = loaded;
+		var savedByKey = persisted?
+			.GroupBy(v => v.Key, StringComparer.Ordinal)
+			.ToDictionary(g => g.Key, g => g.Last().Value, StringComparer.Ordinal);
+		var seen = new HashSet<string>(StringComparer.Ordinal);
 		foreach (var variable in scenario.Variables)
 		{
-			DynamicVariables.Add(new DynamicVariableEntry(variable.Key, variable.Value?.ToString() ?? string.Empty));
+			seen.Add(variable.Key);
+			var value = savedByKey is not null && savedByKey.TryGetValue(variable.Key, out var stored)
+				? stored
+				: variable.Value?.ToString() ?? string.Empty;
+			DynamicVariables.Add(new DynamicVariableEntry(variable.Key, value));
 		}
+		if (savedByKey is null) return;
+		foreach (var extra in savedByKey.Where(pair => seen.Add(pair.Key)))
+			DynamicVariables.Add(new DynamicVariableEntry(extra.Key, extra.Value));
 	}
 
 	private void Subscribe(IRealtimeConversationSession session)
@@ -398,7 +433,11 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		}
 	}
 
-	private void OnModeChanged(object? sender, RealtimeConversationModeChangedEventArgs e) => Mode = e.Mode;
+	private void OnModeChanged(object? sender, RealtimeConversationModeChangedEventArgs e)
+	{
+		if (!IsConnected) return;
+		Mode = e.Mode;
+	}
 
 	private void OnTranscriptReceived(object? sender, RealtimeTranscriptEventArgs e) => Transcript.Add(e.Message);
 
@@ -410,6 +449,7 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 
 	private void OnVolumeChanged(object? sender, RealtimeConversationVolumeChangedEventArgs e)
 	{
+		if (!IsConnected) return;
 		InputVolume = Math.Clamp(e.Input, 0f, 1f);
 		OutputVolume = Math.Clamp(e.Output, 0f, 1f);
 	}
@@ -433,12 +473,20 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private void HandleDisconnected()
 	{
 		StopElapsed();
+		ClearLiveIndicators();
 		IsBusy = false;
 		Unsubscribe(_session);
 		_session = null;
 		IsMuted = false;
 		NotifyOfPropertyChange(nameof(CanStart));
 		NotifyOfPropertyChange(nameof(CanStop));
+	}
+
+	private void ClearLiveIndicators()
+	{
+		Mode = RealtimeConversationMode.Unknown;
+		InputVolume = 0f;
+		OutputVolume = 0f;
 	}
 
 	private void BeginElapsed()
@@ -450,10 +498,8 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 
 	private void UpdateElapsed()
 	{
-		if (_startedAt is { } startedAt)
-		{
-			Elapsed = _clock.Now - startedAt;
-		}
+		if (_elapsedTimer is null || _startedAt is not { } startedAt) return;
+		Elapsed = _clock.Now - startedAt;
 	}
 
 	private void StopElapsed()

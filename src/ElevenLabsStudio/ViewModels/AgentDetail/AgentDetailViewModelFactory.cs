@@ -1,6 +1,7 @@
 using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
+using ElevenLabsStudio.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -38,6 +39,7 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 	private readonly IClockService? _clock;
 	private readonly ILogger<LiveConversationViewModel>? _liveLogger;
 	private readonly IWindowManager? _windows;
+	private readonly IDynamicVariableStore? _variableStore;
 
 	public AgentDetailViewModelFactory(
 		IElevenLabsClient client,
@@ -49,7 +51,8 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 		IRealtimeConversationClient? realtime = null,
 		IClockService? clock = null,
 		ILogger<LiveConversationViewModel>? liveLogger = null,
-		IWindowManager? windows = null)
+		IWindowManager? windows = null,
+		IDynamicVariableStore? variableStore = null)
 	{
 		_client = client;
 		_suggestions = suggestions;
@@ -61,6 +64,7 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 		_clock = clock;
 		_liveLogger = liveLogger;
 		_windows = windows;
+		_variableStore = variableStore;
 	}
 
 	public AgentDetailViewModel Create(Agent agent) => new(
@@ -74,5 +78,6 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 		_realtime,
 		_clock,
 		_liveLogger,
-		_windows);
+		_windows,
+		_variableStore);
 }

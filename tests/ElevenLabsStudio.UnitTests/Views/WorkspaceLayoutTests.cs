@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Shell;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Markup;
@@ -9,6 +10,7 @@ using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.ViewModels.AgentDetail;
+using ElevenLabsStudio.Views;
 using ElevenLabsStudio.Views.AgentDetail;
 using ElevenLabsStudio.Views.Agents;
 using FluentAssertions;
@@ -57,6 +59,19 @@ public sealed class WorkspaceLayoutTests
 			VisualDescendants(canvasFrame).Should().Contain(addNode,
 				"the primary workflow action should sit directly on the canvas");
 			host.Close();
+		});
+	}
+
+	[Fact]
+	public async Task Shell_frame_keeps_a_system_shadow_until_the_window_is_maximized()
+	{
+		await RunOnStaAsync(() =>
+		{
+			var view = new ShellView();
+			WindowChrome.GetWindowChrome(view)!.GlassFrameThickness.Should().Be(new Thickness(1));
+			ShellView.FrameShadowThickness(WindowState.Maximized).Should().Be(new Thickness(0));
+			ShellView.FrameShadowThickness(WindowState.Normal).Should().Be(new Thickness(1));
+			ShellView.FrameShadowThickness(WindowState.Minimized).Should().Be(new Thickness(1));
 		});
 	}
 

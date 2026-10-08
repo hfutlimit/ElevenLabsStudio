@@ -205,17 +205,6 @@
                            FontSize="11"
                            Foreground="{StaticResource App.Ink2}"
                            VerticalAlignment="Center" />
-                <TextBlock Text="·"
-                           FontSize="11"
-                           Margin="6,0"
-                           Foreground="{StaticResource App.Ink3}"
-                           VerticalAlignment="Center" />
-                <TextBlock Text="{Binding BusyMessage, FallbackValue='Ready'}"
-                           FontSize="11"
-                           Foreground="{StaticResource App.Ink3}"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
-                           MaxWidth="180" />
             </StackPanel>
         </Border>
     </Grid>

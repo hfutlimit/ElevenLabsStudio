@@ -6,7 +6,6 @@ namespace ElevenLabsStudio.ViewModels.AgentDetail;
 public sealed class DynamicVariablesDialogViewModel : ScreenBase
 {
 	private string? _error;
-	private int _sequence;
 
 	public DynamicVariablesDialogViewModel(string scenarioName, IEnumerable<DynamicVariableEntry> variables)
 	{
@@ -16,8 +15,6 @@ public sealed class DynamicVariablesDialogViewModel : ScreenBase
 	}
 
 	public string ScenarioName { get; }
-	public string BranchId { get; set; } = string.Empty;
-	public string Environment { get; set; } = "production";
 	public BindableCollection<DynamicVariableEntry> DynamicVariables { get; } = new();
 	public IReadOnlyList<DynamicVariableEntry>? Result { get; private set; }
 	public string? Error
@@ -25,16 +22,6 @@ public sealed class DynamicVariablesDialogViewModel : ScreenBase
 		get => _error;
 		private set => Set(ref _error, value);
 	}
-
-	public void AddDynamicVariable()
-	{
-		string key;
-		do { key = $"variable_{++_sequence}"; }
-		while (DynamicVariables.Any(v => v.Key.Trim() == key));
-		DynamicVariables.Add(new DynamicVariableEntry(key, string.Empty));
-	}
-
-	public void RemoveDynamicVariable(DynamicVariableEntry variable) => DynamicVariables.Remove(variable);
 
 	public async Task SaveAsync()
 	{

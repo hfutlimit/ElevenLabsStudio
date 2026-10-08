@@ -1,4 +1,4 @@
-<Window x:Class="ElevenLabsStudio.ShellView"
+<Window x:Class="ElevenLabsStudio.Views.ShellView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -20,18 +20,18 @@
         d:DataContext="{d:DesignInstance Type=vm:ShellViewModel, IsDesignTimeCreatable=True}">
 
     <!-- Route B rebuild (see docs/prototypes/2026-09-24-redesign-review.md):
-         the window IS the surface. No outer card, no shadow, no
+         the window IS the surface. No outer card and no
          AllowsTransparency (see review §8 — the DWM composite penalty
          and the "floating dark edge while maximized" bug from §7 were
-         both downstream of that one flag). WindowChrome still owns the
-         caption bar; hairline frame + 46px title bar matches the
-         prototype. -->
+         both downstream of that one flag). The 1px glass frame is the
+         system drop shadow; ShellView clears it while maximized.
+         WindowChrome still owns the caption bar. -->
 
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="56"
                             ResizeBorderThickness="6"
                             CornerRadius="0"
-                            GlassFrameThickness="0"
+                            GlassFrameThickness="1"
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
@@ -70,12 +70,6 @@
                                    FontSize="15"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource App.Text}"><Run Text="ElevenLabs "/><Run Text="Studio" FontWeight="Normal" /></TextBlock>
-                        <TextBlock Text="api.elevenlabs.io"
-                                   FontFamily="{StaticResource App.MonoFont}"
-                                   FontSize="10"
-                                   Foreground="{StaticResource App.Ink3}"
-                                   Margin="20,1,0,0"
-                                   VerticalAlignment="Center" />
                     </StackPanel>
 
                     <!-- Caption buttons. -->

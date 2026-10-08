@@ -1,4 +1,6 @@
+using System.IO;
 using System.Text.Json;
+using ElevenLabsStudio.Services;
 using IWindowManager = Caliburn.Micro.IWindowManager;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
@@ -93,7 +95,7 @@ public sealed class LiveConversationViewModelTests
 				"caller_id_norm",
 			]);
 		vm.DynamicVariables.Single(variable => variable.Key == "lookup_status").Value.Should().Be("found");
-		vm.DynamicVariables.Single(variable => variable.Key == "contact_name").Value.Should().Be("Clinton Smith5");
+		vm.DynamicVariables.Single(variable => variable.Key == "contact_name").Value.Should().Be("Joe Messia");
 		vm.DynamicVariables.Single(variable => variable.Key == "organization_by_phone").Value.Should().Be("ZYX Sample Client - tuplus01qa");
 		vm.DynamicVariables.Single(variable => variable.Key == "client_id_by_phone").Value.Should().Be("tuplus01qa");
 		vm.DynamicVariables.Single(variable => variable.Key == "fallback_client_id").Value.Should().Be("supportteam");
@@ -147,41 +149,6 @@ public sealed class LiveConversationViewModelTests
 			variable.Key == "lookup_status" && variable.Value == "not_found");
 		vm.DynamicVariables.Should().ContainSingle(variable =>
 			variable.Key == "fallback_client_id" && variable.Value == "tuplus01qa");
-	}
-
-	[Fact]
-	public void Dynamic_variables_can_be_added_and_removed()
-	{
-		var vm = new DynamicVariablesDialogViewModel("Contact found", Array.Empty<DynamicVariableEntry>());
-		var initialCount = vm.DynamicVariables.Count;
-
-		vm.AddDynamicVariable();
-
-		vm.DynamicVariables.Should().HaveCount(initialCount + 1);
-		vm.DynamicVariables[^1].Key.Should().Be("variable_1");
-
-		vm.RemoveDynamicVariable(vm.DynamicVariables[^1]);
-
-		vm.DynamicVariables.Should().HaveCount(initialCount);
-	}
-
-	[Fact]
-	public void Added_dynamic_variable_keys_stay_unique_after_a_middle_row_is_removed()
-	{
-		var client = Substitute.For<IRealtimeConversationClient>();
-		var vm = new DynamicVariablesDialogViewModel("Contact found", Array.Empty<DynamicVariableEntry>());
-		vm.DynamicVariables.Clear();
-
-		vm.AddDynamicVariable();
-		vm.AddDynamicVariable();
-		vm.RemoveDynamicVariable(vm.DynamicVariables[0]);
-
-		// Count + 1 handed "variable_1" straight back here, and
-		// CreateOptions then refused the whole session as a duplicate.
-		vm.AddDynamicVariable();
-
-		vm.DynamicVariables.Select(variable => variable.Key)
-			.Should().OnlyHaveUniqueItems();
 	}
 
 	[Fact]
@@ -281,6 +248,7 @@ public sealed class LiveConversationViewModelTests
 		session.RaiseTranscript("agent", "Welcome");
 
 		vm.Status.Should().Be(RealtimeConversationStatus.Connected);
+		vm.StatusText.Should().Be("In call");
 		vm.ConversationId.Should().Be("conv_123");
 		vm.Mode.Should().Be(RealtimeConversationMode.Speaking);
 		vm.Transcript.Should().ContainSingle(turn => turn.Text == "Welcome");
@@ -304,12 +272,75 @@ public sealed class LiveConversationViewModelTests
 		vm.IsConnected.Should().BeFalse();
 	}
 
-	private static LiveConversationViewModel NewViewModel(IRealtimeConversationClient client) => new(
+	[Fact]
+	public async Task Session_end_clears_listening_volume_and_the_idle_status()
+	{
+		var session = new FakeSession();
+		var client = Substitute.For<IRealtimeConversationClient>();
+		client.StartAsync(Arg.Any<RealtimeConversationOptions>(), Arg.Any<CancellationToken>())
+			.Returns(session);
+		var vm = NewViewModel(client);
+		await vm.StartAsync();
+		session.RaiseStatus(RealtimeConversationStatus.Connected, "conv_123");
+		session.RaiseMode(RealtimeConversationMode.Listening);
+		session.RaiseVolume(0.42f, 0.87f);
+		vm.ShowConnectionStatus.Should().BeTrue();
+		vm.ShowMode.Should().BeTrue();
+		vm.IsConnected.Should().BeTrue();
+
+		session.RaiseStatus(RealtimeConversationStatus.Disconnected, "conv_123");
+
+		vm.Mode.Should().Be(RealtimeConversationMode.Unknown);
+		vm.ShowMode.Should().BeFalse();
+		vm.InputVolume.Should().Be(0f);
+		vm.OutputVolume.Should().Be(0f);
+		vm.ShowConnectionStatus.Should().BeFalse();
+		vm.IsConnected.Should().BeFalse();
+		vm.Elapsed.Should().Be(TimeSpan.Zero);
+	}
+
+	[Fact]
+	public async Task Saved_parameters_reload_from_the_json_file_after_restart()
+	{
+		var path = Path.Combine(Path.GetTempPath(), "els-vars-" + Guid.NewGuid().ToString("n") + ".json");
+		var store = new JsonDynamicVariableStore(path);
+		var windows = Substitute.For<IWindowManager>();
+		windows.ShowDialogAsync(Arg.Any<object>()).Returns(async call =>
+		{
+			var editor = (DynamicVariablesDialogViewModel)call.ArgAt<object>(0);
+			editor.DynamicVariables.Single(v => v.Key == "contact_name").Value = "Saved Name";
+			await editor.SaveAsync();
+			return (bool?)true;
+		});
+		var client = Substitute.For<IRealtimeConversationClient>();
+		try
+		{
+			using (var vm = NewViewModel(client, windows, store))
+			{
+				await vm.EditDynamicVariablesAsync();
+			}
+
+			using var reloaded = NewViewModel(Substitute.For<IRealtimeConversationClient>(), variables: store);
+			reloaded.DynamicVariables.Single(v => v.Key == "contact_name").Value.Should().Be("Saved Name");
+			reloaded.DynamicVariables.Single(v => v.Key == "lookup_status").Value.Should().Be("found");
+		}
+		finally
+		{
+			if (File.Exists(path)) File.Delete(path);
+		}
+	}
+
+	private static LiveConversationViewModel NewViewModel(
+		IRealtimeConversationClient client,
+		IWindowManager? windows = null,
+		IDynamicVariableStore? variables = null) => new(
 		SampleAgent(),
 		client,
 		Substitute.For<IDialogService>(),
 		new ManualClockService(),
-		NullLogger<LiveConversationViewModel>.Instance);
+		NullLogger<LiveConversationViewModel>.Instance,
+		windows,
+		variables);
 
 	private sealed class FakeSession : IRealtimeConversationSession
 	{
@@ -351,6 +382,9 @@ public sealed class LiveConversationViewModelTests
 
 		public void RaiseMode(RealtimeConversationMode mode) =>
 			ModeChanged?.Invoke(this, new RealtimeConversationModeChangedEventArgs(mode));
+
+		public void RaiseVolume(float input, float output) =>
+			VolumeChanged?.Invoke(this, new RealtimeConversationVolumeChangedEventArgs(input, output));
 
 		public void RaiseTranscript(string speaker, string text) =>
 			TranscriptReceived?.Invoke(this, new RealtimeTranscriptEventArgs(

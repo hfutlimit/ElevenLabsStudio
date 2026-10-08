@@ -6,6 +6,7 @@ using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.Events;
 using ElevenLabsStudio.Core.Exceptions;
 using ElevenLabsStudio.Core.MVVM;
+using ElevenLabsStudio.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -89,7 +90,8 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 		IRealtimeConversationClient? realtime = null,
 		IClockService? clock = null,
 		ILogger<LiveConversationViewModel>? liveLogger = null,
-		IWindowManager? windows = null)
+		IWindowManager? windows = null,
+		IDynamicVariableStore? variableStore = null)
 	{
 		Agent = agent;
 		_client = client;
@@ -111,7 +113,8 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 				dialog,
 				clock,
 				liveLogger ?? NullLogger<LiveConversationViewModel>.Instance,
-				windows);
+				windows,
+				variableStore);
 		}
 
 		// IsDirty is a computed aggregate over the four editable tabs, but

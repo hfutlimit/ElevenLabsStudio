@@ -25,7 +25,7 @@
                     </StackPanel>
                 </Button>
                 <Button x:Name="StopAsync"
-                        Style="{StaticResource App.SecondaryButton}"
+                        Style="{StaticResource App.DangerButton}"
                         IsEnabled="{Binding CanStop}"
                         Margin="0,0,0,6">
                     <StackPanel Orientation="Horizontal">
@@ -34,7 +34,8 @@
                     </StackPanel>
                 </Button>
 
-                <Border Style="{StaticResource App.Badge}" Margin="12,0,12,6">
+                <Border Style="{StaticResource App.Badge}" Margin="12,0,12,6"
+                        Visibility="{Binding ShowConnectionStatus, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal">
                         <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
                             <Ellipse.Style>
@@ -51,8 +52,10 @@
                         <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
                     </StackPanel>
                 </Border>
-                <TextBlock Text="{Binding ModeText}" Margin="0,0,14,6" VerticalAlignment="Center" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
-                <TextBlock Text="{Binding ElapsedText}" Margin="0,0,14,6" VerticalAlignment="Center" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
+                <TextBlock Text="{Binding ModeText}" Margin="0,0,14,6" VerticalAlignment="Center" Foreground="{StaticResource App.TextSecondary}" FontSize="11"
+                           Visibility="{Binding ShowMode, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                <TextBlock Text="{Binding ElapsedText}" Margin="0,0,14,6" VerticalAlignment="Center" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{StaticResource App.TextSecondary}" FontSize="11"
+                           Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}" />
             </WrapPanel>
         </Border>
 
@@ -69,6 +72,11 @@
                  tab, which is what made switching tabs look like a
                  resize. -->
             <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="Scenario"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"
+                           FontSize="12"
+                           Foreground="{StaticResource App.Ink2}" />
                 <ComboBox ItemsSource="{Binding VariableScenarios}"
                           SelectedItem="{Binding SelectedVariableScenario, Mode=TwoWay}"
                           DisplayMemberPath="DisplayName" IsEnabled="{Binding CanStart}"
@@ -108,7 +116,8 @@
                         <Border
                                 Style="{StaticResource App.Badge}"
                                 Padding="7,2"
-                                VerticalAlignment="Center">
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="Live"
                                        Foreground="{StaticResource App.TextSecondary}"
                                        FontSize="10.5"
@@ -117,7 +126,11 @@
                         </StackPanel>
                     </Grid>
                     <Grid Grid.Row="1" Margin="0,12,0,0">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                        <ScrollViewer x:Name="TranscriptScroll"
+                                      Style="{StaticResource App.ScrollViewer}"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      ScrollChanged="OnTranscriptScrollChanged"
                                       Visibility="{Binding HasTranscript, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <ItemsControl ItemsSource="{Binding Transcript}">
                                 <ItemsControl.ItemTemplate>
