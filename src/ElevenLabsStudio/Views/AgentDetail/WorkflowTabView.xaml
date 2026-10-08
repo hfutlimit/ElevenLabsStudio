@@ -164,7 +164,8 @@
 
                                                     <DockPanel Grid.Row="0">
                                                         <Button DockPanel.Dock="Right"
-                                                                Click="RemoveCanvasNode_Click"
+                                                                cal:Message.Attach="[Event Click] = [Action RemoveBoardNode($dataContext)]"
+                                                                cal:Action.TargetWithoutContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 Tag="{Binding Id}"
                                                                 Style="{StaticResource App.IconButton}"
                                                                 Width="26"

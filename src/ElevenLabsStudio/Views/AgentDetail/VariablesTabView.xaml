@@ -60,9 +60,14 @@
                 <DataGridTemplateColumn Header="" Width="56">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
+                            <!-- Declared, not handled in code-behind: the row's
+                                 Variable arrives as $dataContext and the
+                                 action is resolved against the tab's view
+                                 model, so the View never reaches into
+                                 VariablesTabViewModel itself. -->
                             <Button
-                                    Click="RemoveVariable_Click"
-                                    Tag="{Binding}"
+                                    cal:Message.Attach="[Event Click] = [Action RemoveVariable($dataContext)]"
+                                    cal:Action.TargetWithoutContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource App.IconButton}"
                                     Width="28" Height="28"
                                     Foreground="{StaticResource App.Danger}"

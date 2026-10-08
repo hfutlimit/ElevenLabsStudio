@@ -184,6 +184,24 @@ public sealed class WorkflowTabViewModel : ScreenBase
 		_logger.LogDebug("Removed workflow node {NodeId}", node.Id);
 	}
 
+	/// <summary>
+	/// Remove the board node behind a <see cref="WorkflowCanvasNode"/>.
+	/// <para>
+	/// The board binds to <see cref="CanvasNodes"/>, whose items are canvas
+	/// projections rather than the <see cref="WorkflowNode"/> instances this
+	/// VM owns, so the row's $dataContext arrives here as a
+	/// <see cref="WorkflowCanvasNode"/> and the lookup back to the real node
+	/// belongs here rather than in the View.
+	/// </para>
+	/// </summary>
+	public void RemoveBoardNode(WorkflowCanvasNode? node)
+	{
+		if (node is null) return;
+
+		RemoveNode(Nodes.FirstOrDefault(candidate =>
+			string.Equals(candidate.Id, node.Id, StringComparison.Ordinal)));
+	}
+
 	public IReadOnlyList<WorkflowNode> GetCurrentNodes() => Nodes.ToList();
 
 	/// <summary>Called from the board's node cards via Caliburn.</summary>

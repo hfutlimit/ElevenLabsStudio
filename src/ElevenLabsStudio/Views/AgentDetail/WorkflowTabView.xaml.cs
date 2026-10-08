@@ -149,25 +149,18 @@ public partial class WorkflowTabView : UserControl
 		}
 	}
 
+	/// <summary>
+	/// Edges are <see cref="Line"/> objects created here on the canvas, not
+	/// XAML nodes, so there is nothing to hang a Caliburn action off — this
+	/// handler is the only way they can be clicked. It routes through the
+	/// cached view model instead of re-casting <see cref="FrameworkElement.DataContext"/>,
+	/// and every other action in this view is declared in XAML.
+	/// </summary>
 	private void OnEdgeClick(object sender, MouseButtonEventArgs e)
 	{
-		if (sender is Line { Tag: string edgeId }
-			&& DataContext is WorkflowTabViewModel vm)
+		if (sender is Line { Tag: string edgeId })
 		{
-			vm.SelectEdgeById(edgeId);
+			_viewModel?.SelectEdgeById(edgeId);
 		}
-	}
-
-	private void RemoveCanvasNode_Click(object sender, RoutedEventArgs e)
-	{
-		if (sender is not Button button
-			|| button.Tag is not string nodeId
-			|| DataContext is not WorkflowTabViewModel vm)
-		{
-			return;
-		}
-
-		vm.RemoveNode(vm.Nodes.FirstOrDefault(node =>
-			string.Equals(node.Id, nodeId, StringComparison.Ordinal)));
 	}
 }
