@@ -234,9 +234,9 @@ public sealed class WorkspaceLayoutTests
 			var counter = view.FindName("FirstMessageLength").Should().BeOfType<TextBlock>().Subject;
 			var labelRow = counter.Parent.Should().BeAssignableTo<Panel>().Subject;
 			var siblings = labelRow.Children.OfType<TextBlock>().ToList();
-			siblings.Should().Contain(other => !ReferenceEquals(other, counter)
+			siblings.Should().NotContain(other => !ReferenceEquals(other, counter)
 				&& other.Text.StartsWith("First message", StringComparison.Ordinal),
-				"the field label and the character counter must share one row above the editor");
+				"the row must not restate the field name — the tab header already says it");
 
 			// The counter must be visually ABOVE the editor. Grid.GetRow
 			// of the label row < Grid.GetRow of the editor's Border.

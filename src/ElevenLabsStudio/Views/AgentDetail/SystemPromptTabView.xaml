@@ -23,30 +23,22 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Field label row: name + count share one line, with a Reset
-             action that only appears once the field diverges from the
-             server snapshot. The extra bottom margin is the breathing
-             room between the header band and the editor surface. -->
+        <!-- Meta row. The tab header already says "System Prompt", so
+             repeating it here was noise; the character count takes the
+             left edge where the title used to sit, and Reset stays on
+             the right so the row still reads as left-info / right-action. -->
         <Grid Grid.Row="0" Margin="2,0,2,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="System prompt"
-                       FontSize="12.5"
-                       FontWeight="SemiBold"
-                       Foreground="{StaticResource App.Text}"
-                       VerticalAlignment="Center" />
             <TextBlock x:Name="PromptLength"
-                       Grid.Column="1"
                        Text="0 chars"
                        FontFamily="Consolas, Cascadia Mono, monospace"
-                       FontSize="11"
+                       FontSize="11.5"
                        Foreground="{StaticResource App.Ink3}"
-                       VerticalAlignment="Center"
-                       Margin="0,0,12,0" />
-            <Button Grid.Column="2"
+                       VerticalAlignment="Center" />
+            <Button Grid.Column="1"
                     Content="Reset"
                     Style="{StaticResource App.GhostButton}"
                     FontSize="11.5"

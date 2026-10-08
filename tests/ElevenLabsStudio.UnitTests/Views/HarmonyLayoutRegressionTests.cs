@@ -206,10 +206,10 @@ public sealed class HarmonyLayoutRegressionTests
 	[Theory]
 	[InlineData("System Prompt")]
 	[InlineData("First Message")]
-	public Task Editors_keep_a_stable_centered_width_when_text_changes(string header) => WpfTestHost.RunAsync(() =>
+	public Task Editors_fill_the_tab_region_and_ignore_their_own_text(string header) => WpfTestHost.RunAsync(() =>
 	{
 		var detail = new AgentDetailView();
-		WithWindow(detail, 1200, 700, host =>
+		WithWindow(detail, 1800, 700, host =>
 		{
 			var tabs = Descendants(detail).OfType<TabControl>().Single();
 			var item = tabs.Items.OfType<TabItem>().Single(tab => Equals(tab.Header, header));
@@ -220,9 +220,17 @@ public sealed class HarmonyLayoutRegressionTests
 			var editor = (TextBox)editorView.FindName(header == "System Prompt" ? "Prompt" : "FirstMessage");
 			editor.Text = "Short text";
 			host.UpdateLayout();
+
+			// No measure cap any more: the editor must span the whole tab
+			// region, not sit as a 980px column in the middle of a wide pane.
+			// A ContentPresenter's ActualWidth already excludes its own
+			// Margin, so the only slack is the editor frame's 1px border.
+			var region = (ContentPresenter)tabs.Template.FindName("PART_SelectedContentHost", tabs);
+			editor.ActualWidth.Should().BeApproximately(region.ActualWidth - 2, 2,
+				"the editor must fill the tab region instead of being capped");
+
 			var left = editor.TranslatePoint(new Point(), detail).X;
 			var right = detail.ActualWidth - left - editor.ActualWidth;
-			editor.ActualWidth.Should().BeGreaterThan(940);
 			Math.Abs(left - right).Should().BeLessThan(5);
 			var width = editor.ActualWidth;
 			editor.Text = new string('W', 500);

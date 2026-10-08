@@ -19,29 +19,20 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Label + counter + Reset (only while the field diverges
-             from the server snapshot), mirroring SystemPromptTabView.
-             The 12px bottom margin is the header-to-editor transition. -->
+        <!-- Counter + Reset, mirroring SystemPromptTabView. The tab header
+             already names the field, so it is not repeated here. -->
         <Grid Grid.Row="0" Margin="2,0,2,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="First message"
-                       FontSize="12.5"
-                       FontWeight="SemiBold"
-                       Foreground="{StaticResource App.Text}"
-                       VerticalAlignment="Center" />
             <TextBlock x:Name="FirstMessageLength"
-                       Grid.Column="1"
                        Text="0 chars"
                        FontFamily="Consolas, Cascadia Mono, monospace"
-                       FontSize="11"
+                       FontSize="11.5"
                        Foreground="{StaticResource App.Ink3}"
-                       VerticalAlignment="Center"
-                       Margin="0,0,12,0" />
-            <Button Grid.Column="2"
+                       VerticalAlignment="Center" />
+            <Button Grid.Column="1"
                     Content="Reset"
                     Style="{StaticResource App.GhostButton}"
                     FontSize="11.5"
