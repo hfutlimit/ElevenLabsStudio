@@ -168,7 +168,7 @@ public sealed class HarmonyLayoutRegressionTests
 		var source = new DynamicVariableEntry("caller_id_norm", "original");
 		var vm = new DynamicVariablesDialogViewModel("Contact found", new[] { source });
 		var view = new DynamicVariablesDialogView { DataContext = vm };
-		WithWindow(view, 580, 470, host =>
+		WithWindow(view, 800, 760, host =>
 		{
 			var value = Descendants(view).OfType<TextBox>().First(box =>
 				BindingOperations.GetBinding(box, TextBox.TextProperty)?.Path.Path == "Value");
@@ -177,6 +177,29 @@ public sealed class HarmonyLayoutRegressionTests
 			source.Value.Should().Be("original");
 			value.ActualWidth.Should().BeGreaterThan(400);
 			value.TranslatePoint(new Point(0, value.ActualHeight), host).Y.Should().BeLessThan(host.ActualHeight);
+		});
+	});
+
+	[Fact]
+	public Task Parameter_dialog_shows_most_of_the_scenario_without_scrolling() => WpfTestHost.RunAsync(() =>
+	{
+		// Contact found ships nine variables at roughly 88px each.
+		var vm = new DynamicVariablesDialogViewModel(
+			"Contact found",
+			Services.ReferenceTesterInitialWebhookVariables.Scenarios[0].Variables
+				.Select(pair => new DynamicVariableEntry(pair.Key, pair.Value?.ToString() ?? string.Empty)));
+		var view = new DynamicVariablesDialogView { DataContext = vm };
+		WithWindow(view, 800, 760, host =>
+		{
+			host.UpdateLayout();
+			var scroll = Descendants(view).OfType<ScrollViewer>()
+				.Single(viewer => viewer.VerticalScrollBarVisibility == ScrollBarVisibility.Auto);
+			scroll.ViewportHeight.Should().BeGreaterThan(400,
+				"the dialog must be tall enough to show most of a nine-variable scenario at once");
+
+			var save = (Button)view.FindName("SaveAsync");
+			save.TranslatePoint(new Point(0, save.ActualHeight), host).Y.Should().BeLessThan(host.ActualHeight,
+				"the action row must stay inside the dialog, not below its edge");
 		});
 	});
 
