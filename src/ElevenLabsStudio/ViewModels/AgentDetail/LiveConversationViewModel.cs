@@ -1,12 +1,14 @@
 using System.Globalization;
 using System.IO;
 using System.Collections.Specialized;
+using System.Windows;
 using Caliburn.Micro;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.MVVM;
 using ElevenLabsStudio.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Web.WebView2.Wpf;
 
 namespace ElevenLabsStudio.ViewModels.AgentDetail;
 
@@ -55,6 +57,41 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		Transcript.CollectionChanged += OnTranscriptCollectionChanged;
 		_selectedVariableScenario = VariableScenarios[0];
 		LoadScenarioVariables(_selectedVariableScenario);
+	}
+
+	/// <summary>
+	/// Follow the latest line when the transcript grows, but only if the
+	/// reader was already there. A thumb dragged up to reread an earlier
+	/// turn stays where it was.
+	/// </summary>
+	internal static bool ShouldFollowTranscript(
+		double extentHeight,
+		double verticalOffset,
+		double viewportHeight,
+		double extentHeightChange,
+		double slack = 24)
+	{
+		if (extentHeightChange <= 0) return false;
+		var distanceFromBottom = extentHeight - verticalOffset - viewportHeight;
+		return distanceFromBottom <= extentHeightChange + slack;
+	}
+
+	protected override async void OnViewLoaded(object view)
+	{
+		base.OnViewLoaded(view);
+		if (_disposed || view is not FrameworkElement element) return;
+		if (element.FindName("AudioHost") is not WebView2 host) return;
+		if (_client is not WebViewRealtimeConversationClient client) return;
+		try
+		{
+			await client.AttachAsync(host);
+		}
+		catch (Exception ex)
+		{
+			// Start reports a useful failure if the host never became
+			// ready (for example, missing WebView2 runtime).
+			_logger.LogWarning(ex, "Realtime audio host did not initialize for {AgentId}", AgentId);
+		}
 	}
 
 	public BindableCollection<RealtimeTranscriptMessage> Transcript { get; } = new();

@@ -9,6 +9,28 @@ namespace ElevenLabsStudio.UnitTests.ViewModels;
 
 public sealed class EditorBaselineTests
 {
+	private static FirstMessageTabViewModel FirstMessageVm(string firstMessage)
+	{
+		var suggestions = Substitute.For<ISuggestionEngine>();
+		suggestions.Analyze(Arg.Any<Agent>(), Arg.Any<AgentUpdate>())
+			.Returns(Array.Empty<Suggestion>());
+		return new FirstMessageTabViewModel(
+			Snapshot("prompt", firstMessage),
+			suggestions,
+			NullLogger<FirstMessageTabViewModel>.Instance);
+	}
+
+	private static SystemPromptTabViewModel PromptVm(string prompt)
+	{
+		var suggestions = Substitute.For<ISuggestionEngine>();
+		suggestions.Analyze(Arg.Any<Agent>(), Arg.Any<AgentUpdate>())
+			.Returns(Array.Empty<Suggestion>());
+		return new SystemPromptTabViewModel(
+			Snapshot(prompt, "first"),
+			suggestions,
+			NullLogger<SystemPromptTabViewModel>.Instance);
+	}
+
 	private static Agent Snapshot(string prompt, string firstMessage) => new(
 		"agent_1",
 		"Agent",
@@ -108,6 +130,47 @@ public sealed class EditorBaselineTests
 
 		vm.FirstMessage.Should().Be("first-b");
 		vm.HasLocalEdits.Should().BeFalse();
+	}
+
+	[Theory]
+	[InlineData(0, "App.TextMuted")]
+	[InlineData(1, "App.TextSecondary")]
+	[InlineData(450, "App.TextSecondary")]
+	[InlineData(451, "App.Accent")]
+	[InlineData(500, "App.Accent")]
+	[InlineData(501, "App.Danger")]
+	public void First_message_length_tone_follows_the_editor(int length, string brushKey)
+	{
+		var vm = FirstMessageVm(new string('a', length));
+
+		vm.FirstMessageLength.Should().Be(length.ToString("N0") + " chars");
+		vm.FirstMessageLengthBrushKey.Should().Be(brushKey);
+	}
+
+	[Fact]
+	public void First_message_length_updates_when_the_editor_changes()
+	{
+		var vm = FirstMessageVm("hi");
+
+		vm.FirstMessage = new string('a', 501);
+
+		vm.FirstMessageLength.Should().Be(501.ToString("N0") + " chars");
+		vm.FirstMessageLengthBrushKey.Should().Be("App.Danger");
+	}
+
+	[Theory]
+	[InlineData(0, "App.TextMuted")]
+	[InlineData(1, "App.TextSecondary")]
+	[InlineData(7200, "App.TextSecondary")]
+	[InlineData(7201, "App.Accent")]
+	[InlineData(8000, "App.Accent")]
+	[InlineData(8001, "App.Danger")]
+	public void Prompt_length_tone_follows_the_editor(int length, string brushKey)
+	{
+		var vm = PromptVm(new string('a', length));
+
+		vm.PromptLength.Should().Be(length.ToString("N0") + " chars");
+		vm.PromptLengthBrushKey.Should().Be(brushKey);
 	}
 
 	[Fact]

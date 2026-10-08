@@ -25,7 +25,7 @@ public sealed class HarmonyLayoutRegressionTests
 	public void Transcript_follows_new_messages_only_while_the_reader_is_at_the_bottom(
 		double extent, double offset, double viewport, double growth, bool follow)
 	{
-		LiveConversationView.ShouldFollowTranscript(extent, offset, viewport, growth)
+		LiveConversationViewModel.ShouldFollowTranscript(extent, offset, viewport, growth)
 			.Should().Be(follow);
 	}
 

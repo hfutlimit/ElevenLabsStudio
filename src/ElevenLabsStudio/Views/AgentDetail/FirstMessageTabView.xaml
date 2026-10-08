@@ -27,11 +27,27 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="FirstMessageLength"
-                       Text="0 chars"
+                       Text="{Binding FirstMessageLength, Mode=OneWay, FallbackValue='0 chars'}"
                        FontFamily="Consolas, Cascadia Mono, monospace"
                        FontSize="11.5"
-                       Foreground="{StaticResource App.Ink3}"
-                       VerticalAlignment="Center" />
+                       VerticalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource App.TextSecondary}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FirstMessageLengthBrushKey}" Value="App.TextMuted">
+                                <Setter Property="Foreground" Value="{StaticResource App.TextMuted}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding FirstMessageLengthBrushKey}" Value="App.Accent">
+                                <Setter Property="Foreground" Value="{StaticResource App.Accent}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding FirstMessageLengthBrushKey}" Value="App.Danger">
+                                <Setter Property="Foreground" Value="{StaticResource App.Danger}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <Button Grid.Column="1"
                     Content="Reset"
                     Style="{StaticResource App.GhostButton}"

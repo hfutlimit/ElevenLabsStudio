@@ -14,6 +14,8 @@ namespace ElevenLabsStudio.ViewModels.AgentDetail;
 /// </summary>
 public sealed class SystemPromptTabViewModel : ScreenBase
 {
+	public const int LengthWarnAt = 8000;
+
 	private Agent _agent;
 	private readonly ISuggestionEngine _suggestions;
 	private readonly ILogger _logger;
@@ -30,9 +32,15 @@ public sealed class SystemPromptTabViewModel : ScreenBase
 			{
 				RecomputeSuggestions();
 				NotifyOfPropertyChange(nameof(HasLocalEdits));
+				NotifyLength();
 			}
 		}
 	}
+
+	public string PromptLength => EditorLength.Text(_prompt.Length);
+
+	public string PromptLengthBrushKey =>
+		EditorLength.BrushKey(_prompt.Length, LengthWarnAt);
 
 	public Agent Agent => _agent;
 
@@ -65,6 +73,12 @@ public sealed class SystemPromptTabViewModel : ScreenBase
 	/// <summary>Discard local edits and restore the last server value.
 	/// Backs the tab-level Reset button.</summary>
 	public void ResetToServer() => Prompt = _agent.Prompt;
+
+	private void NotifyLength()
+	{
+		NotifyOfPropertyChange(nameof(PromptLength));
+		NotifyOfPropertyChange(nameof(PromptLengthBrushKey));
+	}
 
 	private void RecomputeSuggestions()
 	{

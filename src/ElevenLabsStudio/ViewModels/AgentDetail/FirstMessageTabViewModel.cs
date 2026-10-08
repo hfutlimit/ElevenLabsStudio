@@ -8,6 +8,8 @@ namespace ElevenLabsStudio.ViewModels.AgentDetail;
 
 public sealed class FirstMessageTabViewModel : ScreenBase
 {
+	public const int LengthWarnAt = 500;
+
 	private Agent _agent;
 	private readonly ISuggestionEngine _suggestions;
 	private readonly ILogger _logger;
@@ -24,9 +26,15 @@ public sealed class FirstMessageTabViewModel : ScreenBase
 			{
 				RecomputeSuggestions();
 				NotifyOfPropertyChange(nameof(HasLocalEdits));
+				NotifyLength();
 			}
 		}
 	}
+
+	public string FirstMessageLength => EditorLength.Text(_firstMessage.Length);
+
+	public string FirstMessageLengthBrushKey =>
+		EditorLength.BrushKey(_firstMessage.Length, LengthWarnAt);
 
 	/// <summary>See SystemPromptTabViewModel.HasLocalEdits.</summary>
 	public bool HasLocalEdits =>
@@ -56,6 +64,12 @@ public sealed class FirstMessageTabViewModel : ScreenBase
 
 	/// <summary>See SystemPromptTabViewModel.ResetToServer.</summary>
 	public void ResetToServer() => FirstMessage = _agent.FirstMessage;
+
+	private void NotifyLength()
+	{
+		NotifyOfPropertyChange(nameof(FirstMessageLength));
+		NotifyOfPropertyChange(nameof(FirstMessageLengthBrushKey));
+	}
 
 	private void RecomputeSuggestions()
 	{
