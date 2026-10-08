@@ -288,23 +288,6 @@ public sealed class LiveConversationViewModelTests
 	}
 
 	[Fact]
-	public async Task SendTextAsync_forwards_non_empty_message_and_clears_editor()
-	{
-		var session = new FakeSession();
-		var client = Substitute.For<IRealtimeConversationClient>();
-		client.StartAsync(Arg.Any<RealtimeConversationOptions>(), Arg.Any<CancellationToken>())
-			.Returns(session);
-		var vm = NewViewModel(client);
-		await vm.StartAsync();
-		vm.MessageText = "  hello agent  ";
-
-		await vm.SendTextAsync();
-
-		session.SentText.Should().ContainSingle().Which.Should().Be("hello agent");
-		vm.MessageText.Should().BeEmpty();
-	}
-
-	[Fact]
 	public async Task StopAsync_ends_the_session_and_returns_to_disconnected()
 	{
 		var session = new FakeSession();
@@ -332,7 +315,6 @@ public sealed class LiveConversationViewModelTests
 	{
 		public string? ConversationId { get; private set; }
 		public RealtimeConversationStatus Status { get; private set; } = RealtimeConversationStatus.Connecting;
-		public List<string> SentText { get; } = new();
 		public int StopCount { get; private set; }
 		public int DisposeCount { get; private set; }
 		public event EventHandler<RealtimeConversationStatusChangedEventArgs>? StatusChanged;
@@ -341,11 +323,9 @@ public sealed class LiveConversationViewModelTests
 		public event EventHandler<RealtimeConversationVolumeChangedEventArgs>? VolumeChanged;
 		public event EventHandler<RealtimeConversationErrorEventArgs>? Error;
 
-		public Task SendTextAsync(string text, CancellationToken ct = default)
-		{
-			SentText.Add(text);
-			return Task.CompletedTask;
-		}
+		// Text is not surfaced anywhere in the app anymore (the live session is
+		// voice only), so the test double just satisfies the session contract.
+		public Task SendTextAsync(string text, CancellationToken ct = default) => Task.CompletedTask;
 
 		public Task SetMutedAsync(bool muted, CancellationToken ct = default) => Task.CompletedTask;
 

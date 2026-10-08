@@ -207,16 +207,12 @@
                     Background="{StaticResource App.Canvas}"
                     Height="56"
                     Padding="38,0">
-                <!-- Two footer bodies share one fixed 56px row: the editor
-                     actions for every configuration tab, and the live
-                     session's text composer on New Conversation. Both are
-                     collapsed/expanded off SelectedTabIndex so switching
-                     tabs never changes the footer height. The wrapper Grid
-                     exists only because a Border takes a single child —
-                     it stacks the two in the same cell. -->
+                <!-- Agent actions. Hidden on New Conversation, where there is
+                     no agent draft to save or push — the live session is
+                     driven by voice only. The footer height is fixed, so
+                     this never resizes the pane. -->
                 <Grid>
-                    <Grid>
-                        <Grid.Style>
+                    <Grid.Style>
                         <Style TargetType="Grid">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding SelectedTabIndex}" Value="0">
@@ -225,90 +221,57 @@
                             </Style.Triggers>
                         </Style>
                     </Grid.Style>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Width="6" Height="6" Margin="0,0,9,0" VerticalAlignment="Center">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="{StaticResource App.Ink3}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDirty}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource App.Warning}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-                        <TextBlock VerticalAlignment="Center"
-                                   FontSize="11.5"
-                                   Foreground="{StaticResource App.Ink2}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="Matches the server snapshot" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDirty}" Value="True">
-                                            <Setter Property="Text" Value="Draft edits — not on the server yet" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button x:Name="SaveDraft"
-                                Style="{StaticResource App.SecondaryButton}"
-                                Margin="0,0,10,0"
-                                Content="Save draft"
-                                ToolTip="Persist current edits locally without pushing"
-                                AutomationProperties.Name="Save draft" />
-                        <Button x:Name="Push"
-                                Style="{StaticResource App.PrimaryButton}"
-                                AutomationProperties.Name="Push changes">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CloudUploadOutline"
-                                                         Width="14" Height="14"
-                                                         Margin="0,0,6,0" />
-                                <TextBlock Text="Push to server" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </Grid>
-
-                <Border DataContext="{Binding LiveConversationVm}"
-                        cal:Action.TargetWithoutContext="{Binding}"
-                        Padding="0,4">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DataContext.SelectedTabIndex, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="0">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBox Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                 MinHeight="34"
-                                 VerticalContentAlignment="Center"
-                                 ToolTip="Send a text message without leaving the live session" />
-                        <Button Grid.Column="1"
-                                cal:Message.Attach="[Event Click] = [Action SendTextAsync()]"
-                                Content="Send"
-                                Style="{StaticResource App.SecondaryButton}"
-                                Margin="8,0,0,0"
-                                IsEnabled="{Binding IsConnected}" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="6" Height="6" Margin="0,0,9,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource App.Ink3}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource App.Warning}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock VerticalAlignment="Center"
+                                       FontSize="11.5"
+                                       Foreground="{StaticResource App.Ink2}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="Matches the server snapshot" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                                                <Setter Property="Text" Value="Draft edits — not on the server yet" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="SaveDraft"
+                                    Style="{StaticResource App.SecondaryButton}"
+                                    Margin="0,0,10,0"
+                                    Content="Save draft"
+                                    ToolTip="Persist current edits locally without pushing"
+                                    AutomationProperties.Name="Save draft" />
+                            <Button x:Name="Push"
+                                    Style="{StaticResource App.PrimaryButton}"
+                                    AutomationProperties.Name="Push changes">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CloudUploadOutline"
+                                                             Width="14" Height="14"
+                                                             Margin="0,0,6,0" />
+                                    <TextBlock Text="Push to server" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </Grid>
-                </Border>
-                </Grid>
             </Border>
         </Grid>
     </Grid>

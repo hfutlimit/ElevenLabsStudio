@@ -31,7 +31,6 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private string _branchId = DefaultBranchId;
 	private string _environment = "production";
 	private InitialWebhookVariableScenario _selectedVariableScenario;
-	private string _messageText = string.Empty;
 	private TimeSpan _elapsed;
 	private bool _disposed;
 
@@ -105,12 +104,6 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		DynamicVariables.AddRange(editor.Result.Select(v => new DynamicVariableEntry(v.Key, v.Value)));
 		BranchId = editor.BranchId;
 		Environment = editor.Environment;
-	}
-
-	public string MessageText
-	{
-		get => _messageText;
-		set => Set(ref _messageText, value);
 	}
 
 	public RealtimeConversationStatus Status
@@ -302,22 +295,6 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
 			await ShowFailureAsync("Could not change microphone state", ex.Message, ex);
-		}
-	}
-
-	public async Task SendTextAsync(CancellationToken ct = default)
-	{
-		var text = MessageText.Trim();
-		if (_session is null || text.Length == 0) return;
-
-		try
-		{
-			await _session.SendTextAsync(text, ct);
-			MessageText = string.Empty;
-		}
-		catch (Exception ex) when (ex is not OperationCanceledException)
-		{
-			await ShowFailureAsync("Could not send message", ex.Message, ex);
 		}
 	}
 

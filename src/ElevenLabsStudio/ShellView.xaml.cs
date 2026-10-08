@@ -16,7 +16,11 @@ public partial class ShellView : Window
 		Minimize.Click += (_, _) => WindowState = WindowState.Minimized;
 		MaximizeRestore.Click += (_, _) => ToggleMaximized();
 		CloseWindow.Click += (_, _) => RequestClose();
-		StateChanged += (_, _) => UpdateMaximizeIcon();
+		StateChanged += (_, _) =>
+		{
+			UpdateMaximizeIcon();
+			KeepMaximizedContentInsideWorkArea();
+		};
 		Closing += OnClosing;
 	}
 
@@ -103,6 +107,46 @@ public partial class ShellView : Window
 		MaximizeIcon.Kind = WindowState == WindowState.Maximized
 			? MaterialDesignThemes.Wpf.PackIconKind.WindowRestore
 			: MaterialDesignThemes.Wpf.PackIconKind.WindowMaximize;
+	}
+
+	/// <summary>
+	/// Keep the window content inside the taskbar when maximized.
+	/// <para>
+	/// A <c>WindowStyle="None"</c> window driven by <see cref="WindowChrome"/>
+	/// is sized to the full <em>monitor</em> rectangle when maximized, not to
+	/// the work area. On a 1920x1080 screen with a 48px taskbar the window is
+	/// therefore 48px taller than anything visible, and the bottom of the
+	/// content — which is the 56px sticky action footer — sits behind the
+	/// taskbar. The composer and the Save/Push buttons simply vanish at the
+	/// bottom edge, which reads as "the input box disappeared when I
+	/// maximized". Insetting the root frame by exactly the monitor/work-area
+	/// difference puts the footer back on screen.
+	/// </para>
+	/// <para>
+	/// <see cref="SystemParameters.WorkArea"/> describes the primary monitor,
+	/// so this keeps the content visible for the common single-monitor (and
+	/// maximize-on-primary) case. A window maximized onto a secondary monitor
+	/// would need a per-monitor work-area query.
+	/// </para>
+	/// </summary>
+	private void KeepMaximizedContentInsideWorkArea()
+	{
+		if (WindowState != WindowState.Maximized)
+		{
+			RootFrame.Margin = new Thickness(0);
+			return;
+		}
+
+		var workArea = SystemParameters.WorkArea;
+		var screen = new Rect(
+			0, 0,
+			SystemParameters.PrimaryScreenWidth,
+			SystemParameters.PrimaryScreenHeight);
+		RootFrame.Margin = new Thickness(
+			Math.Max(0, workArea.Left - screen.Left),
+			Math.Max(0, workArea.Top - screen.Top),
+			Math.Max(0, screen.Right - workArea.Right),
+			Math.Max(0, screen.Bottom - workArea.Bottom));
 	}
 
 	// -- Detail pane view resolution ------------------------------------
