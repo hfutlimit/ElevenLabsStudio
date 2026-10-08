@@ -37,6 +37,7 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 	private readonly IRealtimeConversationClient? _realtime;
 	private readonly IClockService? _clock;
 	private readonly ILogger<LiveConversationViewModel>? _liveLogger;
+	private readonly IWindowManager? _windows;
 
 	public AgentDetailViewModelFactory(
 		IElevenLabsClient client,
@@ -47,7 +48,8 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 		ILogger<AgentDetailViewModel> detailLogger,
 		IRealtimeConversationClient? realtime = null,
 		IClockService? clock = null,
-		ILogger<LiveConversationViewModel>? liveLogger = null)
+		ILogger<LiveConversationViewModel>? liveLogger = null,
+		IWindowManager? windows = null)
 	{
 		_client = client;
 		_suggestions = suggestions;
@@ -58,6 +60,7 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 		_realtime = realtime;
 		_clock = clock;
 		_liveLogger = liveLogger;
+		_windows = windows;
 	}
 
 	public AgentDetailViewModel Create(Agent agent) => new(
@@ -70,5 +73,6 @@ public sealed class AgentDetailViewModelFactory : IAgentDetailViewModelFactory
 		_detailLogger,
 		_realtime,
 		_clock,
-		_liveLogger);
+		_liveLogger,
+		_windows);
 }

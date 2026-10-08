@@ -15,6 +15,16 @@
                     ItemContainerStyle="{StaticResource App.TabItem}">
         <TabItem AutomationProperties.Name="Workflow canvas" Header="Workflow canvas">
             <Grid Margin="0,12,0,0">
+                <!-- One star row, so the board is handed exactly the slot
+                     AgentDetailView reserved for this tab. The canvas sizes
+                     itself from its nodes (CanvasHeight = lowest node +
+                     height), so without a star row to bound it the board
+                     pushed the whole tab taller and the pane visibly
+                     resized between tabs. The canvas ScrollViewer now
+                     scrolls inside the slot instead of growing it. -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="300" />
                     <ColumnDefinition Width="Auto" />
@@ -39,6 +49,7 @@
 
                 <Border x:Name="WorkflowCanvasFrame"
                         Grid.Column="0"
+                        VerticalAlignment="Stretch"
                         Style="{StaticResource App.SectionCard}"
                         Background="{StaticResource App.Canvas}"
                         Padding="0"
@@ -224,6 +235,7 @@
                 <Border x:Name="WorkflowInspector"
                         Grid.Column="2"
                         Margin="8,0,0,0"
+                        VerticalAlignment="Stretch"
                         Style="{StaticResource App.SectionCard}"
                         Padding="16"
                         Visibility="{Binding HasInspector, Converter={StaticResource BooleanToVisibilityConverter}}">

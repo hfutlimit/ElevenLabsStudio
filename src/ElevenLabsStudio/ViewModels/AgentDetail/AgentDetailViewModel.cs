@@ -88,7 +88,8 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 		ILogger<AgentDetailViewModel> logger,
 		IRealtimeConversationClient? realtime = null,
 		IClockService? clock = null,
-		ILogger<LiveConversationViewModel>? liveLogger = null)
+		ILogger<LiveConversationViewModel>? liveLogger = null,
+		IWindowManager? windows = null)
 	{
 		Agent = agent;
 		_client = client;
@@ -109,7 +110,8 @@ public sealed class AgentDetailViewModel : ScreenBase, IHandle<AgentUpdatedEvent
 				realtime,
 				dialog,
 				clock,
-				liveLogger ?? NullLogger<LiveConversationViewModel>.Instance);
+				liveLogger ?? NullLogger<LiveConversationViewModel>.Instance,
+				windows);
 		}
 
 		// IsDirty is a computed aggregate over the four editable tabs, but

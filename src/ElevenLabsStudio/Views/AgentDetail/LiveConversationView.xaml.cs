@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using Caliburn.Micro;
 using ElevenLabsStudio.Services;
-using ElevenLabsStudio.ViewModels.AgentDetail;
 
 namespace ElevenLabsStudio.Views.AgentDetail;
 
@@ -31,12 +30,4 @@ public partial class LiveConversationView : UserControl
 		}
 	}
 
-	private void RemoveDynamicVariable_Click(object sender, RoutedEventArgs e)
-	{
-		if (sender is not Button button || button.Tag is not DynamicVariableEntry variable) return;
-		if (DataContext is LiveConversationViewModel vm)
-		{
-			vm.RemoveDynamicVariable(variable);
-		}
-	}
 }

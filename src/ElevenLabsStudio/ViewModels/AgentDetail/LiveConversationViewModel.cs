@@ -17,6 +17,8 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private readonly IDialogService _dialog;
 	private readonly IClockService _clock;
 	private readonly ILogger<LiveConversationViewModel> _logger;
+	private readonly IWindowManager? _windows;
+	private readonly Dictionary<string, DynamicVariableEntry[]> _scenarioValues = new(StringComparer.Ordinal);
 	private IRealtimeConversationSession? _session;
 	private IDisposable? _elapsedTimer;
 	private DateTime? _startedAt;
@@ -31,7 +33,6 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private InitialWebhookVariableScenario _selectedVariableScenario;
 	private string _messageText = string.Empty;
 	private TimeSpan _elapsed;
-	private int _dynamicVariableSequence;
 	private bool _disposed;
 
 	public LiveConversationViewModel(
@@ -39,13 +40,15 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		IRealtimeConversationClient client,
 		IDialogService dialog,
 		IClockService clock,
-		ILogger<LiveConversationViewModel> logger)
+		ILogger<LiveConversationViewModel> logger,
+		IWindowManager? windows = null)
 	{
 		_agent = agent;
 		_client = client;
 		_dialog = dialog;
 		_clock = clock;
 		_logger = logger;
+		_windows = windows;
 		Transcript.CollectionChanged += OnTranscriptCollectionChanged;
 		_selectedVariableScenario = VariableScenarios[0];
 		LoadScenarioVariables(_selectedVariableScenario);
@@ -79,24 +82,29 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 		set
 		{
 			ArgumentNullException.ThrowIfNull(value);
-			if (!Set(ref _selectedVariableScenario, value)) return;
+			if (_selectedVariableScenario == value || !CanStart) return;
+			_scenarioValues[_selectedVariableScenario.Key] = DynamicVariables
+				.Select(v => new DynamicVariableEntry(v.Key, v.Value)).ToArray();
+			Set(ref _selectedVariableScenario, value);
 			LoadScenarioVariables(value);
 		}
 	}
 
-	public void AddDynamicVariable()
+	public async Task EditDynamicVariablesAsync()
 	{
-		// A monotonically increasing counter, never Count + 1: removing
-		// a middle row used to hand the next Add the very same key back,
-		// and CreateOptions then refused the whole session with
-		// "Dynamic variable key 'variable_2' is duplicated."
-		var index = ++_dynamicVariableSequence;
-		DynamicVariables.Add(new DynamicVariableEntry($"variable_{index}", string.Empty));
-	}
-
-	public void RemoveDynamicVariable(DynamicVariableEntry? variable)
-	{
-		if (variable is not null) DynamicVariables.Remove(variable);
+		if (!CanStart || _windows is null) return;
+		var scenario = SelectedVariableScenario;
+		var editor = new DynamicVariablesDialogViewModel(scenario.DisplayName, DynamicVariables)
+		{
+			BranchId = BranchId,
+			Environment = Environment,
+		};
+		if (await _windows.ShowDialogAsync(editor) != true || editor.Result is null
+			|| _disposed || !CanStart || SelectedVariableScenario != scenario) return;
+		DynamicVariables.Clear();
+		DynamicVariables.AddRange(editor.Result.Select(v => new DynamicVariableEntry(v.Key, v.Value)));
+		BranchId = editor.BranchId;
+		Environment = editor.Environment;
 	}
 
 	public string MessageText
@@ -368,9 +376,11 @@ public sealed class LiveConversationViewModel : ScreenBase, IDisposable
 	private void LoadScenarioVariables(InitialWebhookVariableScenario scenario)
 	{
 		DynamicVariables.Clear();
-		// The collection just went back to empty, so restarting the
-		// name sequence can't collide with anything still in it.
-		_dynamicVariableSequence = 0;
+		if (_scenarioValues.TryGetValue(scenario.Key, out var saved))
+		{
+			DynamicVariables.AddRange(saved.Select(v => new DynamicVariableEntry(v.Key, v.Value)));
+			return;
+		}
 		foreach (var variable in scenario.Variables)
 		{
 			DynamicVariables.Add(new DynamicVariableEntry(variable.Key, variable.Value?.ToString() ?? string.Empty));

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using IWindowManager = Caliburn.Micro.IWindowManager;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.ViewModels.AgentDetail;
@@ -10,6 +11,56 @@ namespace ElevenLabsStudio.UnitTests.ViewModels;
 
 public sealed class LiveConversationViewModelTests
 {
+	[Theory]
+	[InlineData(true, "updated")]
+	[InlineData(false, "2601234567")]
+	public async Task Parameter_dialog_applies_only_saved_values_to_the_next_call(bool save, string expected)
+	{
+		var windows = Substitute.For<IWindowManager>();
+		var client = Substitute.For<IRealtimeConversationClient>();
+		RealtimeConversationOptions? sent = null;
+		client.StartAsync(Arg.Any<RealtimeConversationOptions>(), Arg.Any<CancellationToken>())
+			.Returns(call => { sent = call.ArgAt<RealtimeConversationOptions>(0); return new FakeSession(); });
+		windows.ShowDialogAsync(Arg.Any<object>()).Returns(async call =>
+		{
+			var editor = (DynamicVariablesDialogViewModel)call.ArgAt<object>(0);
+			editor.DynamicVariables.Single(v => v.Key == "caller_id_norm").Value = "updated";
+			if (save) await editor.SaveAsync();
+			return (bool?)save;
+		});
+		using var vm = new LiveConversationViewModel(SampleAgent(), client,
+			Substitute.For<IDialogService>(), new ManualClockService(),
+			NullLogger<LiveConversationViewModel>.Instance, windows);
+		await vm.EditDynamicVariablesAsync();
+		await vm.StartAsync();
+		sent!.DynamicVariables["caller_id_norm"].Should().Be(expected);
+	}
+
+	[Theory]
+	[InlineData("")]
+	[InlineData(" name ")]
+	public async Task Parameter_dialog_rejects_empty_or_duplicate_names(string secondKey)
+	{
+		var editor = new DynamicVariablesDialogViewModel("Contact found",
+			new[] { new DynamicVariableEntry("name", "one"), new DynamicVariableEntry(secondKey, "two") });
+		await editor.SaveAsync();
+		editor.Result.Should().BeNull();
+		editor.Error.Should().NotBeNullOrEmpty();
+	}
+
+	[Fact]
+	public void Switching_contact_scenarios_retains_each_scenarios_edited_values()
+	{
+		var vm = NewViewModel(Substitute.For<IRealtimeConversationClient>());
+		vm.DynamicVariables.Single(v => v.Key == "caller_id_norm").Value = "111";
+		vm.SelectedVariableScenario = vm.VariableScenarios[1];
+		vm.DynamicVariables.Single(v => v.Key == "caller_id_norm").Value = "222";
+		vm.SelectedVariableScenario = vm.VariableScenarios[0];
+		vm.DynamicVariables.Single(v => v.Key == "caller_id_norm").Value.Should().Be("111");
+		vm.SelectedVariableScenario = vm.VariableScenarios[1];
+		vm.DynamicVariables.Single(v => v.Key == "caller_id_norm").Value.Should().Be("222");
+	}
+
 	private static Agent SampleAgent() => new(
 		AgentId: "agent_live",
 		Name: "Live agent",
@@ -101,7 +152,7 @@ public sealed class LiveConversationViewModelTests
 	[Fact]
 	public void Dynamic_variables_can_be_added_and_removed()
 	{
-		var vm = NewViewModel(Substitute.For<IRealtimeConversationClient>());
+		var vm = new DynamicVariablesDialogViewModel("Contact found", Array.Empty<DynamicVariableEntry>());
 		var initialCount = vm.DynamicVariables.Count;
 
 		vm.AddDynamicVariable();
@@ -118,7 +169,7 @@ public sealed class LiveConversationViewModelTests
 	public void Added_dynamic_variable_keys_stay_unique_after_a_middle_row_is_removed()
 	{
 		var client = Substitute.For<IRealtimeConversationClient>();
-		var vm = NewViewModel(client);
+		var vm = new DynamicVariablesDialogViewModel("Contact found", Array.Empty<DynamicVariableEntry>());
 		vm.DynamicVariables.Clear();
 
 		vm.AddDynamicVariable();

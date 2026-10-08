@@ -1,0 +1,73 @@
+<UserControl x:Class="ElevenLabsStudio.Views.AgentDetail.DynamicVariablesDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:cal="http://www.caliburnproject.org"
+             Width="560" Height="440" Background="{StaticResource App.Canvas}">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <DockPanel Margin="0,0,0,16">
+            <Button DockPanel.Dock="Right" x:Name="AddDynamicVariable" Content="Add variable"
+                    Style="{StaticResource App.SecondaryButton}" />
+            <StackPanel>
+                <TextBlock Text="{Binding ScenarioName}" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Text="Parameters for the next conversation" Margin="0,4,0,0"
+                           Foreground="{StaticResource App.TextMuted}" FontSize="12" />
+            </StackPanel>
+        </DockPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+            <ItemsControl ItemsSource="{Binding DynamicVariables}" Margin="0,0,8,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     FontFamily="{StaticResource App.MonoFont}" FontSize="11"
+                                     MinHeight="32" Padding="8,5" Margin="0,0,8,5"
+                                     ToolTip="Variable name" AutomationProperties.Name="Variable name" />
+                            <Button Grid.Column="1" Content="Remove" Style="{StaticResource App.GhostButton}"
+                                    cal:Action.TargetWithoutContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    cal:Message.Attach="[Event Click] = [Action RemoveDynamicVariable($dataContext)]" />
+                            <TextBox Grid.Row="1" Grid.ColumnSpan="2"
+                                     Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     MinHeight="38" Padding="9,7" TextWrapping="Wrap"
+                                     ToolTip="{Binding Value}" AutomationProperties.Name="Variable value" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+                <Expander Header="Advanced session settings" Margin="0,8,8,0">
+                    <StackPanel Margin="0,8,0,0">
+                        <TextBlock Text="Branch ID" FontSize="12" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding BranchId, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}" MinHeight="36" />
+                        <TextBlock Text="Environment" FontSize="12" Margin="0,12,0,4" />
+                        <TextBox Text="{Binding Environment, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}" MinHeight="36" />
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+        <TextBlock Grid.Row="2" Text="{Binding Error}" Foreground="{StaticResource App.Danger}"
+                   TextWrapping="Wrap" Margin="0,8,0,0" />
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="CancelAsync" Content="Cancel" IsCancel="True"
+                    Style="{StaticResource App.SecondaryButton}" Margin="0,0,10,0" />
+            <Button x:Name="SaveAsync" Content="Save parameters" Style="{StaticResource App.PrimaryButton}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

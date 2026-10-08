@@ -76,6 +76,10 @@ docs/screenshots/*.png
 *.application
 *.xbap
 *.exe.mdb
-*.dll.mdbpush.log
+*.dll.mdb
+push.log
 _e2e_dumps/
 _live_probe*
+
+# Recoverable-delete landing dir used by the local tooling
+.trash/

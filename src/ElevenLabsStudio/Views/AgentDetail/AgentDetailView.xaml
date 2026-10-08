@@ -43,13 +43,13 @@
             <!-- 1. Header: name (20px 650) + id (mono ink3), meta row
                      with sync pip + server stamp + voice id. Icon
                      actions live on the far right, not the footer. -->
-            <Grid Grid.Row="0" Margin="38,30,38,22">
+            <Grid Grid.Row="0" Margin="38,18,38,14">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="AGENT CONFIGURATION"
+                    <TextBlock Text="AGENT WORKSPACE"
                                Style="{StaticResource App.Eyebrow}"
                                FontSize="8.5"
                                Margin="0,0,0,9" />
@@ -64,62 +64,6 @@
                                    Margin="13,0,0,4"
                                    VerticalAlignment="Bottom"
                                    Foreground="{StaticResource App.Ink3}" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                        <!-- Sync state pip + label. -->
-                        <Ellipse x:Name="SyncPip"
-                                 Width="6" Height="6"
-                                 VerticalAlignment="Center">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="{StaticResource App.Ink3}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDirty}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource App.Warning}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-                        <TextBlock x:Name="SyncLabel"
-                                   FontSize="11.5"
-                                   Margin="6,0,0,0"
-                                   VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="In sync with server" />
-                                    <Setter Property="Foreground" Value="{StaticResource App.Ink2}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDirty}" Value="True">
-                                            <Setter Property="Text" Value="Unsaved changes" />
-                                            <Setter Property="Foreground" Value="{StaticResource App.Warning}" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>                        <TextBlock Text="/"
-                                   FontSize="11.5"
-                                   Margin="10,0"
-                                   Foreground="{StaticResource App.Line}"
-                                   VerticalAlignment="Center" />
-                        <TextBlock FontSize="11.5"
-                                   VerticalAlignment="Center"
-                                   Foreground="{StaticResource App.Ink2}">
-                            <TextBlock.Text>
-                                <Binding Path="Agent.UpdatedAt" StringFormat="Server version {0:yyyy-MM-dd HH:mm}" />
-                            </TextBlock.Text>
-                        </TextBlock>
-                        <TextBlock Text="/"
-                                   FontSize="11.5"
-                                   Margin="10,0"
-                                   Foreground="{StaticResource App.Line}"
-                                   VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding Agent.VoiceId, StringFormat='voice: {0}'}"
-                                   FontFamily="{StaticResource App.MonoFont}"
-                                   FontSize="9.5"
-                                   Foreground="{StaticResource App.Ink2}"
-                                   VerticalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="1"
@@ -189,18 +133,40 @@
                                      so the custom template's items host has
                                      to be a StackPanel for the labels to size
                                      to content. -->
-                                <StackPanel Orientation="Horizontal"
-                                            IsItemsHost="True"
-                                            Background="Transparent"
-                                            Margin="0" />
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled">
+                                    <StackPanel Orientation="Horizontal"
+                                                IsItemsHost="True"
+                                                Background="Transparent"
+                                                Margin="0" />
+                                </ScrollViewer>
                             </Border>
+                            <!-- The selected tab renders into ONE fixed,
+                                 content-independent region: the row above is
+                                 a star row, so the box gets whatever the pane
+                                 has left after the strip and the footer, and
+                                 never a pixel more or less because the
+                                 selected tab happens to want a taller view.
+                                 ClipToBounds is the load-bearing part — an
+                                 unbounded view (the workflow canvas sizes
+                                 itself from its nodes, MaterialDesign editor
+                                 helper text hangs below the editor box)
+                                 would otherwise paint straight over the
+                                 sticky footer, which reads to the user as
+                                 "the tab changed height". -->
                             <ContentPresenter x:Name="PART_SelectedContentHost"
-                                              Grid.Row="1"
-                                              ContentSource="SelectedContent"
-                                              Margin="38,30,38,38" />
+                                              Grid.Row="1" ContentSource="SelectedContent"
+                                              VerticalAlignment="Stretch"
+                                              ClipToBounds="True"
+                                              Margin="38,12,38,12" />
                         </Grid>
                     </ControlTemplate>
                 </TabControl.Template>
+                <TabItem Header="New Conversation">
+                    <ContentControl cal:View.Model="{Binding LiveConversationVm}"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch" />
+                </TabItem>
                 <TabItem Header="System Prompt">
                     <ContentControl cal:View.Model="{Binding SystemPromptVm}"
                                     MaxWidth="980"
@@ -230,11 +196,6 @@
                                     HorizontalAlignment="Stretch"
                                     VerticalContentAlignment="Stretch" />
                 </TabItem>
-                <TabItem Header="Live conversation">
-                    <ContentControl cal:View.Model="{Binding LiveConversationVm}"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalContentAlignment="Stretch" />
-                </TabItem>
             </TabControl>
 
             <!-- 3. Sticky action footer. Push lives here (was in the
@@ -244,9 +205,26 @@
                     BorderBrush="{StaticResource App.Line}"
                     BorderThickness="0,1,0,0"
                     Background="{StaticResource App.Canvas}"
-                    MinHeight="73"
+                    Height="56"
                     Padding="38,0">
+                <!-- Two footer bodies share one fixed 56px row: the editor
+                     actions for every configuration tab, and the live
+                     session's text composer on New Conversation. Both are
+                     collapsed/expanded off SelectedTabIndex so switching
+                     tabs never changes the footer height. The wrapper Grid
+                     exists only because a Border takes a single child —
+                     it stacks the two in the same cell. -->
                 <Grid>
+                    <Grid>
+                        <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedTabIndex}" Value="0">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -297,6 +275,39 @@
                             </StackPanel>
                         </Button>
                     </StackPanel>
+                </Grid>
+
+                <Border DataContext="{Binding LiveConversationVm}"
+                        cal:Action.TargetWithoutContext="{Binding}"
+                        Padding="0,4">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DataContext.SelectedTabIndex, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 MinHeight="34"
+                                 VerticalContentAlignment="Center"
+                                 ToolTip="Send a text message without leaving the live session" />
+                        <Button Grid.Column="1"
+                                cal:Message.Attach="[Event Click] = [Action SendTextAsync()]"
+                                Content="Send"
+                                Style="{StaticResource App.SecondaryButton}"
+                                Margin="8,0,0,0"
+                                IsEnabled="{Binding IsConnected}" />
+                    </Grid>
+                </Border>
                 </Grid>
             </Border>
         </Grid>

@@ -60,8 +60,15 @@
         </Grid>
 
         <!-- Editor with hairline frame. Focus ring is provided by the
-             App.InsetEditor trigger on IsKeyboardFocusWithin. -->
+             App.InsetEditor trigger on IsKeyboardFocusWithin.
+             ClipToBounds: MaterialDesign's TextBox template keeps an
+             empty helper/validation footer row that it lays out below
+             the control once the box is stretched to fill the row, so
+             the editor painted ~22px past the frame and into the tab
+             footer. These editors carry no validation text, so clipping
+             that empty row costs nothing. -->
         <Border Grid.Row="1"
+                ClipToBounds="True"
                 Style="{StaticResource App.InsetEditor}">
             <!-- Inherited text-layout properties set a 22px line height
                  for the 13px prompt, keeping long instructions readable. -->

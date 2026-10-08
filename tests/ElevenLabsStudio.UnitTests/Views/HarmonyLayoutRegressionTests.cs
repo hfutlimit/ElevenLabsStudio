@@ -1,17 +1,151 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Markup;
 using System.Windows.Media;
+using Caliburn.Micro;
+using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.ViewModels.AgentDetail;
 using ElevenLabsStudio.Views.AgentDetail;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 
 namespace ElevenLabsStudio.UnitTests.Views;
 
 public sealed class HarmonyLayoutRegressionTests
 {
+	[Theory]
+	[InlineData(698, 544)]
+	[InlineData(1056, 720)]
+	public Task Switching_tabs_keeps_the_tab_strip_and_content_bounds_stable(int width, int height) => WpfTestHost.RunAsync(() =>
+	{
+		using var vm = new AgentDetailViewModel(
+			Agent.Empty("phone_agent"), Substitute.For<IElevenLabsClient>(),
+			Substitute.For<ISuggestionEngine>(), Substitute.For<IDialogService>(),
+			Substitute.For<IEventAggregator>(), Substitute.For<IDraftStore>(),
+			NullLogger<AgentDetailViewModel>.Instance,
+			Substitute.For<IRealtimeConversationClient>(), Substitute.For<IClockService>());
+		var detail = new AgentDetailView { DataContext = vm };
+		WithWindow(detail, width, height, host =>
+		{
+			var tabs = Descendants(detail).OfType<TabControl>().Single();
+			var content = (ContentPresenter)tabs.Template.FindName("PART_SelectedContentHost", tabs);
+			var tabTop = tabs.TranslatePoint(new Point(), detail).Y;
+			var contentTop = content.TranslatePoint(new Point(), detail).Y;
+			var contentHeight = content.ActualHeight;
+			foreach (var item in tabs.Items.OfType<TabItem>())
+			{
+				tabs.SelectedItem = item;
+				host.UpdateLayout();
+				tabs.TranslatePoint(new Point(), detail).Y.Should().BeApproximately(tabTop, 1);
+				content.TranslatePoint(new Point(), detail).Y.Should().BeApproximately(contentTop, 1);
+				content.ActualHeight.Should().BeApproximately(contentHeight, 1);
+			}
+		});
+	});
+
+	[Theory]
+	[InlineData(1000, 600)]
+	[InlineData(1360, 840)]
+	public Task Every_tab_keeps_its_content_inside_the_fixed_tab_region(int width, int height) => WpfTestHost.RunAsync(() =>
+	{
+		using var vm = new AgentDetailViewModel(
+			Agent.Empty("phone_agent"), Substitute.For<IElevenLabsClient>(),
+			Substitute.For<ISuggestionEngine>(), Substitute.For<IDialogService>(),
+			Substitute.For<IEventAggregator>(), Substitute.For<IDraftStore>(),
+			NullLogger<AgentDetailViewModel>.Instance,
+			Substitute.For<IRealtimeConversationClient>(), Substitute.For<IClockService>());
+		var detail = new AgentDetailView();
+		WithWindow(detail, width, height, host =>
+		{
+			var tabs = Descendants(detail).OfType<TabControl>().Single();
+			var content = (ContentPresenter)tabs.Template.FindName("PART_SelectedContentHost", tabs);
+			var footer = Descendants(detail).OfType<Border>()
+				.Single(border => Math.Abs(border.ActualHeight - 56) < 0.5 && border.ActualHeight > 0);
+			var footerTop = footer.TranslatePoint(new Point(), detail).Y;
+
+			foreach (var item in tabs.Items.OfType<TabItem>())
+			{
+				// Build each tab's real view by hand: going through Caliburn
+				// would depend on ViewLocator static state left behind by
+				// whichever test ran before this one.
+				((ContentControl)item.Content).Content = ViewFor((string)item.Header, vm);
+				tabs.SelectedItem = item;
+				host.UpdateLayout();
+
+				var label = (string)item.Header;
+				content.ClipToBounds.Should().BeTrue(
+					$"{label}: the tab region must clip, or an unbounded view paints over the footer");
+
+				// Nothing may render below the region: that spill is exactly
+				// what the user saw as "the tab changed height".
+				foreach (var element in Descendants(content).OfType<FrameworkElement>())
+				{
+					if (element.ActualHeight <= 0 || !element.IsVisible) continue;
+					if (IsClippedByAncestor(element, content)) continue;
+					var bottom = element.TranslatePoint(new Point(0, element.ActualHeight), detail).Y;
+					bottom.Should().BeLessThanOrEqualTo(
+						footerTop + 1,
+						$"{label}: {element.GetType().Name} renders past the tab region into the footer");
+				}
+			}
+		});
+	});
+
+	private static bool IsClippedByAncestor(FrameworkElement element, DependencyObject stopAt)
+	{
+		for (var parent = VisualTreeHelper.GetParent(element); parent is FrameworkElement fe; parent = VisualTreeHelper.GetParent(fe))
+		{
+			if (fe is ScrollViewer or Border { ClipToBounds: true } or Grid { ClipToBounds: true }) return true;
+			if (ReferenceEquals(fe, stopAt)) break;
+		}
+		return false;
+	}
+
+	private static FrameworkElement ViewFor(string header, AgentDetailViewModel vm) => header switch
+	{
+		"New Conversation" => new LiveConversationView { DataContext = vm.LiveConversationVm },
+		"System Prompt" => new SystemPromptTabView { DataContext = vm.SystemPromptVm },
+		"First Message" => new FirstMessageTabView { DataContext = vm.FirstMessageVm },
+		"Workflow" => new WorkflowTabView { DataContext = vm.WorkflowVm },
+		"Variables" => new VariablesTabView { DataContext = vm.VariablesVm },
+		"Conversations" => new ConversationsTabView { DataContext = vm.ConversationsVm },
+		_ => throw new InvalidOperationException($"unknown tab {header}"),
+	};
+
+	[Theory]
+	[InlineData(1000, 700)]
+	[InlineData(698, 544)]
+	public Task Selecting_an_agent_opens_the_new_conversation_workspace(int width, int height) => WpfTestHost.RunAsync(() =>
+	{
+		using var vm = new AgentDetailViewModel(
+			Agent.Empty("phone_agent"), Substitute.For<IElevenLabsClient>(),
+			Substitute.For<ISuggestionEngine>(), Substitute.For<IDialogService>(),
+			Substitute.For<IEventAggregator>(), Substitute.For<IDraftStore>(),
+			NullLogger<AgentDetailViewModel>.Instance,
+			Substitute.For<IRealtimeConversationClient>(), Substitute.For<IClockService>());
+		var detail = new AgentDetailView { DataContext = vm };
+		WithWindow(detail, width, height, host =>
+		{
+			var tabs = Descendants(detail).OfType<TabControl>().Single();
+			var selected = (TabItem)tabs.SelectedItem;
+			selected.Header.Should().Be("New Conversation");
+			Caliburn.Micro.View.GetModel((ContentControl)selected.Content)
+				.Should().BeSameAs(vm.LiveConversationVm);
+			var live = Descendants(detail).OfType<LiveConversationView>().Single();
+			var scenario = Descendants(live).OfType<ComboBox>().Single();
+			scenario.TranslatePoint(new Point(0, scenario.ActualHeight), host).Y.Should().BeLessThan(host.ActualHeight);
+			((Button)live.FindName("EditDynamicVariablesAsync")).IsVisible.Should().BeTrue();
+			var transcript = Descendants(live).OfType<ScrollViewer>().Single(viewer =>
+				BindingOperations.GetBinding(viewer, UIElement.VisibilityProperty)?.Path.Path == "HasTranscript");
+			((FrameworkElement)transcript.Parent).ActualHeight.Should().BeGreaterThan(80,
+				"audio controls must leave room for the live transcript at minimum window height");
+		});
+	});
+
 	[Fact]
 	public Task Tab_headers_have_a_full_height_click_target() => WpfTestHost.RunAsync(() =>
 	{
@@ -28,21 +162,39 @@ public sealed class HarmonyLayoutRegressionTests
 		});
 	});
 
+	[Fact]
+	public Task Parameter_dialog_edits_values_without_changing_the_source_until_saved() => WpfTestHost.RunAsync(() =>
+	{
+		var source = new DynamicVariableEntry("caller_id_norm", "original");
+		var vm = new DynamicVariablesDialogViewModel("Contact found", new[] { source });
+		var view = new DynamicVariablesDialogView { DataContext = vm };
+		WithWindow(view, 580, 470, host =>
+		{
+			var value = Descendants(view).OfType<TextBox>().First(box =>
+				BindingOperations.GetBinding(box, TextBox.TextProperty)?.Path.Path == "Value");
+			value.SetCurrentValue(TextBox.TextProperty, "edited-for-call");
+			vm.DynamicVariables[0].Value.Should().Be("edited-for-call");
+			source.Value.Should().Be("original");
+			value.ActualWidth.Should().BeGreaterThan(400);
+			value.TranslatePoint(new Point(0, value.ActualHeight), host).Y.Should().BeLessThan(host.ActualHeight);
+		});
+	});
+
 	[Theory]
-	[InlineData(0)]
-	[InlineData(1)]
-	public Task Editors_keep_a_stable_centered_width_when_text_changes(int tabIndex) => WpfTestHost.RunAsync(() =>
+	[InlineData("System Prompt")]
+	[InlineData("First Message")]
+	public Task Editors_keep_a_stable_centered_width_when_text_changes(string header) => WpfTestHost.RunAsync(() =>
 	{
 		var detail = new AgentDetailView();
 		WithWindow(detail, 1200, 700, host =>
 		{
 			var tabs = Descendants(detail).OfType<TabControl>().Single();
-			var item = (TabItem)tabs.Items[tabIndex];
+			var item = tabs.Items.OfType<TabItem>().Single(tab => Equals(tab.Header, header));
 			var content = (ContentControl)item.Content;
-			UserControl editorView = tabIndex == 0 ? new SystemPromptTabView() : new FirstMessageTabView();
+			UserControl editorView = header == "System Prompt" ? new SystemPromptTabView() : new FirstMessageTabView();
 			content.Content = editorView;
-			tabs.SelectedIndex = tabIndex;
-			var editor = (TextBox)editorView.FindName(tabIndex == 0 ? "Prompt" : "FirstMessage");
+			tabs.SelectedItem = item;
+			var editor = (TextBox)editorView.FindName(header == "System Prompt" ? "Prompt" : "FirstMessage");
 			editor.Text = "Short text";
 			host.UpdateLayout();
 			var left = editor.TranslatePoint(new Point(), detail).X;
@@ -79,37 +231,6 @@ public sealed class HarmonyLayoutRegressionTests
 			vm.SelectNodeById("tool-1");
 			host.UpdateLayout();
 			column.ActualWidth.Should().BeApproximately(resizedWidth, 1);
-		});
-	});
-
-	[Fact]
-	public Task Live_columns_fit_the_minimum_window_before_and_after_resizing() => WpfTestHost.RunAsync(() =>
-	{
-		var view = new LiveConversationView();
-		WithWindow(view, 638, 550, host =>
-		{
-			var splitter = Descendants(view).OfType<GridSplitter>().Single();
-			var grid = (Grid)splitter.Parent;
-			void AssertFits()
-			{
-				var columnsRight = grid.TranslatePoint(new Point(grid.ColumnDefinitions.Sum(c => c.ActualWidth), 0), host).X;
-				columnsRight.Should().BeLessOrEqualTo(host.ActualWidth - 19,
-					"column minima must fit the host, not enlarge the grid beyond its layout slot");
-				var stop = (Button)view.FindName("StopAsync");
-				var right = stop.TranslatePoint(new Point(stop.ActualWidth, 0), host).X;
-				right.Should().BeLessOrEqualTo(host.ActualWidth);
-			}
-			AssertFits();
-			host.Width = 1100;
-			host.UpdateLayout();
-			var widthBeforeDrag = grid.ColumnDefinitions[0].ActualWidth;
-			Drag(splitter, -60);
-			host.UpdateLayout();
-			grid.ColumnDefinitions[0].ActualWidth.Should().BeLessThan(widthBeforeDrag - 20,
-				"the resize must change star weights before the host is narrowed again");
-			host.Width = 638;
-			host.UpdateLayout();
-			AssertFits();
 		});
 	});
 

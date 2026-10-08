@@ -54,7 +54,12 @@
                     AutomationProperties.Name="Reset first message" />
         </Grid>
 
+        <!-- Same ClipToBounds reason as SystemPromptTabView: MaterialDesign's
+             empty helper/validation footer row is laid out below a stretched
+             TextBox and painted over the tab footer. No validation text is
+             bound to this editor. -->
         <Border Grid.Row="1"
+                ClipToBounds="True"
                 Style="{StaticResource App.InsetEditor}">
             <TextBox x:Name="FirstMessage"
                      AcceptsReturn="True"

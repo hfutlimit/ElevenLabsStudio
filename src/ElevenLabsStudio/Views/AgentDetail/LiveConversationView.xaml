@@ -3,110 +3,109 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
-    <!-- VerticalAlignment=Stretch is load-bearing: Caliburn injects this
-         view into a host that does not always stretch its child, which
-         left Row 1 (the *) short and parked the slack under the
-         composer instead of feeding it to the transcript. -->
-    <Grid Margin="20,16,20,16" VerticalAlignment="Stretch">
+    <Grid VerticalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-
         <Border Grid.Row="0"
                 Style="{StaticResource App.SectionCard}"
-                Padding="16,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="1.35*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="Live conversation"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource App.Text}" />
-                    <TextBlock Margin="0,4,12,0"
-                               FontSize="11"
-                               TextWrapping="Wrap"
-                               Foreground="{StaticResource App.TextSecondary}"><Run Text="{Binding AgentName}" /><Run Text=" · " /><Run Text="{Binding AgentId}" FontFamily="{StaticResource App.MonoFont}" /></TextBlock>
-                </StackPanel>
-                <WrapPanel Grid.Column="1"
-                           Orientation="Horizontal"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Stretch">
-                    <Border Style="{StaticResource App.Badge}" Margin="0,0,12,6">
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="{StaticResource App.TextMuted}" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                                <Setter Property="Fill" Value="{StaticResource App.Success}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
-                        </StackPanel>
-                    </Border>
-                    <TextBlock Text="{Binding ModeText}" Margin="0,0,14,6" VerticalAlignment="Center" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
-                    <TextBlock Text="{Binding ElapsedText}" Margin="0,0,14,6" VerticalAlignment="Center" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
-                    <Button x:Name="StartAsync"
-                            Style="{StaticResource App.PrimaryButton}"
-                            IsEnabled="{Binding CanStart}"
-                            Margin="0,0,6,6">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Microphone" Width="15" Height="15" Margin="0,0,6,0" />
-                            <TextBlock Text="Start" />
-                        </StackPanel>
-                    </Button>
-                    <Button x:Name="StopAsync"
-                            Style="{StaticResource App.SecondaryButton}"
-                            IsEnabled="{Binding CanStop}"
-                            Margin="0,0,0,6">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="StopCircleOutline" Width="15" Height="15" Margin="0,0,6,0" />
-                            <TextBlock Text="End" />
-                        </StackPanel>
-                    </Button>
-                </WrapPanel>
-            </Grid>
+                Padding="0,4">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="StartAsync"
+                        Style="{StaticResource App.PrimaryButton}"
+                        IsEnabled="{Binding CanStart}"
+                        AutomationProperties.Name="New Conversation"
+                        ToolTip="Start a voice conversation with the current dynamic variables"
+                        Margin="0,0,8,6">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Microphone" Width="15" Height="15" Margin="0,0,6,0" />
+                        <TextBlock Text="New Conversation" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="StopAsync"
+                        Style="{StaticResource App.SecondaryButton}"
+                        IsEnabled="{Binding CanStop}"
+                        Margin="0,0,0,6">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="StopCircleOutline" Width="15" Height="15" Margin="0,0,6,0" />
+                        <TextBlock Text="End" />
+                    </StackPanel>
+                </Button>
+
+                <Border Style="{StaticResource App.Badge}" Margin="12,0,12,6">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource App.TextMuted}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="Fill" Value="{StaticResource App.Success}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{Binding ModeText}" Margin="0,0,14,6" VerticalAlignment="Center" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
+                <TextBlock Text="{Binding ElapsedText}" Margin="0,0,14,6" VerticalAlignment="Center" FontFamily="Consolas, Cascadia Mono, monospace" Foreground="{StaticResource App.TextSecondary}" FontSize="11" />
+            </WrapPanel>
         </Border>
 
-        <Grid Grid.Row="1" Margin="0,12,0,12">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <!-- Star widths continue to adapt after splitter dragging,
-                     unlike a fixed pixel column. Together the minima fit
-                     the expanded sidebar at the shell's minimum width. -->
-                <ColumnDefinition Width="0.8*" MinWidth="260" MaxWidth="390" />
-                <ColumnDefinition Width="6" />
-                <ColumnDefinition Width="*" MinWidth="260" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="2"
-                    Background="{StaticResource App.Surface}"
-                    BorderBrush="{StaticResource App.Line}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="16,14"
-                    VerticalAlignment="Stretch"
-                    MinWidth="0">
+            <!-- Dynamic variables stay out of the transcript: a scenario
+                 dropdown picks contact found / contact not found, and the
+                 button opens the parameter dialog. Keeping the key/value
+                 grid inline is what used to make this pane the tallest
+                 tab, which is what made switching tabs look like a
+                 resize. -->
+            <WrapPanel VerticalAlignment="Center">
+                <ComboBox ItemsSource="{Binding VariableScenarios}"
+                          SelectedItem="{Binding SelectedVariableScenario, Mode=TwoWay}"
+                          DisplayMemberPath="DisplayName" IsEnabled="{Binding CanStart}"
+                          Width="180" MinHeight="36" Margin="0,0,10,0"
+                          ToolTip="Dynamic variables scenario" AutomationProperties.Name="Dynamic variables scenario" />
+                <Button x:Name="EditDynamicVariablesAsync" Content="Set parameters"
+                        Style="{StaticResource App.SecondaryButton}" IsEnabled="{Binding CanStart}"
+                        AutomationProperties.Name="Set dynamic variables" />
+            </WrapPanel>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Background="{StaticResource App.Surface}"
+                BorderBrush="{StaticResource App.Line}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="14,10"
+                Margin="0,10,0,10"
+                VerticalAlignment="Stretch"
+                MinWidth="0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Transcript" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" />
-                        <Border Grid.Column="1"
+                        <TextBlock ToolTip="{Binding ConversationId}" Text="Transcript" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="ToggleMuteAsync"
+                                    Content="{Binding MuteButtonText}" Style="{StaticResource App.GhostButton}"
+                                    Margin="0,0,8,0" IsEnabled="{Binding IsConnected}" />
+                        <Border
                                 Style="{StaticResource App.Badge}"
                                 Padding="7,2"
                                 VerticalAlignment="Center">
@@ -115,6 +114,7 @@
                                        FontSize="10.5"
                                        FontWeight="SemiBold" />
                         </Border>
+                        </StackPanel>
                     </Grid>
                     <Grid Grid.Row="1" Margin="0,12,0,0">
                         <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -151,21 +151,21 @@
                         </ScrollViewer>
                         <Border Background="{StaticResource App.SurfaceAlt}"
                                 CornerRadius="8"
-                                Padding="24"
+                                Padding="12"
                                 Visibility="{Binding HasNoTranscript, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="MessageTextOutline"
-                                                         Width="30"
-                                                         Height="30"
+                                                         Width="20"
+                                                         Height="20"
                                                          HorizontalAlignment="Center"
                                                          Foreground="{StaticResource App.TextMuted}" />
                                 <TextBlock Text="No transcript yet"
-                                           Margin="0,10,0,0"
+                                           Margin="0,4,0,0"
                                            HorizontalAlignment="Center"
                                            FontWeight="SemiBold"
                                            FontSize="13"
                                            Foreground="{StaticResource App.Text}" />
-                                <TextBlock Text="Start a conversation to see live messages here."
+                                <TextBlock Text="Edit the variables, then select New Conversation to start speaking."
                                            Margin="0,4,0,0"
                                            HorizontalAlignment="Center"
                                            TextWrapping="Wrap"
@@ -175,194 +175,29 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                    <Grid Grid.Row="2" Margin="0,10,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="Microphone" Margin="0,0,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                            <ProgressBar Value="{Binding InputVolume, Mode=OneWay}" Maximum="1" Height="6" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Text="Agent audio" Margin="0,0,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
+                            <ProgressBar Value="{Binding OutputVolume, Mode=OneWay}" Maximum="1" Height="6" />
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
 
-            <GridSplitter Grid.Column="1"
-                          Width="6"
-                          HorizontalAlignment="Stretch"
-                          VerticalAlignment="Stretch"
-                          Background="{StaticResource App.Border}"
-                          ResizeDirection="Columns"
-                          ResizeBehavior="PreviousAndNext"
-                          ShowsPreview="False"
-                          ToolTip="Drag to resize the session panel" />
-
-            <Border Grid.Column="0"
-                    Background="{StaticResource App.Tint}"
-                    BorderBrush="{StaticResource App.Line}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="16"
-                    Margin="0,0,12,0"
-                    VerticalAlignment="Stretch"
-                    MinWidth="0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              Padding="0,0,4,0">
-                    <StackPanel Margin="0,0,0,8">
-                        <TextBlock Text="Session" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource App.Text}" Margin="0,0,0,10" />
-                        <Border Background="{StaticResource App.Surface}"
-                                BorderBrush="{StaticResource App.Border}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="10,8">
-                            <StackPanel>
-                                <TextBlock Text="Conversation ID" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
-                                <TextBlock Text="{Binding ConversationId, TargetNullValue=—}"
-                                           Margin="0,3,0,0"
-                                           TextWrapping="Wrap"
-                                           FontFamily="Consolas, Cascadia Mono, monospace"
-                                           FontSize="11"
-                                           Foreground="{StaticResource App.TextSecondary}" />
-
-                                <TextBlock Text="Branch ID" Margin="0,10,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
-                                <TextBox Text="{Binding BranchId, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                         HorizontalContentAlignment="Left"
-                                         Padding="9,0"
-                                         MinHeight="34" />
-                                <TextBlock Text="Environment" Margin="0,9,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
-                                <TextBox Text="{Binding Environment, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                         HorizontalContentAlignment="Left"
-                                         Padding="9,0"
-                                         MinHeight="34" />
-                            </StackPanel>
-                        </Border>
-
-                        <TextBlock Text="Initial webhook scenario" Margin="0,10,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
-                        <ComboBox ItemsSource="{Binding VariableScenarios}"
-                                  SelectedItem="{Binding SelectedVariableScenario, Mode=TwoWay}"
-                                  DisplayMemberPath="DisplayName"
-                                  IsEnabled="{Binding CanStart}"
-                                  MinHeight="36"
-                                  AutomationProperties.Name="Initial webhook scenario" />
-                        <TextBlock Text="Preset matches the tester-v2 initial webhook payload."
-                                   Margin="1,4,0,0"
-                                   TextWrapping="Wrap"
-                                   Foreground="{StaticResource App.TextMuted}"
-                                   FontSize="11" />
-
-                        <Grid Margin="0,12,0,4">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Dynamic variables" Foreground="{StaticResource App.Text}" FontSize="12" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding DynamicVariables.Count, StringFormat='{}{0} values'}"
-                                           Margin="7,1,0,0"
-                                           Foreground="{StaticResource App.TextMuted}"
-                                           FontSize="11" />
-                            </StackPanel>
-                            <Button x:Name="AddDynamicVariable"
-                                    HorizontalAlignment="Right"
-                                    Style="{StaticResource App.GhostButton}"
-                                    Padding="8,3"
-                                    IsEnabled="{Binding CanStart}">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Plus" Width="13" Height="13" Margin="0,0,4,0" />
-                                    <TextBlock Text="Add" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-                        <Border Background="{StaticResource App.Surface}"
-                                BorderBrush="{StaticResource App.Border}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="10,8">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1.15*" />
-                                    <ColumnDefinition Width="1.45*" />
-                                    <ColumnDefinition Width="32" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Key" Foreground="{StaticResource App.TextMuted}" FontSize="11" Margin="2,0,4,5" />
-                                <TextBlock Grid.Column="1" Text="Value" Foreground="{StaticResource App.TextMuted}" FontSize="11" Margin="4,0,4,5" />
-                                <ItemsControl Grid.Row="1" Grid.ColumnSpan="3" ItemsSource="{Binding DynamicVariables}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="0,0,0,6">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="1.15*" />
-                                                    <ColumnDefinition Width="1.45*" />
-                                                    <ColumnDefinition Width="32" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBox Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}"
-                                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                         MinHeight="32"
-                                                         Margin="0,0,4,0"
-                                                         HorizontalContentAlignment="Left"
-                                                         Padding="8,0"
-                                                         ToolTip="{Binding Key}" />
-                                                <TextBox Grid.Column="1"
-                                                         Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                         MinHeight="32"
-                                                         Margin="4,0,4,0"
-                                                         HorizontalContentAlignment="Left"
-                                                         Padding="8,0"
-                                                         ToolTip="{Binding Value}" />
-                                                <Button Grid.Column="2"
-                                                        Click="RemoveDynamicVariable_Click"
-                                                        Tag="{Binding}"
-                                                        Style="{StaticResource App.IconButton}"
-                                                        Width="28"
-                                                        Height="28"
-                                                        Margin="4,2,0,0"
-                                                        Foreground="{StaticResource App.Danger}"
-                                                        ToolTip="Remove variable">
-                                                    <materialDesign:PackIcon Kind="TrashCanOutline" Width="14" Height="14" />
-                                                </Button>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </Grid>
-                        </Border>
-                        <TextBlock Text="Values are sent as strings in the initial webhook payload."
-                                   Margin="1,4,0,0"
-                                   TextWrapping="Wrap"
-                                   Foreground="{StaticResource App.TextMuted}"
-                                   FontSize="11" />
-
-                        <TextBlock Text="Microphone" Margin="0,14,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
-                        <ProgressBar Value="{Binding InputVolume, Mode=OneWay}" Maximum="1" Height="6" />
-                        <TextBlock Text="Agent audio" Margin="0,10,0,3" Foreground="{StaticResource App.TextMuted}" FontSize="11" />
-                        <ProgressBar Value="{Binding OutputVolume, Mode=OneWay}" Maximum="1" Height="6" />
-                        <Button x:Name="ToggleMuteAsync"
-                                Content="{Binding MuteButtonText}"
-                                Style="{StaticResource App.GhostButton}"
-                                Margin="0,16,0,0"
-                                IsEnabled="{Binding IsConnected}" />
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
-        </Grid>
-
-        <Border Grid.Row="2" Style="{StaticResource App.SectionCard}" Padding="10,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         MinHeight="34"
-                         VerticalContentAlignment="Center"
-                         ToolTip="Send a text message without leaving the live session" />
-                <Button Grid.Column="1"
-                        x:Name="SendTextAsync"
-                        Content="Send"
-                        Style="{StaticResource App.SecondaryButton}"
-                        Margin="8,0,0,0"
-                        IsEnabled="{Binding IsConnected}" />
-            </Grid>
-        </Border>
-
         <!-- Audio sink for the realtime WebRTC pump. Stays 1x1 in the
-             composer row; it must keep x:Name="AudioHost" because the
+             transcript row; it must keep x:Name="AudioHost" because the
              live view model resolves it through the visual tree. -->
         <wv2:WebView2 x:Name="AudioHost"
                       Grid.Row="2"

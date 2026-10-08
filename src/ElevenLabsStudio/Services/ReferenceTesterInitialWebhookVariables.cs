@@ -11,7 +11,7 @@ public static class ReferenceTesterInitialWebhookVariables
 	[
 		new(
 			"found",
-			"Account found — pass all variables",
+			"Contact found",
 			new Dictionary<string, object?>
 			{
 				["lookup_status"] = "found",
@@ -26,7 +26,7 @@ public static class ReferenceTesterInitialWebhookVariables
 			}),
 		new(
 			"not_found",
-			"Account not found — fallback values",
+			"Contact not found",
 			new Dictionary<string, object?>
 			{
 				["lookup_status"] = "not_found",
