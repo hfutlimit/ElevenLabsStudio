@@ -225,6 +225,66 @@
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </Grid>
+
+                    <!-- A failed request used to leave a blank pane that
+                         looked exactly like a conversation with no
+                         turns, so the user could not tell "no history"
+                         from "the network died". State it, and offer the
+                         one retry that usually clears it. -->
+                    <Grid Panel.ZIndex="3"
+                          Background="{StaticResource App.Surface}"
+                          Visibility="{Binding HasTranscriptError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    MaxWidth="380">
+                            <materialDesign:PackIcon Kind="AlertCircleOutline"
+                                                     Width="20" Height="20"
+                                                     HorizontalAlignment="Center"
+                                                     Foreground="{StaticResource App.Danger}" />
+                            <TextBlock Text="Could not load the transcript"
+                                       Margin="0,10,0,0"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{StaticResource App.Text}" />
+                            <TextBlock Text="{Binding TranscriptError}"
+                                       Margin="0,6,0,0"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       FontSize="11"
+                                       Foreground="{StaticResource App.TextMuted}" />
+                            <Button x:Name="RetryTranscriptAsync"
+                                    Content="Retry"
+                                    Style="{StaticResource App.SecondaryButton}"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,14,0,0"
+                                    AutomationProperties.Name="Retry loading transcript" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Genuinely empty: the request succeeded and there
+                         was nothing recorded. -->
+                    <Grid Panel.ZIndex="3"
+                          Background="{StaticResource App.Surface}"
+                          Visibility="{Binding HasNoTranscript, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="MessageTextOutline"
+                                                     Width="18" Height="18"
+                                                     HorizontalAlignment="Center"
+                                                     Foreground="{StaticResource App.TextMuted}" />
+                            <TextBlock Text="No transcript recorded"
+                                       Margin="0,8,0,0"
+                                       FontSize="12.5"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{StaticResource App.Text}" />
+                            <TextBlock Text="This conversation finished without any turns."
+                                       Margin="0,4,0,0"
+                                       TextAlignment="Center"
+                                       FontSize="11"
+                                       Foreground="{StaticResource App.TextMuted}" />
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Grid>
         </Border>

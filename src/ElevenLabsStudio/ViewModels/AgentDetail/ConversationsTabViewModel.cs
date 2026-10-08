@@ -22,6 +22,7 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 	private long _selectionGeneration;
 	private bool _isConversationListLoading;
 	private bool _isTranscriptLoading;
+	private string? _transcriptError;
 
 	public BindableCollection<ConversationRecord> Conversations { get; } = new();
 	public BindableCollection<TranscriptTurn> Turns { get; } = new();
@@ -43,6 +44,38 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 			if (Set(ref _isTranscriptLoading, value)) UpdateBusyState();
 		}
 	}
+
+	/// <summary>
+	/// Why the current conversation's transcript is not showing. Kept
+	/// separate from <see cref="IsTranscriptLoading"/> so the right pane
+	/// can say "this failed" instead of presenting an empty box that is
+	/// indistinguishable from "this conversation had no turns".
+	/// </summary>
+	public string? TranscriptError
+	{
+		get => _transcriptError;
+		private set
+		{
+			if (Set(ref _transcriptError, value))
+			{
+				NotifyOfPropertyChange(nameof(HasTranscriptError));
+			}
+		}
+	}
+
+	/// <summary>
+	/// String-to-visibility is not available in this app (only a boolean
+	/// converter is registered), so the view binds this instead of
+	/// <see cref="TranscriptError"/>.
+	/// </summary>
+	public bool HasTranscriptError => !string.IsNullOrEmpty(_transcriptError);
+
+	/// <summary>
+	/// True when a transcript was asked for and came back with no turns
+	/// and no error. Drives the "nothing recorded" empty state.
+	/// </summary>
+	public bool HasNoTranscript =>
+		SelectedConversation is not null && !IsTranscriptLoading && TranscriptError is null && Turns.Count == 0;
 
 	private ConversationRecord? _selectedConversation;
 	public ConversationRecord? SelectedConversation
@@ -81,11 +114,14 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 		if (conversation is null)
 		{
 			IsTranscriptLoading = false;
+			TranscriptError = null;
 			Turns.Clear();
+			NotifyOfPropertyChange(nameof(HasNoTranscript));
 			return;
 		}
 
 		IsTranscriptLoading = true;
+		TranscriptError = null;
 		try
 		{
 			var detail = await _client.GetConversationAsync(
@@ -109,21 +145,40 @@ public sealed class ConversationsTabViewModel : ScreenBase, IDisposable
 		{
 			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
 			_logger.LogError(ex, "ElevenLabs error loading conversation {ConversationId}", conversation.ConversationId);
-			await _dialog.ShowErrorAsync("Load failed", $"HTTP {ex.HttpStatus}: {ex.Message}", ct);
+			TranscriptError = $"HTTP {ex.HttpStatus}: {ex.Message}";
+			await _dialog.ShowErrorAsync("Load failed", TranscriptError, ct);
 		}
 		catch (Exception ex)
 		{
 			if (selectionToken.IsCancellationRequested || generation != _selectionGeneration) return;
 			_logger.LogError(ex, "Unexpected error loading conversation {ConversationId}", conversation.ConversationId);
-			await _dialog.ShowErrorAsync("Unexpected error", ex.Message, ct);
+			TranscriptError = ex.Message;
+			await _dialog.ShowErrorAsync("Unexpected error", TranscriptError, ct);
 		}
 		finally
 		{
 			if (generation == _selectionGeneration)
 			{
 				IsTranscriptLoading = false;
+				// Both the error and the empty state depend on the settled
+				// loading flag and on Turns, neither of which raise their
+				// own change for the view to recompute this from.
+				NotifyOfPropertyChange(nameof(HasNoTranscript));
 			}
 		}
+	}
+
+	/// <summary>
+	/// Re-run the transcript request for the current conversation. The
+	/// network in front of this box drops TLS handshakes often enough
+	/// that a failed transcript is usually worth one more try.
+	/// </summary>
+	public Task RetryTranscriptAsync(CancellationToken ct = default)
+	{
+		var current = _selectedConversation;
+		return current is null
+			? Task.CompletedTask
+			: SelectConversationAsync(current, ct);
 	}
 
 	private async Task SelectConversationGuardedAsync(ConversationRecord? conversation)

@@ -1,3 +1,4 @@
+using System.Net.Http;
 using ElevenLabsStudio.Core.Abstractions;
 using ElevenLabsStudio.Core.Domain;
 using ElevenLabsStudio.Core.Exceptions;
@@ -126,6 +127,66 @@ public sealed class ConversationsTabViewModelTests
 
 		vm.Turns.Should().ContainSingle(turn => turn.Text == "kept");
 		await dialog.Received().ShowErrorAsync("Load failed", Arg.Any<string>(), Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task A_failed_transcript_says_so_instead_of_looking_empty()
+	{
+		// The network in front of this box drops TLS often enough that a
+		// failed transcript is routine. Previously the right pane went
+		// blank with no state at all, which is indistinguishable from
+		// "this conversation had no turns".
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetConversationAsync("c1", Arg.Any<CancellationToken>())
+			.Returns<Task<ConversationRecord>>(_ => throw new HttpRequestException("SSL boom"));
+		var vm = Build(client);
+
+		await vm.SelectConversationAsync(Conversation("c1"));
+
+		vm.HasTranscriptError.Should().BeTrue();
+		vm.TranscriptError.Should().Be("SSL boom");
+		vm.HasNoTranscript.Should().BeFalse(
+			"a failed load must not present itself as an empty conversation");
+		vm.IsTranscriptLoading.Should().BeFalse();
+	}
+
+	[Fact]
+	public async Task A_successful_empty_transcript_reports_the_empty_state()
+	{
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetConversationAsync("c1", Arg.Any<CancellationToken>())
+			.Returns(Conversation("c1"));
+		var vm = Build(client);
+
+		await vm.SelectConversationAsync(Conversation("c1"));
+
+		vm.Turns.Should().BeEmpty();
+		vm.HasTranscriptError.Should().BeFalse();
+		vm.HasNoTranscript.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task Retry_reloads_the_current_conversation_and_clears_the_error()
+	{
+		var attempt = 0;
+		var client = Substitute.For<IElevenLabsClient>();
+		client.GetConversationAsync("c1", Arg.Any<CancellationToken>()).Returns(_ =>
+		{
+			attempt++;
+			return attempt == 1
+				? throw new HttpRequestException("SSL boom")
+				: Conversation("c1", new TranscriptTurn("agent", "recovered", DateTimeOffset.UtcNow));
+		});
+		var vm = Build(client);
+
+		await vm.SelectConversationAsync(Conversation("c1"));
+		vm.HasTranscriptError.Should().BeTrue();
+
+		await vm.RetryTranscriptAsync();
+
+		vm.HasTranscriptError.Should().BeFalse();
+		vm.Turns.Should().ContainSingle(turn => turn.Text == "recovered");
+		vm.HasNoTranscript.Should().BeFalse();
 	}
 
 	[Fact]
