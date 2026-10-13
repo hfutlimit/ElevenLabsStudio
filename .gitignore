@@ -1,4 +1,5 @@
 # Build outputs
+dist/
 [Bb]in/
 [Oo]bj/
 [Dd]ebug/
